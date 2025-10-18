@@ -1,10 +1,26 @@
-// https://docs.expo.dev/guides/using-eslint/
-const { defineConfig } = require('eslint/config');
-const expoConfig = require('eslint-config-expo/flat');
+const { defineConfig, globalIgnores } = require('eslint/config');
+const expo = require('eslint-config-expo/flat');
+const globals = require('globals');
+const eslintPluginPrettierRecommended = require('eslint-plugin-prettier/recommended');
 
 module.exports = defineConfig([
-  expoConfig,
+  globalIgnores(['dist/*']),
+  ...expo,
+  eslintPluginPrettierRecommended,
   {
-    ignores: ['dist/*'],
+    settings: {
+      'import/resolver': {
+        alias: {
+          map: [['@', './src']],
+          extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+        },
+      },
+    },
+  },
+  {
+    files: ['babel.config.js', 'metro.config.js', 'jest.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
   },
 ]);
