@@ -31,3 +31,46 @@ export const SettingsToggleItem = ({ icon, label, value, onValueChange }) => (
         <Switch value={value} onValueChange={onValueChange} />
     </View>
 );
+
+export const SettingsStatusItem = ({ 
+    icon, 
+    label, 
+    isActive, 
+    onPress,
+    activeIcon = "checkmark-circle",
+    activeIconColor = "#10b981",
+    inactiveText = "Setup",
+    showChevronWhenInactive = true 
+}) => {
+    const content = (
+        <View style={tw`flex-row items-center py-4 px-5 bg-white`}>
+            <Ionicons name={icon} size={24} color="#333" style={tw`mr-4`} />
+            <Text style={tw`flex-1 text-base font-medium text-gray-900`}>{label}</Text>
+            
+            {isActive ? (
+                <Ionicons name={activeIcon} size={24} color={activeIconColor} />
+            ) : (
+                <View style={tw`flex-row items-center`}>
+                    <Text style={tw`text-base text-gray-600 mr-1`}>{inactiveText}</Text>
+                    {showChevronWhenInactive && (
+                        <Ionicons name="chevron-forward" size={20} color="#999" />
+                    )}
+                </View>
+            )}
+        </View>
+    );
+
+    if (!isActive && onPress) {
+        return (
+            <Pressable
+                onPress={onPress}
+                style={({ pressed }) => [
+                    pressed && tw`bg-gray-50`,
+                ]}>
+                {content}
+            </Pressable>
+        );
+    }
+
+    return content;
+};
