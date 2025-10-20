@@ -323,6 +323,10 @@ export async function fetchAccountEmail(): Promise<any> {
     return await _selfGet('api/v1/account/settings/email');
 }
 
+export async function fetchAccountBirthdate(): Promise<any> {
+    return await _selfGet('api/v1/account/settings/birthdate');
+}
+
 // ============================================================================
 // ACCOUNT RELATIONSHIPS
 // ============================================================================
@@ -389,6 +393,10 @@ export async function updateAccountBio(params: any): Promise<any> {
 
 export async function updateAccountEmail(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/email/update', params);
+}
+
+export async function updateAccountBirthdate(params: any): Promise<any> {
+    return await _selfPost('api/v1/account/settings/birthdate', params);
 }
 
 export async function updateAccountAvatar(params: any): Promise<Response> {

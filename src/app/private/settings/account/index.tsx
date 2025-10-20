@@ -54,7 +54,11 @@ export default function AccountScreen() {
                     onPress={() => router.push('/private/settings/account/email')}
                 />
                 <Divider />
-                <SettingsItem icon="calendar-outline" label="Date of birth" onPress={() => {}} />
+                <SettingsItem 
+                    icon="calendar-outline" 
+                    label="Date of birth" 
+                    onPress={() => router.push('/private/settings/account/birthdate')}
+                />
 
                 <SectionHeader title="Account Control" />
                 <SettingsItem
