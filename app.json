@@ -43,7 +43,27 @@
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Loops to access your photos and videos.",
+          "savePhotosPermission": "Allow Loops to save photos and videos.",
+          "isAccessMediaLocationEnabled": true,
+          "granularPermissions": [
+            "audio",
+            "photo"
+          ]
+        }
+      ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Loops needs access to your Camera.",
+          "enableMicrophonePermission": true,
+          "microphonePermissionText": "Loops needs access to your Microphone."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
