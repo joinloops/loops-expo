@@ -68,13 +68,40 @@ export default function PrivacyScreen() {
 
             <ScrollView style={tw`flex-1`}>
                 <SectionHeader title="Account Privacy" />
-
+                {/* <SettingsToggleItem
+                    icon="lock-closed-outline"
+                    label="Private account"
+                    value={privateAccount}
+                    onValueChange={setPrivateAccount}
+                    />
+                    <Divider /> */}
                 <SettingsToggleItem
                     icon="people-outline"
                     label="Suggest account to others"
                     value={suggestAccount}
                     onValueChange={handleToggleSuggest}
                 />
+                {/* <SectionHeader title="Interactions" />
+                <SettingsItem icon="chatbubble-outline" label="Comments" onPress={() => {}} />
+                <Divider />
+                <SettingsItem
+                    icon="paper-plane-outline"
+                    label="Direct messages"
+                    onPress={() => {}}
+                /> */}
+                {/* <Divider />
+                <SettingsItem icon="at-outline" label="Mentions and tags" onPress={() => {}} />
+
+                <SectionHeader title="Data" />
+                <SettingsItem
+                    icon="download-outline"
+                    label="Download your data"
+                    onPress={() => {}}
+                />
+                <Divider />
+                <SettingsItem icon="eye-off-outline" label="Watch history" onPress={() => {}} />
+                <Divider />
+                <SettingsItem icon="search-outline" label="Search history" onPress={() => {}} /> */}
             </ScrollView>
         </View>
     );
