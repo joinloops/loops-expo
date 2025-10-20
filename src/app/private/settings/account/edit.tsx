@@ -1,14 +1,14 @@
 import { SectionHeader } from '@/components/settings/Stack';
 import { Storage } from '@/utils/cache';
-import { fetchSelfAccount } from '@/utils/requests';
+import { fetchSelfAccount, getMimeType, updateAccountAvatar } from '@/utils/requests';
 import { truncate } from '@/utils/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import tw from 'twrnc';
 
 const ProfileItem = ({
@@ -42,6 +42,8 @@ const ProfileItem = ({
 );
 
 export default function EditProfileScreen() {
+    const queryClient = useQueryClient();
+
     const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['fetchSelfAccount', 'self'],
         queryFn: async () => {
@@ -67,15 +69,23 @@ export default function EditProfileScreen() {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [1, 1],
             quality: 1,
         });
 
         if (!result.canceled) {
-            // TODO: Handle API mutation 
             setProfileImage(result.assets[0].uri);
+            const image = result.assets[0].uri
+            const name = image.split("/").slice(-1)[0];
+            const payload = {
+                uri: Platform.OS === 'ios' ? image.replace('file://', '') : image,
+                type: getMimeType(image),
+                name: name
+            }
+
+            mutation.mutate({avatar: payload})
         }
     };
 
@@ -95,8 +105,38 @@ export default function EditProfileScreen() {
 
         if (!result.canceled) {
             setProfileImage(result.assets[0].uri);
+            const image = result.assets[0].uri
+            const name = image.split("/").slice(-1)[0];
+            const payload = {
+                uri: Platform.OS === 'ios' ? image.replace('file://', '') : image,
+                type: getMimeType(image),
+                name: name
+            }
+
+            mutation.mutate({avatar: payload})
         }
     };
+
+    const mutation = useMutation({
+        mutationFn: async (data) => {
+            const res = await updateAccountAvatar(data)
+            if(!res) {
+            if(res?.message) {
+                throw res.message
+            } else {
+                throw 'An unexpected error occured!'
+            }
+            }
+            return res
+        },
+        onSuccess: (data, variables, context) => {
+           queryClient.setQueryData(['fetchSelfAccount', 'self'], data);
+           router.back();
+        },
+        onError: (error) => {
+            Alert.alert('Error', error)
+        }
+      })
 
     const handleChangePhoto = () => {
         Alert.alert('Change photo', 'Choose a photo from your library or take a new one', [

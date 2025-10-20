@@ -1,6 +1,16 @@
 import { Storage } from '@/utils/cache';
 import { Alert } from 'react-native';
 
+export function getMimeType(filename) {
+    const extension = filename.split('.').pop().toLowerCase();
+    const mimeTypes = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+    };
+    return mimeTypes[extension] || 'unknown';
+};
+
 export function objectToForm(obj: { [key: string | number]: any }) {
     const form = new FormData();
 
@@ -13,6 +23,16 @@ export function objectToForm(obj: { [key: string | number]: any }) {
             form.append(String(key), String(value));
         }
     });
+
+    return form;
+}
+
+export function arrayToForm(obj) {
+    let form = new FormData();
+
+    Object.keys(obj).forEach(key =>
+        form.append(key, obj[key])
+    );
 
     return form;
 }
@@ -31,7 +51,7 @@ export async function postForm(
 
     const resp = await fetch(url, {
         method: 'POST',
-        body: data ? objectToForm(data) : undefined,
+        body: data ? arrayToForm(data) : undefined,
         headers,
     });
 
@@ -131,6 +151,13 @@ export async function _selfPost(path, params, customHeaders = false) {
     let token = Storage.getString('app.token');
     const url = `https://${instance}/${path}`;
     return postJson(url, params, token, customHeaders);
+}
+
+export async function _selfPostForm(path, params) {
+    let instance = Storage.getString('app.instance');
+    let token = Storage.getString('app.token');
+    const url = `https://${instance}/${path}`;
+    return postForm(url, params, token, 'multipart/form-data');
 }
 
 export function getJsonWithTimeout(
@@ -274,3 +301,8 @@ export async function fetchAccountEmail() {
 export async function updateAccountEmail(params) {
     return await _selfPost('api/v1/account/settings/email/update', params);
 }
+
+export async function updateAccountAvatar(params) {
+    return await _selfPostForm('api/v1/account/settings/update-avatar', params)
+}
+
