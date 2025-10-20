@@ -1,17 +1,21 @@
 import { Storage } from '@/utils/cache';
 import { Alert } from 'react-native';
 
-export function getMimeType(filename) {
-    const extension = filename.split('.').pop().toLowerCase();
-    const mimeTypes = {
+// ============================================================================
+// UTILITY HELPERS
+// ============================================================================
+
+export function getMimeType(filename: string): string {
+    const extension = filename.split('.').pop()?.toLowerCase() || '';
+    const mimeTypes: Record<string, string> = {
         'jpg': 'image/jpeg',
         'jpeg': 'image/jpeg',
         'png': 'image/png',
     };
     return mimeTypes[extension] || 'unknown';
-};
+}
 
-export function objectToForm(obj: { [key: string | number]: any }) {
+export function objectToForm(obj: { [key: string | number]: any }): FormData {
     const form = new FormData();
 
     Object.entries(obj).forEach(([key, value]) => {
@@ -27,8 +31,8 @@ export function objectToForm(obj: { [key: string | number]: any }) {
     return form;
 }
 
-export function arrayToForm(obj) {
-    let form = new FormData();
+export function arrayToForm(obj: any): FormData {
+    const form = new FormData();
 
     Object.keys(obj).forEach(key =>
         form.append(key, obj[key])
@@ -37,60 +41,9 @@ export function arrayToForm(obj) {
     return form;
 }
 
-export async function postForm(
-    url: string,
-    data?: { [key: string | number]: any },
-    token?: string,
-    contentType?: string,
-) {
-    // Send a POST request with data formatted with FormData returning JSON
-    let headers: { [key: string]: string } = {};
-
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    if (contentType) headers['Content-Type'] = contentType;
-
-    const resp = await fetch(url, {
-        method: 'POST',
-        body: data ? arrayToForm(data) : undefined,
-        headers,
-    });
-
-    return resp;
-}
-
-export async function postJson(
-    url: string,
-    data?: any,
-    token?: string,
-    customHeaders?: { [key: string]: string },
-) {
-    // Send a POST request with data formatted with FormData returning JSON
-    let headers: { [key: string]: string } = customHeaders ? customHeaders : {};
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    headers['Accept'] = 'application/json';
-    headers['Content-Type'] = 'application/json';
-
-    const resp = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers,
-    });
-
-    return resp.json();
-}
-
-export async function post(url: string, token?: string) {
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    return resp;
-}
+// ============================================================================
+// LOW-LEVEL HTTP METHODS (Keep unchanged as requested)
+// ============================================================================
 
 export async function get(url: string, token?: string, data?: any) {
     let completeURL;
@@ -110,12 +63,90 @@ export async function get(url: string, token?: string, data?: any) {
     return resp;
 }
 
+export async function postForm(
+    url: string,
+    data?: { [key: string | number]: any },
+    token?: string,
+    contentType?: string,
+) {
+    // Send a POST request with data formatted with FormData returning JSON
+    let headers: { [key: string]: string } = {};
+
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (contentType) headers['Content-Type'] = contentType;
+
+    const resp = await fetch(url, {
+        method: 'POST',
+        body: data ? objectToForm(data) : undefined,
+        headers,
+    });
+
+    return resp;
+}
+
+// ============================================================================
+// ADDITIONAL HTTP METHODS
+// ============================================================================
+
+export async function post(url: string, token?: string): Promise<Response> {
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    return resp;
+}
+
+export async function postFormFile(
+    url: string,
+    data?: { [key: string | number]: any },
+    token?: string,
+    contentType?: string,
+): Promise<Response> {
+    let headers: { [key: string]: string } = {};
+
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (contentType) headers['Content-Type'] = contentType;
+
+    const resp = await fetch(url, {
+        method: 'POST',
+        body: data ? arrayToForm(data) : undefined,
+        headers,
+    });
+
+    return resp;
+}
+
+export async function postJson(
+    url: string,
+    data?: any,
+    token?: string,
+    customHeaders?: { [key: string]: string },
+): Promise<any> {
+    let headers: { [key: string]: string } = customHeaders ? customHeaders : {};
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    headers['Accept'] = 'application/json';
+    headers['Content-Type'] = 'application/json';
+
+    const resp = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers,
+    });
+
+    return resp.json();
+}
+
 export async function getJSON(
     url: string,
     token?: string,
     data?: any,
     customHeaders?: { [key: string]: string },
-) {
+): Promise<any> {
     let completeURL;
     if (data) {
         let params = new URLSearchParams(data);
@@ -139,33 +170,12 @@ export async function getJSON(
     return resp.json();
 }
 
-export async function _selfGet(path, params, customHeaders = false) {
-    let instance = Storage.getString('app.instance');
-    let token = Storage.getString('app.token');
-    const url = `https://${instance}/${path}`;
-    return getJSON(url, token, params, customHeaders);
-}
-
-export async function _selfPost(path, params, customHeaders = false) {
-    let instance = Storage.getString('app.instance');
-    let token = Storage.getString('app.token');
-    const url = `https://${instance}/${path}`;
-    return postJson(url, params, token, customHeaders);
-}
-
-export async function _selfPostForm(path, params) {
-    let instance = Storage.getString('app.instance');
-    let token = Storage.getString('app.token');
-    const url = `https://${instance}/${path}`;
-    return postForm(url, params, token, 'multipart/form-data');
-}
-
 export function getJsonWithTimeout(
     url: string,
     token?: string,
     data?: any,
     customHeaders?: { [key: string]: string },
-    timeout = 5000,
+    timeout: number = 5000,
 ): Promise<Response> {
     let completeURL;
     if (data) {
@@ -195,12 +205,53 @@ export function getJsonWithTimeout(
     ]);
 }
 
-export async function loginPreflightCheck(server: string) {
-    let url = 'https://' + server + '/nodeinfo/2.1';
+// ============================================================================
+// SELF API HELPERS (Uses stored instance and token)
+// ============================================================================
+
+export async function _selfGet(
+    path: string,
+    params?: any,
+    customHeaders?: { [key: string]: string } | false,
+): Promise<any> {
+    const instance = Storage.getString('app.instance');
+    const token = Storage.getString('app.token');
+    const url = `https://${instance}/${path}`;
+    return getJSON(url, token, params, customHeaders || undefined);
+}
+
+export async function _selfPost(
+    path: string,
+    params?: any,
+    customHeaders?: { [key: string]: string } | false,
+): Promise<any> {
+    const instance = Storage.getString('app.instance');
+    const token = Storage.getString('app.token');
+    const url = `https://${instance}/${path}`;
+    return postJson(url, params, token, customHeaders || undefined);
+}
+
+export async function _selfPostForm(
+    path: string,
+    params?: any,
+): Promise<Response> {
+    const instance = Storage.getString('app.instance');
+    const token = Storage.getString('app.token');
+    const url = `https://${instance}/${path}`;
+    return postFormFile(url, params, token, 'multipart/form-data');
+}
+
+// ============================================================================
+// AUTHENTICATION & SERVER VALIDATION
+// ============================================================================
+
+export async function loginPreflightCheck(server: string): Promise<boolean> {
+    const url = 'https://' + server + '/nodeinfo/2.1';
 
     try {
-        let res = await getJsonWithTimeout(url, undefined, false, undefined, 5000);
-        let json = await res.json();
+        const res = await getJsonWithTimeout(url, undefined, undefined, undefined, 5000);
+        const json = await res.json();
+        
         if (!json) {
             Alert.alert('Error', 'This server is not compatible or is unavailable.');
             return false;
@@ -216,12 +267,12 @@ export async function loginPreflightCheck(server: string) {
             return false;
         }
 
-        if (json.software.name != 'loops') {
+        if (json.software.name !== 'loops') {
             Alert.alert('Error', 'Invalid server type, this app is only compatible with Loops');
             return false;
         }
 
-        if (json.software.repository != 'https://github.com/joinloops/loops-server') {
+        if (json.software.repository !== 'https://github.com/joinloops/loops-server') {
             Alert.alert('Error', 'Invalid server type, this app is only compatible with Loops');
             return false;
         }
@@ -233,76 +284,113 @@ export async function loginPreflightCheck(server: string) {
     return true;
 }
 
-export async function verifyCredentials(domain: string, token: string) {
+export async function verifyCredentials(domain: string, token: string): Promise<any> {
     const resp = await get(`https://${domain}/api/v1/account/info/self`, token);
-
     return resp.json();
 }
 
-export async function queryApi(endpoint: string, params = null) {
-    let server = Storage.getString('app.instance');
-    let token = Storage.getString('app.token');
+// ============================================================================
+// GENERIC API QUERY
+// ============================================================================
 
-    let url = `https://${server}/${endpoint}`;
+export async function queryApi(endpoint: string, params: any = null): Promise<any> {
+    const server = Storage.getString('app.instance');
+    const token = Storage.getString('app.token');
+    const url = `https://${server}/${endpoint}`;
 
     return await getJSON(url, token, params);
 }
 
-export async function fetchAccount(id) {
+// ============================================================================
+// ACCOUNT ENDPOINTS
+// ============================================================================
+
+export async function fetchAccount(id: string): Promise<any> {
     const url = `api/v1/account/info/${id}`;
     return await _selfGet(url);
 }
 
-export async function fetchSelfAccount() {
+export async function fetchSelfAccount(): Promise<any> {
     const url = `api/v1/account/info/self`;
     return await _selfGet(url);
 }
 
-export async function fetchAccountFollowing({ queryKey, pageParam = false }) {
+export async function fetchAccountState(id: string): Promise<any> {
+    return await _selfGet(`api/v1/account/state/${id}`);
+}
+
+export async function fetchAccountEmail(): Promise<any> {
+    return await _selfGet('api/v1/account/settings/email');
+}
+
+// ============================================================================
+// ACCOUNT RELATIONSHIPS
+// ============================================================================
+
+export async function fetchAccountFollowing({ 
+    queryKey, 
+    pageParam = false 
+}: { 
+    queryKey: any[]; 
+    pageParam?: string | false;
+}): Promise<any> {
     const url = pageParam
         ? `api/v1/account/following/${queryKey[1]}?cursor=${pageParam}`
         : `api/v1/account/following/${queryKey[1]}`;
     return await _selfGet(url);
 }
 
-export async function fetchAccountFollowers({ queryKey, pageParam = false }) {
+export async function fetchAccountFollowers({ 
+    queryKey, 
+    pageParam = false 
+}: { 
+    queryKey: any[]; 
+    pageParam?: string | false;
+}): Promise<any> {
     const url = pageParam
         ? `api/v1/account/followers/${queryKey[1]}?cursor=${pageParam}`
         : `api/v1/account/followers/${queryKey[1]}`;
     return await _selfGet(url);
 }
 
-export async function fetchSelfAccountVideos({ pageParam = false }) {
+// ============================================================================
+// FEED & CONTENT
+// ============================================================================
+
+export async function fetchSelfAccountVideos({ 
+    pageParam = false 
+}: { 
+    pageParam?: string | false;
+} = {}): Promise<any> {
     const url = pageParam
         ? `api/v1/feed/account/self?cursor=${pageParam}`
         : `api/v1/feed/account/self`;
     return await _selfGet(url);
 }
 
-export async function fetchAccountState(id) {
-    return await _selfGet(`api/v1/account/state/${id}`);
-}
-
-export async function fetchNotifications({ pageParam = false }) {
+export async function fetchNotifications({ 
+    pageParam = false 
+}: { 
+    pageParam?: string | false;
+} = {}): Promise<any> {
     const url = pageParam
         ? `api/v1/account/notifications?cursor=${pageParam}`
         : `api/v1/account/notifications`;
     return await _selfGet(url);
 }
 
-export async function updateAccountBio(params) {
+// ============================================================================
+// ACCOUNT UPDATES
+// ============================================================================
+
+export async function updateAccountBio(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/bio', params);
 }
 
-export async function fetchAccountEmail() {
-    return await _selfGet('api/v1/account/settings/email');
-}
-
-export async function updateAccountEmail(params) {
+export async function updateAccountEmail(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/email/update', params);
 }
 
-export async function updateAccountAvatar(params) {
-    return await _selfPostForm('api/v1/account/settings/update-avatar', params)
+export async function updateAccountAvatar(params: any): Promise<Response> {
+    return await _selfPostForm('api/v1/account/settings/update-avatar', params);
 }
-
