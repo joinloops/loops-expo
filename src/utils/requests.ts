@@ -346,6 +346,17 @@ export async function fetchAccountSecurityConfig(): Promise<any> {
     return await _selfGet('api/v1/account/settings/security-config')
 }
 
+export async function fetchAccountBlocks(): Promise<any> {
+    return await _selfGet('api/v1/account/settings/blocked-accounts')
+}
+
+export async function searchAccountBlocks(query, cursor): Promise<any> {
+     const params = { q: query };
+    if (cursor) params.cursor = cursor;
+    const res = await _selfGet('api/v1/account/settings/blocked-accounts', params)
+    return res
+}
+
 // ============================================================================
 // ACCOUNT RELATIONSHIPS
 // ============================================================================
@@ -428,4 +439,8 @@ export async function updateAccountPrivacy(params: any): Promise<any> {
 
 export async function updateAccountPassword(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/update-password', params);
+}
+
+export async function unblockAccount(id): Promise<any> {
+    return await _selfPost(`api/v1/account/unblock/${id}`);
 }

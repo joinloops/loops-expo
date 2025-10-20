@@ -1,10 +1,11 @@
 import {
     SectionHeader,
+    SettingsItem,
     SettingsToggleItem
 } from '@/components/settings/Stack';
 import { fetchAccountPrivacy, updateAccountPrivacy } from '@/utils/requests';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import tw from 'twrnc';
@@ -12,6 +13,7 @@ import tw from 'twrnc';
 export default function PrivacyScreen() {
     const [suggestAccount, setSuggestAccount] = useState(true);
     const queryClient = useQueryClient();
+    const router = useRouter()
     
     const { data, isLoading, error } = useQuery({
         queryKey: ['privacySettings'],
@@ -80,6 +82,12 @@ export default function PrivacyScreen() {
                     label="Suggest account to others"
                     value={suggestAccount}
                     onValueChange={handleToggleSuggest}
+                />
+                <SectionHeader title="Interactions" />
+                <SettingsItem
+                    icon="close-circle-outline"
+                    label="Blocked Accounts"
+                    onPress={() => router.push('/private/settings/privacy/blockedAccounts')}
                 />
                 {/* <SectionHeader title="Interactions" />
                 <SettingsItem icon="chatbubble-outline" label="Comments" onPress={() => {}} />
