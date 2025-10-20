@@ -220,6 +220,14 @@ export function getJsonWithTimeout(
 // SELF API HELPERS (Uses stored instance and token)
 // ============================================================================
 
+export async function _selfAnonGet(
+    path: string,
+): Promise<any> {
+    const instance = Storage.getString('app.instance');
+    const url = `https://${instance}/${path}`;
+    return await getJSON(url);
+}
+
 export async function _selfGet(
     path: string,
     params?: any,
@@ -443,4 +451,20 @@ export async function updateAccountPassword(params: any): Promise<any> {
 
 export async function unblockAccount(id): Promise<any> {
     return await _selfPost(`api/v1/account/unblock/${id}`);
+}
+
+// ============================================================================
+// LEGAL
+// ============================================================================
+
+export async function getInstanceTerms(): Promise<any> {
+    return await _selfAnonGet(`api/v1/page/content?slug=terms`);
+}
+
+export async function getInstancePrivacy(): Promise<any> {
+    return await _selfAnonGet(`api/v1/page/content?slug=privacy`);
+}
+
+export async function getInstanceCommunityGuidelines(): Promise<any> {
+    return await _selfAnonGet(`api/v1/page/content?slug=community-guidelines`);
 }
