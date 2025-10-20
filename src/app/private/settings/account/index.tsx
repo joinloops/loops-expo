@@ -66,8 +66,8 @@ export default function AccountScreen() {
                     label="Sign out"
                     onPress={() => handleSignOut()}
                 />
-                <Divider />
-                <SettingsItem icon="trash-outline" label="Delete account" onPress={() => {}} />
+                {/* <Divider /> */}
+                {/* <SettingsItem icon="trash-outline" label="Delete account" onPress={() => {}} /> */}
             </ScrollView>
         </View>
     );

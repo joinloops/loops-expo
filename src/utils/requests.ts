@@ -327,6 +327,10 @@ export async function fetchAccountBirthdate(): Promise<any> {
     return await _selfGet('api/v1/account/settings/birthdate');
 }
 
+export async function fetchAccountPrivacy(): Promise<any> {
+    return await _selfGet('api/v1/account/settings/privacy');
+}
+
 // ============================================================================
 // ACCOUNT RELATIONSHIPS
 // ============================================================================
@@ -401,4 +405,8 @@ export async function updateAccountBirthdate(params: any): Promise<any> {
 
 export async function updateAccountAvatar(params: any): Promise<Response> {
     return await _selfPostForm('api/v1/account/settings/update-avatar', params);
+}
+
+export async function updateAccountPrivacy(params: any): Promise<any> {
+    return await _selfPost('api/v1/account/settings/privacy', params);
 }
