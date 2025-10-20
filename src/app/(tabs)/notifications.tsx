@@ -3,6 +3,7 @@ import { StackText, YStack } from '@/components/ui/Stack';
 import { fetchNotifications } from '@/utils/requests';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useMemo } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import tw from 'twrnc';
@@ -57,6 +58,7 @@ export default function NotificationScreen() {
 
     return (
         <View style={tw`flex-1 bg-white`}>
+            <StatusBar style="light-content" />
             <FlatList
                 data={notifications}
                 keyExtractor={(item) => item.id.toString()}
