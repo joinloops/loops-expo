@@ -1,9 +1,20 @@
 import { Storage } from '@/utils/cache';
+import * as WebBrowser from 'expo-web-browser';
 import { Alert } from 'react-native';
 
 // ============================================================================
 // UTILITY HELPERS
 // ============================================================================
+
+export async function openBrowser(url) {
+    await WebBrowser.openBrowserAsync(url);
+}
+
+export async function openLocalLink(path) {
+    const instance = Storage.getString('app.instance');
+    const url = `https://${instance}/${path}`
+    await WebBrowser.openBrowserAsync(url);
+}
 
 export function getMimeType(filename: string): string {
     const extension = filename.split('.').pop()?.toLowerCase() || '';
@@ -331,6 +342,10 @@ export async function fetchAccountPrivacy(): Promise<any> {
     return await _selfGet('api/v1/account/settings/privacy');
 }
 
+export async function fetchAccountSecurityConfig(): Promise<any> {
+    return await _selfGet('api/v1/account/settings/security-config')
+}
+
 // ============================================================================
 // ACCOUNT RELATIONSHIPS
 // ============================================================================
@@ -409,4 +424,8 @@ export async function updateAccountAvatar(params: any): Promise<Response> {
 
 export async function updateAccountPrivacy(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/privacy', params);
+}
+
+export async function updateAccountPassword(params: any): Promise<any> {
+    return await _selfPost('api/v1/account/settings/update-password', params);
 }
