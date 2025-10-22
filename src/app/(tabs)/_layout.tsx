@@ -34,6 +34,7 @@ export default function TabsLayout() {
                 options={{
                     title: 'Home',
                     tabBarShowLabel: false,
+                    headerShown: false,
                     tabBarIcon: ({ color }) => <Feather size={28} name="home" color={color} />,
                 }}
             />
