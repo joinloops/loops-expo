@@ -399,6 +399,17 @@ export async function fetchAccountFollowers({
 // FEED & CONTENT
 // ============================================================================
 
+export async function fetchForYouFeed({ 
+    pageParam = false 
+}: { 
+    pageParam?: string | false;
+} = {}): Promise<any> {
+    const url = pageParam
+        ? `api/v1/feed/for-you?cursor=${pageParam}`
+        : `api/v1/feed/for-you`;
+    return await _selfGet(url);
+}
+
 export async function fetchSelfAccountVideos({ 
     pageParam = false 
 }: { 
