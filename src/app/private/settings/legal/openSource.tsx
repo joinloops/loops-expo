@@ -1,16 +1,16 @@
-// screens/OpenSourceScreen.tsx
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
     Modal,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
+
 
 type License = {
     name: string;
@@ -140,6 +140,7 @@ export default function OpenSourceScreen() {
 
     return (
         <View style={styles.container}>
+            <StatusBar style="light-content" />
             <Stack.Screen
                 options={{
                     title: 'Open Source Software Notices'
