@@ -2,6 +2,7 @@ import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stac
 import { useAuthStore } from '@/utils/authStore';
 import { openBrowser } from '@/utils/requests';
 import { Stack, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import tw from 'twrnc';
@@ -37,6 +38,7 @@ export default function SettingsScreen() {
 
     return (
         <View style={tw`flex-1 bg-gray-100`}>
+            <StatusBar style="light-content" />
             <Stack.Screen
                 options={{
                     title: 'Settings and privacy',
