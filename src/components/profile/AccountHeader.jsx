@@ -63,7 +63,7 @@ export default function AccountHeader(props) {
             <XStack gap="$2" width="100%" paddingHorizontal="$3">
                 {isOwner ? (
                     <>
-                        <Link href="/settings/bio" asChild style={{ flex: 1 }}>
+                        <Link href="/private/settings/account/edit" asChild style={{ flex: 1 }}>
                             <Button title="Edit Profile" />
                         </Link>
                         <Link href="/settings/share-profile" asChild style={{ flex: 1 }}>
