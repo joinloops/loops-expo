@@ -11,17 +11,17 @@ export default function TabsLayout() {
             screenOptions={{
                 initialRouteName: 'index',
                 backBehavior: 'order',
-                tabBarActiveTintColor: '#F02C56',
+                tabBarActiveTintColor: '#000',
                 animation: 'shift',
                 tabBarStyle: {
-                    backgroundColor: '#000',
+                    backgroundColor: '#fff',
                     borderTopWidth: 1,
-                    borderTopColor: '#222',
+                    borderTopColor: '#ccc',
                     height: Platform.OS === 'ios' ? 94 : 94,
                     paddingTop: Platform.OS === 'ios' ? 11 : 5,
                     paddingBottom: Platform.OS === 'ios' ? 8 : 5,
                     elevation: 0,
-                    shadowColor: '#000',
+                    shadowColor: '#ccc',
                     shadowOpacity: 0,
                     shadowOffset: {
                         height: 0,
