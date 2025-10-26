@@ -39,35 +39,12 @@ export default function TabsLayout() {
                 }}
             />
             <Tabs.Screen
-                name="explore"
-                options={{
-                    href: '/explore',
-                    tabBarLabel: 'Explore',
-                    tabBarShowLabel: false,
-                    tabBarLabelStyle: { display: 'none' },
-                    headerShown: false,
-                    tabBarIcon: ({ color }) => <Feather name="zap" size={26} color={color} />,
-                }}
-            />
-            <Tabs.Screen
                 name="create"
                 options={{
                     title: 'Create',
                     tabBarShowLabel: false,
                     headerShown: false,
-                    tabBarIcon: ({ color }) => <Feather size={28} name="camera" color={color} />,
-                }}
-            />
-            <Tabs.Screen
-                name="notifications"
-                options={{
-                    href: '/notifications',
-                    tabBarLabel: 'Notifications',
-                    tabBarShowLabel: false,
-                    tabBarLabelStyle: { display: 'none' },
-                    headerShown: true,
-                    headerTitle: 'Notifications',
-                    tabBarIcon: ({ color }) => <Feather name="bell" size={26} color={color} />,
+                    tabBarIcon: ({ color }) => <Feather size={28} name="video" color={color} />,
                 }}
             />
             <Tabs.Screen
