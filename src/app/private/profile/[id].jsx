@@ -37,7 +37,7 @@ export default function ProfileScreen() {
             const res = await fetchUserVideos(id.toString(), activeTab);
             return res.data;
         },
-        enabled: !!id,
+        enabled: !!user,
     });
 
     const handleVideoPress = (video) => {
