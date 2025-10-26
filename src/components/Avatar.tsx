@@ -103,7 +103,6 @@ const Avatar = memo(function Avatar({
 
     const size = width ?? resolvedTheme.size ?? 40;
 
-    // If rounded, compute fully circular radius. Otherwise prefer explicit radius, theme radius, or 0.
     const computedRadius = rounded ? Math.ceil(size / 2) : (radius ?? resolvedTheme.radius ?? 0);
 
     const finalBorderWidth = borderWidth ?? resolvedTheme.borderWidth ?? 0;
