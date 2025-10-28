@@ -1,6 +1,7 @@
 import Avatar from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { StackText, XStack, YStack } from '@/components/ui/Stack';
+import { prettyCount } from '@/utils/ui';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Pressable, View } from 'react-native';
@@ -18,30 +19,25 @@ export default function AccountHeader(props) {
                 <StackText fontWeight="bold" fontSize="$6">
                     {props.user?.username ? '@' + props.user?.username : ''}
                 </StackText>
-                {props.user?.is_verified && (
-                    <Ionicons name="checkmark-circle" size={20} color="#20D5EC" />
-                )}
             </XStack>
 
             <XStack justifyContent="center" alignItems="center" gap="$8">
-                <Link href={`/private/profile/following/${props.user?.id}`} asChild>
-                    <Pressable>
-                        <YStack justifyContent="center" alignItems="center">
-                            <StackText fontSize="$5" fontWeight="bold">
-                                {props.user?.post_count || 0}
-                            </StackText>
-                            <StackText fontSize="$3" color="#86878B">
-                                Videos
-                            </StackText>
-                        </YStack>
-                    </Pressable>
-                </Link>
+                <Pressable>
+                    <YStack justifyContent="center" alignItems="center">
+                        <StackText fontSize="$5" fontWeight="bold">
+                            { prettyCount(props.user?.post_count || 0)}
+                        </StackText>
+                        <StackText fontSize="$3" color="#86878B">
+                            Videos
+                        </StackText>
+                    </YStack>
+                </Pressable>
 
                 <Link href={`/private/profile/followers/${props.user?.id}`} asChild>
                     <Pressable>
                         <YStack justifyContent="center" alignItems="center">
                             <StackText fontSize="$5" fontWeight="bold">
-                                {props.user?.follower_count}
+                                {prettyCount(props.user?.follower_count, {precision: props.user?.follower_count > 1000 ? 1 : 0})}
                             </StackText>
                             <StackText fontSize="$3" color="#86878B">
                                 Followers
@@ -52,7 +48,7 @@ export default function AccountHeader(props) {
 
                 <YStack justifyContent="center" alignItems="center">
                     <StackText fontSize="$5" fontWeight="bold">
-                        {props.user?.likes_count || 0}
+                        {prettyCount(props.user?.likes_count, {precision: props.user?.likes_count > 1000 ? 1 : 0})}
                     </StackText>
                     <StackText fontSize="$3" color="#86878B">
                         Likes
@@ -66,41 +62,24 @@ export default function AccountHeader(props) {
                         <Link href="/private/settings/account/edit" asChild style={{ flex: 1 }}>
                             <Button title="Edit Profile" />
                         </Link>
-                        <Link href="/settings/share-profile" asChild style={{ flex: 1 }}>
-                            <Button title="Share Profile" variant="secondary" />
-                        </Link>
                     </>
                 ) : (
                     <>
                         <View style={{ flex: 1 }}>
-                            <Button
+                            { state?.blocking && (
+                                <Button
+                                    title={'Unblock'}
+                                    variant={'danger'}
+                                    onPress={props.onUnblockPress}
+                                />
+                            )}
+                            { !state?.blocking && (<Button
                                 title={state?.following ? 'Following' : 'Follow'}
                                 variant={state?.following ? 'secondary' : 'primary'}
                                 onPress={props.onFollowPress}
                             />
+                            )}
                         </View>
-
-                        {state?.following && (
-                            <Link
-                                href={`/private/messages/${props.user?.id}`}
-                                asChild
-                                style={{ flex: 1 }}>
-                                <Button title="Message" variant="secondary" icon="mail-outline" />
-                            </Link>
-                        )}
-
-                        <Pressable
-                            onPress={props.onUserIconPress}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: '#E5E5E5',
-                                borderRadius: 4,
-                                padding: 10,
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            }}>
-                            <Ionicons name="person-add-outline" size={20} color="black" />
-                        </Pressable>
 
                         <Pressable
                             onPress={props.onMenuPress}

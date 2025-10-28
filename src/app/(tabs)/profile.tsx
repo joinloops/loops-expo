@@ -6,6 +6,7 @@ import { fetchSelfAccount, fetchSelfAccountVideos } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import tw from 'twrnc';
@@ -60,6 +61,10 @@ export default function ProfileScreen() {
         router.push(`/private/settings`);
     };
 
+    const handleNotificationsPress = () => {
+        router.push(`/private/notifications`);
+    };
+
     const renderEmpty = () => (
         <YStack paddingY="$8" alignItems="center" justifyContent="center">
             <StackText fontSize="$4" color="#86878B">
@@ -72,6 +77,7 @@ export default function ProfileScreen() {
 
     return (
         <View style={tw`flex-1 bg-white`}>
+            <StatusBar style="dark" />
             <Stack.Screen
                 options={{
                     title: 'Profile',
@@ -86,8 +92,13 @@ export default function ProfileScreen() {
                     headerBackTitleVisible: false,
                     headerShown: true,
                     headerTitle: 'My Profile',
+                    headerLeft: () => (
+                        <Pressable onPress={() => handleNotificationsPress()} style={tw`ml-3`}>
+                            <Ionicons name="notifications-outline" size={30} />
+                        </Pressable>
+                    ),
                     headerRight: () => (
-                        <Pressable onPress={() => handleSettingsPress()}>
+                        <Pressable onPress={() => handleSettingsPress()} style={tw`mr-3`}>
                             <Ionicons name="menu" size={30} />
                         </Pressable>
                     ),

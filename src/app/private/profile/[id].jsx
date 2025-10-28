@@ -1,18 +1,32 @@
 import AccountHeader from '@/components/profile/AccountHeader';
 import AccountTabs from '@/components/profile/AccountTabs';
 import VideoGrid from '@/components/profile/VideoGrid';
+import { ReportModal } from '@/components/ReportModal';
 import { StackText, YStack } from '@/components/ui/Stack';
-import { fetchAccount, fetchAccountState, fetchUserVideos } from '@/utils/requests';
-import { useQuery } from '@tanstack/react-query';
+import {
+    blockAccount,
+    cancelFollowRequest,
+    fetchAccount,
+    fetchAccountState,
+    fetchUserVideos,
+    followAccount,
+    unblockAccount,
+    unfollowAccount
+} from '@/utils/requests';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Text, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function ProfileScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('videos');
+    const [showMenuModal, setShowMenuModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['fetchAccount', id.toString()],
@@ -22,7 +36,7 @@ export default function ProfileScreen() {
         },
     });
 
-    const { data: userState } = useQuery({
+    const { data: userState, refetch: refetchUserState } = useQuery({
         queryKey: ['fetchAccountState', id.toString()],
         queryFn: async () => {
             const res = await fetchAccountState(id.toString());
@@ -37,11 +51,162 @@ export default function ProfileScreen() {
             const res = await fetchUserVideos(id.toString(), activeTab);
             return res.data;
         },
-        enabled: !!id,
+        enabled: !!user,
+    });
+
+    const followMutation = useMutation({
+        mutationFn: async () => {
+            if (userState?.pending_follow_request) {
+                const res = await cancelFollowRequest(id.toString());
+                return res.data;
+            } else if (userState?.following) {
+                const res = await unfollowAccount(id.toString());
+                return res.data;
+            } else {
+                const res = await followAccount(id.toString());
+                return res.data;
+            }
+        },
+        onSuccess: async () => {
+            await refetchUserState();
+            
+            queryClient.invalidateQueries(['fetchAccount', id.toString()]);
+        },
+        onError: (error) => {
+            console.error('Follow action failed:', error);
+        },
+    });
+
+    const blockMutation = useMutation({
+        mutationFn: async () => {
+            if (userState?.blocking) {
+                const res = await unblockAccount(id.toString());
+                return res.data;
+            } else {
+                const res = await blockAccount(id.toString());
+                return res.data;
+            }
+        },
+        onSuccess: async () => {
+            await refetchUserState();
+            setShowMenuModal(false);
+        },
+        onError: (error) => {
+            console.error('Block action failed:', error);
+        },
     });
 
     const handleVideoPress = (video) => {
-        router.push(`/private/video/${video.id}`);
+        router.push(`/private/profile/feed/${video.id}?profileId=${video.account.id}`);
+    };
+
+    const handleOnOpenMenu = () => {
+        setShowMenuModal(true);
+    };
+
+    const handleBlockPress = () => {
+        setShowMenuModal(false);
+        
+        if (userState?.blocked) {
+            Alert.alert(
+                'Unblock User',
+                `Unblock @${user?.username}?`,
+                [
+                    {
+                        text: 'Cancel',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Unblock',
+                        onPress: () => blockMutation.mutate(),
+                    },
+                ]
+            );
+        } else {
+            Alert.alert(
+                'Block User',
+                `Block @${user?.username}? They won't be able to see your profile or contact you.`,
+                [
+                    {
+                        text: 'Cancel',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Block',
+                        style: 'destructive',
+                        onPress: () => blockMutation.mutate(),
+                    },
+                ]
+            );
+        }
+    };
+
+    const handleReportPress = () => {
+        setShowMenuModal(false);
+        setShowReportModal(true);
+    };
+
+    const handleCommunityGuidelines = () => {
+        setShowReportModal(false);
+        router.push('/private/settings/legal/community')
+    };
+
+    const handleOnUnblockPress = () => {
+         if (userState?.blocking) {
+            Alert.alert(
+                'Unblock User',
+                `Are you sure you want to unblock @${user?.username}?`,
+                [
+                    {
+                        text: 'No',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Unblock',
+                        style: 'destructive',
+                        onPress: () => blockMutation.mutate(),
+                    },
+                ]
+            );
+        }
+    }
+
+    const handleOnFollowPress = () => {
+        if (userState?.pending_follow_request) {
+            Alert.alert(
+                'Cancel Follow Request',
+                `Cancel your follow request to @${user?.username}?`,
+                [
+                    {
+                        text: 'No',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Yes',
+                        style: 'destructive',
+                        onPress: () => followMutation.mutate(),
+                    },
+                ]
+            );
+        } else if (userState?.following) {
+            Alert.alert(
+                'Unfollow',
+                `Unfollow @${user?.username}?`,
+                [
+                    {
+                        text: 'Cancel',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Unfollow',
+                        style: 'destructive',
+                        onPress: () => followMutation.mutate(),
+                    },
+                ]
+            );
+        } else {
+            followMutation.mutate();
+        }
     };
 
     const renderEmpty = () => (
@@ -56,6 +221,8 @@ export default function ProfileScreen() {
 
     return (
         <View style={tw`flex-1 bg-white`}>
+            <StatusBar style="dark" />
+
             <Stack.Screen
                 options={{
                     title: 'Profile',
@@ -79,7 +246,14 @@ export default function ProfileScreen() {
                 keyExtractor={(item) => item.id.toString()}
                 ListHeaderComponent={
                     <>
-                        <AccountHeader user={user} userState={userState} />
+                        <AccountHeader 
+                            user={user} 
+                            userState={userState} 
+                            onFollowPress={handleOnFollowPress}
+                            onMenuPress={handleOnOpenMenu}
+                            onUnblockPress={() => handleOnUnblockPress()}
+                            isFollowLoading={followMutation.isPending}
+                        />
                         <AccountTabs activeTab={activeTab} onTabChange={setActiveTab} />
                     </>
                 }
@@ -98,6 +272,67 @@ export default function ProfileScreen() {
                     flexGrow: 1,
                 }}
             />
+
+            <Modal
+                visible={showMenuModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowMenuModal(false)}
+            >
+                <Pressable 
+                    style={tw`flex-1 bg-black/50 justify-end`}
+                    onPress={() => setShowMenuModal(false)}
+                >
+                    <Pressable 
+                        style={tw`bg-white rounded-t-3xl`}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <View style={tw`py-4`}>
+                            <Pressable
+                                style={tw`px-6 py-4 flex-row items-center`}
+                                onPress={handleBlockPress}
+                            >
+                                <Text style={tw`text-base text-gray-900 font-medium`}>
+                                    {userState?.blocked ? 'Unblock' : 'Block'}
+                                </Text>
+                            </Pressable>
+
+                            <View style={tw`h-px bg-gray-200 mx-6`} />
+
+                            <Pressable
+                                style={tw`px-6 py-4 flex-row items-center`}
+                                onPress={handleReportPress}
+                            >
+                                <Text style={tw`text-base text-red-600 font-medium`}>
+                                    Report
+                                </Text>
+                            </Pressable>
+
+                            <View style={tw`mt-2 border-t border-gray-200`}>
+                                <Pressable
+                                    style={tw`px-6 py-4`}
+                                    onPress={() => setShowMenuModal(false)}
+                                >
+                                    <Text style={tw`text-base text-gray-600 font-medium text-center`}>
+                                        Cancel
+                                    </Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </Pressable>
+                </Pressable>
+            </Modal>
+
+            {user && (
+                <ReportModal
+                    visible={showReportModal}
+                    userState={userState}
+                    onClose={() => setShowReportModal(false)}
+                    onCommunityGuidelines={handleCommunityGuidelines}
+                    reportType="profile"
+                    item={user}
+                />
+            )}
         </View>
     );
 }

@@ -5,9 +5,9 @@ import tw from 'twrnc';
 
 export default function AccountTabs({ activeTab, onTabChange }) {
     const tabs = [
-        { id: 'videos', icon: 'film-outline', iconActive: 'film' },
-        { id: 'favorites', icon: 'heart-outline', iconActive: 'heart' },
-        { id: 'reblogs', icon: 'sync-outline', iconActive: 'sync' },
+        { id: 'videos', icon: 'film', iconActive: 'film' },
+        // { id: 'favorites', icon: 'heart-outline', iconActive: 'heart' },
+        // { id: 'reblogs', icon: 'sync-outline', iconActive: 'sync' },
     ];
 
     return (
@@ -21,13 +21,14 @@ export default function AccountTabs({ activeTab, onTabChange }) {
                             flex: 1,
                             alignItems: 'center',
                             paddingVertical: 8,
-                            borderBottomWidth: activeTab === tab.id ? 2 : 0,
-                            borderBottomColor: '#161823',
+                            // borderBottomWidth: activeTab === tab.id ? 2 : 0,
+                            // borderBottomColor: '#161823',
                         }}>
                         <Ionicons
                             name={activeTab === tab.id ? tab.iconActive : tab.icon}
                             size={24}
-                            color={activeTab === tab.id ? '#161823' : '#86878B'}
+                            //color={activeTab === tab.id ? '#161823' : '#86878B'}
+                            color={activeTab === tab.id ? '#86878B' : '#86878B'}
                         />
                     </Pressable>
                 ))}
