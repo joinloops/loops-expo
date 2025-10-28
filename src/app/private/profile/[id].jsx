@@ -5,6 +5,7 @@ import { StackText, YStack } from '@/components/ui/Stack';
 import { fetchAccount, fetchAccountState, fetchUserVideos } from '@/utils/requests';
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import tw from 'twrnc';
@@ -41,7 +42,7 @@ export default function ProfileScreen() {
     });
 
     const handleVideoPress = (video) => {
-        router.push(`/private/video/${video.id}`);
+        router.push(`/private/profile/feed/${video.id}?profileId=${video.account.id}`);
     };
 
     const renderEmpty = () => (
@@ -56,6 +57,8 @@ export default function ProfileScreen() {
 
     return (
         <View style={tw`flex-1 bg-white`}>
+            <StatusBar style="dark" />
+
             <Stack.Screen
                 options={{
                     title: 'Profile',
