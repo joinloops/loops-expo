@@ -153,7 +153,7 @@ export const useAuthStore = create(
             },
         }),
         {
-            name: 'auth-store',
+            name: 'auth-store.v1.02',
             storage: createJSONStorage(() => ({
                 setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
                 getItem: (key: string) => SecureStore.getItemAsync(key),
@@ -164,7 +164,7 @@ export const useAuthStore = create(
                     state?.setHasHydrated(true);
                 };
             },
-            // Don't persist user data in Zustand since it's in MMKV
+
             partialize: (state) => ({
                 shouldCreateAccount: state.shouldCreateAccount,
                 hasCompletedOnboarding: state.hasCompletedOnboarding,
