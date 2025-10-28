@@ -339,6 +339,19 @@ export async function fetchUserVideos(id): Promise<any> {
     return await _selfGet(url)
 }
 
+export async function fetchUserVideoCursor({ 
+    queryKey, 
+    pageParam = false 
+}: { 
+    queryKey: any[]; 
+    pageParam?: string | false;
+}): Promise<any> {
+    const url = pageParam
+        ? `api/v1/feed/account/${queryKey[1]}/cursor?id=${queryKey[2]}&cursor=${pageParam}`
+        : `api/v1/feed/account/${queryKey[1]}/cursor?id=${queryKey[2]}`;
+    return await _selfGet(url);
+}
+
 export async function fetchAccountState(id: string): Promise<any> {
     return await _selfGet(`api/v1/account/state/${id}`);
 }
