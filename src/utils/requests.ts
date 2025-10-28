@@ -421,6 +421,18 @@ export async function unblockAccount(id): Promise<any> {
     return await _selfPost(`api/v1/account/unblock/${id}`);
 }
 
+export async function followAccount(id): Promise<any> {
+    return await _selfPost(`api/v1/account/follow/${id}`);
+}
+
+export async function unfollowAccount(id): Promise<any> {
+    return await _selfPost(`api/v1/account/unfollow/${id}`);
+}
+
+export async function cancelFollowRequest(id): Promise<any> {
+    return await _selfPost(`api/v1/account/undo-follow-request/${id}`)
+}
+
 // ============================================================================
 // REPORTS ENDPOINTS
 // ============================================================================

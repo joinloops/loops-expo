@@ -66,25 +66,20 @@ export default function AccountHeader(props) {
                 ) : (
                     <>
                         <View style={{ flex: 1 }}>
-                            <Button
+                            { state?.blocking && (
+                                <Button
+                                    title={'Unblock'}
+                                    variant={'danger'}
+                                    onPress={props.onUnblockPress}
+                                />
+                            )}
+                            { !state?.blocking && (<Button
                                 title={state?.following ? 'Following' : 'Follow'}
                                 variant={state?.following ? 'secondary' : 'primary'}
                                 onPress={props.onFollowPress}
                             />
+                            )}
                         </View>
-
-                        {/* <Pressable
-                            onPress={props.onUserIconPress}
-                            style={{
-                                borderWidth: 1,
-                                borderColor: '#E5E5E5',
-                                borderRadius: 4,
-                                padding: 10,
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            }}>
-                            <Ionicons name="person-add-outline" size={20} color="black" />
-                        </Pressable> */}
 
                         <Pressable
                             onPress={props.onMenuPress}

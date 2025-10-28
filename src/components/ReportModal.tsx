@@ -66,7 +66,7 @@ export function ReportModal({ visible, onClose, onCommunityGuidelines, item, rep
 
     useEffect(() => {
         const type = hideContent ? 'block' : 'unblock'
-        blockMutation.mutate({type, id: item.account.id})
+        blockMutation.mutate({type, id: item.account?.id})
     }, [hideContent])
 
     const handleReasonSelect = async (reason) => {
@@ -248,20 +248,23 @@ export function ReportModal({ visible, onClose, onCommunityGuidelines, item, rep
                             </Text>
 
                             <View style={tw`h-px bg-gray-200 my-6`} />
+                            { item?.account?.username && (
+                                <>
+                                    <Text style={tw`text-gray-500 mb-4`}>You can also:</Text>
 
-                            <Text style={tw`text-gray-500 mb-4`}>You can also:</Text>
-
-                            <View style={tw`flex-row justify-between items-center`}>
-                                <Text style={tw`text-base flex-1`}>
-                                    Hide content from <Text style={tw`font-bold`}>{item?.account?.username || 'this user'}</Text>
-                                </Text>
-                                <Switch
-                                    value={hideContent}
-                                    onValueChange={setHideContent}
-                                    trackColor={{ false: '#E5E5EA', true: '#34C759' }}
-                                    thumbColor="#fff"
-                                />
-                            </View>
+                                    <View style={tw`flex-row justify-between items-center`}>
+                                        <Text style={tw`text-base flex-1`}>
+                                            Hide content from <Text style={tw`font-bold`}>{item?.account?.username || 'this user'}</Text>
+                                        </Text>
+                                        <Switch
+                                            value={hideContent}
+                                            onValueChange={setHideContent}
+                                            trackColor={{ false: '#E5E5EA', true: '#34C759' }}
+                                            thumbColor="#fff"
+                                            />
+                                    </View>
+                                </>
+                            )}
                         </View>
 
                         <View style={tw`px-5 pb-8`}>
