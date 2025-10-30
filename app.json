@@ -63,7 +63,8 @@
           "enableMicrophonePermission": true,
           "microphonePermissionText": "Loops needs access to your Microphone."
         }
-      ]
+      ],
+      "react-native-compressor"
     ],
     "experiments": {
       "typedRoutes": true,
