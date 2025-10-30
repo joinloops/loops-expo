@@ -54,7 +54,7 @@ export default function ProfileScreen() {
     }, [videosData]);
 
     const handleVideoPress = (video) => {
-        router.push(`/private/video/${video.id}`);
+        router.push(`/private/profile/feed/${video.id}?profileId=${video.account.id}`);
     };
 
     const handleSettingsPress = () => {
