@@ -7,7 +7,7 @@ import { Link } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 export default function AccountHeader(props) {
-    const isOwner = props.user?.is_owner;
+    const isOwner = props?.is_owner || props.user?.is_owner;
 
     const state = props?.userState;
 
@@ -33,7 +33,7 @@ export default function AccountHeader(props) {
                     </YStack>
                 </Pressable>
 
-                <Link href={`/private/profile/followers/${props.user?.id}`} asChild>
+                <Link href={`/private/profile/followers/${props.user?.id}?username=${props.user?.username}&followersCount=${props.user?.follower_count}&followingCount=${props.user?.following_count}`} asChild>
                     <Pressable>
                         <YStack justifyContent="center" alignItems="center">
                             <StackText fontSize="$5" fontWeight="bold">
