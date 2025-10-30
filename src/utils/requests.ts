@@ -394,9 +394,24 @@ export async function fetchAccountFollowing({
     queryKey: any[]; 
     pageParam?: string | false;
 }): Promise<any> {
-    const url = pageParam
-        ? `api/v1/account/following/${queryKey[1]}?cursor=${pageParam}`
-        : `api/v1/account/following/${queryKey[1]}`;
+    const [, accountId, search] = queryKey;
+    
+    let url = `api/v1/account/following/${accountId}`;
+    const params = new URLSearchParams();
+    
+    if (pageParam) {
+        params.append('cursor', pageParam);
+    }
+    
+    if (search) {
+        params.append('search', search);
+    }
+    
+    const queryString = params.toString();
+    if (queryString) {
+        url += `?${queryString}`;
+    }
+    
     return await _selfGet(url);
 }
 
@@ -407,9 +422,50 @@ export async function fetchAccountFollowers({
     queryKey: any[]; 
     pageParam?: string | false;
 }): Promise<any> {
+    const [, accountId, search] = queryKey;
+    
+    let url = `api/v1/account/followers/${accountId}`;
+    const params = new URLSearchParams();
+    
+    if (pageParam) {
+        params.append('cursor', pageParam);
+    }
+    
+    if (search) {
+        params.append('search', search);
+    }
+    
+    const queryString = params.toString();
+    if (queryString) {
+        url += `?${queryString}`;
+    }
+    
+    return await _selfGet(url);
+}
+
+export async function fetchAccountFriends({ 
+    queryKey, 
+    pageParam = false 
+}: { 
+    queryKey: any[]; 
+    pageParam?: string | false;
+}): Promise<any> {
     const url = pageParam
-        ? `api/v1/account/followers/${queryKey[1]}?cursor=${pageParam}`
-        : `api/v1/account/followers/${queryKey[1]}`;
+        ? `api/v1/account/friends/${queryKey[1]}?cursor=${pageParam}`
+        : `api/v1/account/friends/${queryKey[1]}`;
+    return await _selfGet(url);
+}
+
+export async function fetchAccountSuggested({ 
+    queryKey, 
+    pageParam = false 
+}: { 
+    queryKey: any[]; 
+    pageParam?: string | false;
+}): Promise<any> {
+    const url = pageParam
+        ? `api/v1/account/suggested/${queryKey[1]}?cursor=${pageParam}`
+        : `api/v1/account/suggested/${queryKey[1]}`;
     return await _selfGet(url);
 }
 
