@@ -27,6 +27,7 @@ export default function EditBioScreen() {
             return res;
         },
         onSuccess: (res) => {
+            queryClient.setQueryData(['fetchAccount', res.data.id], res.data);
             queryClient.setQueryData(['fetchSelfAccount', 'self'], res.data);
             router.back();
         },
