@@ -45,12 +45,15 @@ export function truncate(text: string, limit: number, opts?: { suffix?: string }
  * prettyCount(1_235_000) -> "1.2M"
  */
 export function prettyCount(
-    n: number,
+    n: number | string,
     opts?: { precision?: number; rounding?: 'round' | 'floor' | 'ceil' },
 ): string {
-    if (!Number.isFinite(n)) return '0';
-    const abs = Math.abs(n);
-    const sign = n < 0 ? '-' : '';
+    const num = typeof n === 'string' ? parseFloat(n) : n;
+    
+    if (!Number.isFinite(num) || isNaN(num)) return '0';
+    
+    const abs = Math.abs(num);
+    const sign = num < 0 ? '-' : '';
     const precision = opts?.precision ?? 0;
     const rounder = Math[opts?.rounding ?? 'round'];
 
