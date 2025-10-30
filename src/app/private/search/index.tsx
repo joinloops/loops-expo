@@ -1,12 +1,15 @@
-import { searchContent } from '@/utils/requests';
+import { PressableHaptics } from '@/components/ui/PressableHaptics';
+import { useAuthStore } from '@/utils/authStore';
+import { followAccount, searchContent, unfollowAccount } from '@/utils/requests';
 import { prettyCount } from '@/utils/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     FlatList,
     Image,
     Keyboard,
@@ -22,10 +25,21 @@ import tw from 'twrnc';
 type TabType = 'Top' | 'Users' | 'Videos' | 'Hashtags';
 type FilterType = 'All' | 'Unwatched' | 'Watched' | 'Recently uploaded';
 
+type Hashtag = {
+    id: number;
+    name: string;
+    slug: string;
+    count: number;
+    created_at: string;
+};
+
 export default function SearchScreen() {
     const params = useLocalSearchParams<{ query?: string; type?: string }>();
     const router = useRouter();
+    const { user } = useAuthStore();
+    const queryClient = useQueryClient();
 
+    const searchInputRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState(params.query || '');
     const [activeTab, setActiveTab] = useState<TabType>('Top');
     const [activeFilter, setActiveFilter] = useState<FilterType>('All');
@@ -34,14 +48,59 @@ export default function SearchScreen() {
     const filters: FilterType[] = ['All', 'Unwatched', 'Watched', 'Recently uploaded'];
 
     const { data, isLoading, isFetching, refetch } = useQuery({
-        queryKey: ['search', searchQuery, params.type, activeTab],
+        queryKey: ['search', searchQuery, activeTab],
         queryFn: () => searchContent({
             query: searchQuery,
-            type: params.type || activeTab,
+            type: activeTab,
             limit: 20,
         }),
         enabled: searchQuery.length > 0,
         staleTime: 30000,
+    });
+
+    const followMutation = useMutation({
+        mutationFn: async ({ userId, isFollowing }: { userId: string; isFollowing: boolean }) => {
+            if (isFollowing) {
+                const res = await unfollowAccount(userId);
+                return res.data;
+            } else {
+                const res = await followAccount(userId);
+                return res.data;
+            }
+        },
+        onMutate: async ({ userId, isFollowing }) => {
+            await queryClient.cancelQueries({ queryKey: ['search', searchQuery, activeTab] });
+
+            const previousData = queryClient.getQueryData(['search', searchQuery, activeTab]);
+
+            queryClient.setQueryData(['search', searchQuery, activeTab], (old: any) => {
+                if (!old) return old;
+                
+                return {
+                    ...old,
+                    users: old.users?.map((u: User) =>
+                        u.id === userId
+                            ? { 
+                                ...u, 
+                                is_following: !isFollowing,
+                                follower_count: isFollowing ? u.follower_count - 1 : u.follower_count + 1
+                            }
+                            : u
+                    ),
+                };
+            });
+
+            return { previousData };
+        },
+        onError: (err, variables, context) => {
+            if (context?.previousData) {
+                queryClient.setQueryData(
+                    ['search', searchQuery, activeTab],
+                    context.previousData
+                );
+            }
+            console.error('Follow action failed:', err);
+        },
     });
 
     useEffect(() => {
@@ -61,6 +120,12 @@ export default function SearchScreen() {
         setSearchQuery('');
         setActiveFilter('All');
         setActiveTab('Top');
+        searchInputRef?.current?.focus();
+    };
+
+    const handleTabChange = (tab: TabType) => {
+        setActiveTab(tab);
+        router.setParams({ type: tab, query: searchQuery });
     };
 
     const formatDate = (dateString: string): string => {
@@ -77,45 +142,104 @@ export default function SearchScreen() {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
-    const renderUserCard = ({ item }: { item: User }) => (
-        <TouchableOpacity
-            style={tw`flex-row items-center px-4 py-3 border-b border-gray-100`}
-            onPress={() => router.push(`/private/profile/${item.id}`)}
-            activeOpacity={0.7}
-        >
-            <Image
-                source={{ uri: item.avatar }}
-                style={tw`w-14 h-14 rounded-full bg-gray-200`}
-            />
-            <View style={tw`flex-1 ml-3`}>
-                <View style={tw`flex-row items-center`}>
-                    <Text style={tw`text-base font-semibold`} numberOfLines={1}>
-                        {item.username}
+    const handleFollowPress = (item: User) => {
+        if(item.is_following) {
+            Alert.alert(
+                'Unfollow User',
+                `Are you sure you want to unfollow @${item?.username}?`,
+                [
+                    {
+                        text: 'No',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Unfollow',
+                        style: 'destructive',
+                        onPress: () => followMutation.mutate({
+                            userId: item.id,
+                            isFollowing: item.is_following,
+                        }),
+                    },
+                ]
+            );
+        } else {
+            followMutation.mutate({
+                userId: item.id,
+                isFollowing: item.is_following,
+            });
+        }
+    };
+
+    const renderUserCard = ({ item }: { item: User }) => {
+        const isOwnAccount = item.id === user?.id;
+        const isFollowing = item.is_following;
+        const isLoading = followMutation.isPending && followMutation.variables?.userId === item.id;
+
+        return (
+            <TouchableOpacity
+                style={tw`flex-row items-center px-4 py-3 border-b border-gray-100`}
+                onPress={() => router.push(`/private/profile/${item.id}`)}
+                activeOpacity={0.7}
+            >
+                <Image
+                    source={{ uri: item.avatar }}
+                    style={tw`w-14 h-14 rounded-full bg-gray-200`}
+                />
+                <View style={tw`flex-1 ml-3`}>
+                    <View style={tw`flex-row items-center`}>
+                        <Text style={tw`text-base font-semibold`} numberOfLines={1}>
+                            {item.username}
+                        </Text>
+                    </View>
+                    <Text style={tw`text-sm text-gray-600`} numberOfLines={1}>
+                        {item.name}
+                    </Text>
+                    <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+                        {prettyCount(item.follower_count)} followers · {prettyCount(item.post_count)} posts
                     </Text>
                 </View>
-                <Text style={tw`text-sm text-gray-600`} numberOfLines={1}>
-                    {item.name}
-                </Text>
-                <Text style={tw`text-xs text-gray-500 mt-0.5`}>
-                    {prettyCount(item.follower_count)} followers · {prettyCount(item.post_count)} posts
-                </Text>
-            </View>
-            <TouchableOpacity
-                style={tw`bg-[#FE2C55] px-6 py-2 rounded-md`}
-                onPress={(e) => {
-                    e.stopPropagation();
-                    console.log('Follow user:', item.username);
-                }}
-            >
-                <Text style={tw`text-white font-semibold text-sm`}>Follow</Text>
+
+                {isOwnAccount ? (
+                    <PressableHaptics
+                        style={tw`bg-gray-200 px-6 py-2 rounded-md`}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            router.push(`/private/profile/${item.id}`);
+                        }}
+                    >
+                        <Text style={tw`text-dark font-semibold text-sm`}>View</Text>
+                    </PressableHaptics>
+                ) : (
+                    <PressableHaptics
+                        style={tw`${isFollowing ? 'bg-gray-200' : 'bg-[#FE2C55]'} px-6 py-2 rounded-md min-w-[90px] items-center justify-center ${isLoading ? 'opacity-70' : ''}`}
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            if (!isLoading) {
+                                handleFollowPress(item);
+                            }
+                        }}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator 
+                                size="small" 
+                                color={isFollowing ? '#000' : '#fff'} 
+                            />
+                        ) : (
+                            <Text style={tw`${isFollowing ? 'text-dark' : 'text-white'} font-semibold text-sm`}>
+                                {isFollowing ? 'Following' : 'Follow'}
+                            </Text>
+                        )}
+                    </PressableHaptics>
+                )}
             </TouchableOpacity>
-        </TouchableOpacity>
-    );
+        );
+    };
 
     const renderVideoItem = ({ item, index }) => (
         <TouchableOpacity
             style={tw`w-[48%] mb-3 ${index % 2 === 0 ? 'mr-[4%]' : ''}`}
-            onPress={() => router.push(`/private/video/${item.id}`)}
+            onPress={() => router.push(`/private/profile/feed/${item.id}?profileId=${item?.account?.id}`)}
             activeOpacity={0.9}
         >
             <View style={tw`relative`}>
@@ -156,6 +280,41 @@ export default function SearchScreen() {
         </TouchableOpacity>
     );
 
+    const renderHashtagCard = ({ item }: { item: Hashtag }) => (
+        <TouchableOpacity
+            style={tw`flex-row items-center px-4 py-3 border-b border-gray-100`}
+            onPress={() => {
+                setSearchQuery(item.name);
+                handleTabChange('Videos');
+            }}
+            activeOpacity={0.7}
+        >
+            <View style={tw`w-14 h-14 rounded-full bg-gray-100 items-center justify-center`}>
+                <Text style={tw`text-2xl font-bold text-gray-700`}>#</Text>
+            </View>
+            
+            <View style={tw`flex-1 ml-3`}>
+                <Text style={tw`text-base font-semibold`} numberOfLines={1}>
+                    {item.name}
+                </Text>
+                <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+                    {prettyCount(item.count)} {item.count === 1 ? 'post' : 'posts'}
+                </Text>
+            </View>
+
+            <PressableHaptics
+                style={tw`bg-[#FE2C55] px-10 py-2 rounded-md`}
+                onPress={(e) => {
+                    e.stopPropagation();
+                    setSearchQuery('#' + item.name);
+                    handleTabChange('Videos');
+                }}
+            >
+                <Ionicons name="videocam" size={20} color="white" />
+            </PressableHaptics>
+        </TouchableOpacity>
+    );
+
     const renderEmptyState = () => (
         <View style={tw`flex-1 items-center justify-center py-20`}>
             <Ionicons name="search-outline" size={72} color="#E5E7EB" />
@@ -179,7 +338,7 @@ export default function SearchScreen() {
             );
         }
 
-        if (!data || (data.videos?.length === 0 && data.users?.length === 0)) {
+        if (!data || (data.videos?.length === 0 && data.users?.length === 0 && data.hashtags?.length === 0)) {
             return renderEmptyState();
         }
 
@@ -187,27 +346,44 @@ export default function SearchScreen() {
         const isVideoSearch = params.type === 'Videos';
 
         const renderListHeader = () => {
-            if (activeTab === 'Users' || params.type === 'Users') {
+            if (activeTab === 'Hashtags') {
+                return (
+                    <View style={tw`mb-3`}>
+                        <Text style={tw`px-4 py-2 text-sm font-semibold text-gray-700`}>
+                            Hashtags
+                        </Text>
+                        {data.hashtags?.map((hashtag) => (
+                            <View key={hashtag.id}>
+                                {renderHashtagCard({ item: hashtag })}
+                            </View>
+                        ))}
+                    </View>
+                );
+            }
+
+            if (activeTab === 'Users') {
                 return (
                     <View style={tw`mb-3`}>
                         <Text style={tw`px-4 py-2 text-sm font-semibold text-gray-700`}>
                             Accounts
                         </Text>
-                        {data.users.map((user) => (
+                        {data.users?.map((user) => (
                             <View key={user.id}>
                                 {renderUserCard({ item: user })}
                             </View>
                         ))}
                     </View>
-                )
-            } else if (activeTab === 'Videos' || params.type === 'Videos') {
+                );
+            }
+            
+            if (activeTab === 'Videos') {
                 return (
                     <View style={tw`mb-3`}>
-                        <Text style={tw`px-4 pb-2 text-sm font-semibold text-gray-700`}>
+                        <Text style={tw`px-4 py-2 text-sm font-semibold text-gray-700`}>
                             Videos
                         </Text>
                     </View>
-                )
+                );
             }
 
             return (
@@ -225,14 +401,29 @@ export default function SearchScreen() {
                             <View style={tw`h-3 bg-gray-50 mt-2 mb-3`} />
                         </>
                     )}
+                    
+                    {data.hashtags?.length > 0 && (
+                        <>
+                            <Text style={tw`px-4 py-2 text-sm font-semibold text-gray-700`}>
+                                Hashtags
+                            </Text>
+                            {data.hashtags.map((hashtag) => (
+                                <View key={hashtag.id}>
+                                    {renderHashtagCard({ item: hashtag })}
+                                </View>
+                            ))}
+                            <View style={tw`h-3 bg-gray-50 mt-2 mb-3`} />
+                        </>
+                    )}
+                    
                     {data.videos?.length > 0 && (
-                        <Text style={tw`px-4 pb-2 text-sm font-semibold text-gray-700`}>
+                        <Text style={tw`px-4 py-2 text-sm font-semibold text-gray-700`}>
                             Videos
                         </Text>
                     )}
                 </View>
-            )
-        }
+            );
+        };
 
         return (
             <FlatList
@@ -273,6 +464,7 @@ export default function SearchScreen() {
                     <View style={tw`flex-1 flex-row items-center bg-gray-100 rounded-lg px-3 py-2.5`}>
                         <Ionicons name="search" size={20} color="#9CA3AF" />
                         <TextInput
+                            ref={searchInputRef}
                             style={[
                                 tw`flex-1 ml-2 text-gray-900`,
                                 {
@@ -323,7 +515,7 @@ export default function SearchScreen() {
                         renderItem={({ item: tab }) => (
                             <TouchableOpacity
                                 style={tw`mr-6 pb-3 ${activeTab === tab ? 'border-b-2 border-black' : ''}`}
-                                onPress={() => setActiveTab(tab)}
+                                onPress={() => handleTabChange(tab)}
                             >
                                 <Text
                                     style={tw`text-base px-3 ${activeTab === tab ? 'font-semibold text-black' : 'font-normal text-gray-500'
