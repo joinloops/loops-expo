@@ -1,10 +1,11 @@
+import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Switch, Text, View } from 'react-native';
 import tw from 'twrnc';
 
 export const SettingsItem = ({ icon, label, onPress, showChevron = true }) => (
-    <Pressable
+    <PressableHaptics
         onPress={onPress}
         style={({ pressed }) => [
             tw`flex-row items-center py-4 px-5 bg-white`,
@@ -13,7 +14,7 @@ export const SettingsItem = ({ icon, label, onPress, showChevron = true }) => (
         <Ionicons name={icon} size={24} color="#333" style={tw`mr-4`} />
         <Text style={tw`flex-1 text-base font-medium text-gray-900`}>{label}</Text>
         {showChevron && <Ionicons name="chevron-forward" size={20} color="#999" />}
-    </Pressable>
+    </PressableHaptics>
 );
 
 export const SectionHeader = ({ title }) => (
@@ -62,13 +63,13 @@ export const SettingsStatusItem = ({
 
     if (!isActive && onPress) {
         return (
-            <Pressable
+            <PressableHaptics
                 onPress={onPress}
                 style={({ pressed }) => [
                     pressed && tw`bg-gray-50`,
                 ]}>
                 {content}
-            </Pressable>
+            </PressableHaptics>
         );
     }
 
