@@ -576,14 +576,18 @@ export async function videoUnlike(id): Promise<any> {
 }
 
 export async function fetchNotifications({ 
-    pageParam = false 
+    pageParam 
 }: { 
-    pageParam?: string | false;
+    pageParam?: string | undefined;
 } = {}): Promise<any> {
     const url = pageParam
         ? `api/v1/account/notifications?cursor=${pageParam}`
         : `api/v1/account/notifications`;
     return await _selfGet(url);
+}
+
+export async function notificationMarkAsRead(id) {
+    return await _selfPost(`/v1/account/notifications/${id}/read`);
 }
 
 export async function commentPost({id, commentText, parentId}): Promise<any> {
