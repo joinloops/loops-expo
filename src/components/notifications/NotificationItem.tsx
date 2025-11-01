@@ -15,6 +15,7 @@ interface NotificationItemProps {
     item: {
         id: string;
         type: string;
+        video_pid?: string;
         video_id?: string;
         video_thumbnail?: string;
         actor: Actor;
@@ -57,7 +58,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ item, onPres
         }
     };
 
-    const showActionButtons = item.type === 'video.commentReply' || item.type === 'video.comment';
+    //const showActionButtons = item.type === 'video.commentReply' || item.type === 'video.comment';
+    const showActionButtons = false;
 
     return (
         <Pressable
