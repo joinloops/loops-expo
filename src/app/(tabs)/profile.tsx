@@ -111,7 +111,7 @@ export default function ProfileScreen() {
                 keyExtractor={(item) => item.id.toString()}
                 ListHeaderComponent={
                     <>
-                        <AccountHeader user={user} loading={userLoading} />
+                        <AccountHeader user={user} isOwner={true} loading={userLoading} />
                         <AccountTabs activeTab={activeTab} onTabChange={setActiveTab} />
                     </>
                 }
