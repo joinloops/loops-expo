@@ -4,17 +4,17 @@ import { openBrowser } from '@/utils/requests';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, ScrollView, Share, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function SettingsScreen() {
-    const { logOut } = useAuthStore();
+    const { logOut, resetOnboarding, user } = useAuthStore();
     const router = useRouter();
 
     const performLogOut = () => {
-        logOut();
         router.dismissAll();
         router.replace('/sign-in');
+        logOut();
     };
 
     const handleSignOut = () => {
@@ -34,6 +34,20 @@ export default function SettingsScreen() {
 
     const handleReportBug = async () => {
         await openBrowser('https://github.com/joinloops/loops-expo/issues/new')
+    }
+
+    const handleShare = async () => {
+
+        try {
+            const shareContent = {
+                message: `Check out my account on Loops!`,
+                url: user?.url
+            };
+
+            const result = await Share.share(shareContent);
+        } catch (error) {
+            console.error('Share error:', error);
+        }
     }
 
     return (
@@ -67,7 +81,7 @@ export default function SettingsScreen() {
                     onPress={() => router.push('/private/settings/security')}
                 />
                 <Divider />
-                <SettingsItem icon="share-outline" label="Share profile" onPress={() => {}} />
+                <SettingsItem icon="share-outline" label="Share profile" onPress={() => handleShare()} />
 
                 {/* <SectionHeader title="Content & Display" />
                 <SettingsItem
