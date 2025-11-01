@@ -2,8 +2,9 @@ import { StackText, XStack, YStack } from '@/components/ui/Stack';
 import { useAuthStore } from '@/utils/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Pressable, StatusBar, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import tw from 'twrnc';
 
@@ -12,7 +13,7 @@ export default function OnboardingStepTwo() {
 
     return (
         <View style={tw`flex-1 bg-black`}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar style="light" />
             <LinearGradient
                 colors={['#000000', '#0a0a0a']}
                 style={tw`absolute inset-0`}

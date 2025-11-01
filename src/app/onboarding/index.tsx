@@ -6,14 +6,14 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, {
-    cancelAnimation,
-    Easing,
-    FadeIn,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withTiming
+  cancelAnimation,
+  Easing,
+  FadeIn,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming
 } from 'react-native-reanimated';
 import tw from 'twrnc';
 
@@ -34,7 +34,7 @@ export default function OnboardingStepOne() {
 
   return (
     <View style={tw`flex-1 bg-black`}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar style="light" />
       <LinearGradient
         colors={['#000000', '#0a0a0e', '#15151a']}
         start={{ x: 0, y: 0 }}
