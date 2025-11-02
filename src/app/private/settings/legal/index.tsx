@@ -11,7 +11,7 @@ export default function LegalScreen() {
 
     return (
         <View style={tw`flex-1 bg-gray-100`}>
-            <StatusBar style="light-content" />
+            <StatusBar style="light" />
             
             <Stack.Screen
                 options={{

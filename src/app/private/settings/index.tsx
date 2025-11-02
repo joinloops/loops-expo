@@ -52,7 +52,7 @@ export default function SettingsScreen() {
 
     return (
         <View style={tw`flex-1 bg-gray-100`}>
-            <StatusBar style="light-content" />
+            <StatusBar style="dark" />
             <Stack.Screen
                 options={{
                     title: 'Settings and privacy',
