@@ -4,13 +4,17 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "*/": ["src/*"]
-    }
+      "@/*": ["src/*"]
+    },
+    "allowJs": true,
+    "resolveJsonModule": true
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "src/components/profile/AccountListItem.jsx"  ]
+  ]
 }
