@@ -39,11 +39,8 @@ export default function ProfileScreen() {
         error,
     } = useInfiniteQuery({
         queryKey: ['userSelfVideos', 'user'],
-        queryFn: async ({ pageParam }) => {
-            const res = await fetchSelfAccountVideos(pageParam);
-            return res;
-        },
-        initialPageParam: 0,
+        queryFn: fetchSelfAccountVideos,
+        initialPageParam: undefined,
         refetchOnWindowFocus: true,
         getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
     });
@@ -78,6 +75,7 @@ export default function ProfileScreen() {
     return (
         <View style={tw`flex-1 bg-white`}>
             <StatusBar style="dark" />
+
             <Stack.Screen
                 options={{
                     title: 'Profile',
