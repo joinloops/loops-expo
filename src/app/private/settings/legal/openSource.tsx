@@ -140,7 +140,7 @@ export default function OpenSourceScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="light-content" />
+            <StatusBar style="light" />
             <Stack.Screen
                 options={{
                     title: 'Open Source Software Notices'
