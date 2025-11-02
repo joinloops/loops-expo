@@ -517,6 +517,19 @@ export async function submitReport({
 }
 
 // ============================================================================
+// CAMERA & COMPOSE
+// ============================================================================
+
+export async function composeAutocompleteTags(q): Promise<any> {
+    return await _selfGet(`api/v1/autocomplete/tags?q=${q}`);
+}
+
+
+export async function composeAutocompleteMentions(q): Promise<any> {
+    return await _selfGet(`api/v1/autocomplete/accounts?q=${q}`);
+}
+
+// ============================================================================
 // FEED & CONTENT
 // ============================================================================
 
@@ -587,7 +600,7 @@ export async function fetchNotifications({
 }
 
 export async function notificationMarkAsRead(id) {
-    return await _selfPost(`/v1/account/notifications/${id}/read`);
+    return await _selfPost(`api/v1/account/notifications/${id}/read`);
 }
 
 export async function commentPost({id, commentText, parentId}): Promise<any> {
