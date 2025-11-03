@@ -1,10 +1,11 @@
 import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stack';
 import { useAuthStore } from '@/utils/authStore';
 import { openBrowser } from '@/utils/requests';
+import { shareContent } from '@/utils/sharer';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Alert, ScrollView, Share, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function SettingsScreen() {
@@ -15,7 +16,7 @@ export default function SettingsScreen() {
         router.dismissAll();
         router.replace('/sign-in');
         
-        setTimeout(() => logOut(), 50);
+        setTimeout(() => logOut(), 100);
     };
 
     const handleSignOut = () => {
@@ -38,14 +39,11 @@ export default function SettingsScreen() {
     }
 
     const handleShare = async () => {
-
         try {
-            const shareContent = {
+            await shareContent({
                 message: `Check out my account on Loops!`,
                 url: user?.url
-            };
-
-            const result = await Share.share(shareContent);
+            })
         } catch (error) {
             console.error('Share error:', error);
         }
