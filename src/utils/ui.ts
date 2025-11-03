@@ -84,43 +84,47 @@ export function prettyCount(
 }
 
 /**
- * Returns a short, social-style relative time like "now", "45s", "5m", "2h", "3d", "4w", "6mo", "1y".
+ * Returns a short, social-style relative time like "now", "45s", "5m", "2h".
  *
  * @param input - Date | number | string (anything new Date(...) accepts)
  * @param now - Current time (optional, mainly for testing)
  */
+
 export function timeAgo(input: Date | number | string, now?: Date | number): string {
     const d = new Date(input);
     const ref = now ? new Date(now) : new Date();
 
     const diffMs = ref.getTime() - d.getTime();
     const s = Math.max(0, Math.floor(diffMs / 1000));
+    const h = Math.floor(s / 3600);
 
-    if (s < 5) return 'now';
-    if (s < 60) return `${s}s`;
+    if (h < 24) {
+        if (s < 5) return 'now';
+        if (s < 60) return `${s}s`;
+        
+        const m = Math.floor(s / 60);
+        if (m < 60) return `${m}m`;
+        
+        return `${h}h`;
+    }
 
-    const m = Math.floor(s / 60);
-    if (m < 60) return `${m}m`;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const month = months[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    const currentYear = ref.getFullYear();
 
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h`;
-
-    const dys = Math.floor(h / 24);
-    if (dys < 7) return `${dys}d`;
-
-    const w = Math.floor(dys / 7);
-    if (w < 5) return `${w}w`;
-
-    const mo = Math.floor(dys / 30);
-    if (mo < 12) return `${mo}mo`;
-
-    const y = Math.floor(dys / 365);
-    return `${y}y`;
+    if (year === currentYear) {
+        return `${month} ${day}`;
+    }
+    
+    return `${month} ${day}, ${year}`;
 }
 
 /**
  * Format a date using Intl.DateTimeFormat with sensible defaults.
- * Works in modern React Native with Hermes.
  *
  * @example
  * formatDate(new Date(), { dateStyle: 'medium', timeStyle: 'short' })
@@ -132,7 +136,6 @@ export function formatDate(
     const { locale, ...fmt } = opts ?? {};
     const d = new Date(input);
 
-    // Default to a concise date; caller can pass timeStyle/dateStyle etc.
     const options: Intl.DateTimeFormatOptions = Object.keys(fmt).length
         ? fmt
         : { year: 'numeric', month: 'short', day: 'numeric' };
@@ -140,14 +143,12 @@ export function formatDate(
     try {
         return new Intl.DateTimeFormat(locale, options).format(d);
     } catch {
-        // Fallback if Intl is missing or options unsupported
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
             d.getDate(),
         ).padStart(2, '0')}`;
     }
 }
 
-/** Returns true if two dates fall on the same calendar day (local time). */
 export function isSameDay(a: Date | number | string, b: Date | number | string): boolean {
     const d1 = new Date(a);
     const d2 = new Date(b);
