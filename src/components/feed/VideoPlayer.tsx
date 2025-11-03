@@ -70,7 +70,7 @@ export default function VideoPlayer({
         if (!player) return;
 
         try {
-            const shouldPlay = isActive && !commentsOpen && !shareOpen && !otherOpen && screenFocused;
+            const shouldPlay = isActive && screenFocused;
 
             if (isActive && !wasActiveRef.current) {
                 player.currentTime = 0;
