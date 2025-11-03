@@ -1,6 +1,8 @@
 import { StackText, YStack } from '@/components/ui/Stack';
+import { prettyCount } from '@/utils/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { Image, Pressable, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 export default function VideoGrid({ video, onPress }) {
     return (
@@ -22,16 +24,35 @@ export default function VideoGrid({ video, onPress }) {
                     resizeMode="cover"
                 />
 
+                <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
+                    style={styles.gradientOverlay}
+                    pointerEvents="none"
+                />
+
                 <YStack
                     position="absolute"
-                    bottom={4}
-                    left={4}
+                    bottom={8}
+                    left={8}
                     flexDirection="row"
                     alignItems="center"
-                    gap="$1">
-                    <Ionicons name="play" size={12} color="white" />
-                    <StackText fontSize={10} fontWeight="600">
-                        {formatCount(video.likes || 0)}
+                    gap={1}>
+                    <Ionicons name="heart-outline" size={12} color="white" />
+                    <StackText fontSize={10} fontWeight="600" style={{color: '#fff'}}>
+                        {prettyCount(video.likes || 0)}
+                    </StackText>
+                </YStack>
+
+                <YStack
+                    position="absolute"
+                    bottom={8}
+                    right={8}
+                    flexDirection="row"
+                    alignItems="center"
+                    gap={1}>
+                    <Ionicons name="chatbubbles-outline" size={12} color="white" />
+                    <StackText fontSize={10} fontWeight="600" style={{color: '#fff'}}>
+                        {prettyCount(video.comments || 0)}
                     </StackText>
                 </YStack>
             </View>
@@ -39,12 +60,12 @@ export default function VideoGrid({ video, onPress }) {
     );
 }
 
-function formatCount(count) {
-    if (count >= 1000000) {
-        return (count / 1000000).toFixed(1) + 'M';
-    }
-    if (count >= 1000) {
-        return (count / 1000).toFixed(1) + 'K';
-    }
-    return count.toString();
-}
+const styles = StyleSheet.create({
+    gradientOverlay: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: '100%',
+    },
+})
