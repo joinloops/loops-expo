@@ -52,10 +52,6 @@ export function arrayToForm(obj: any): FormData {
     return form;
 }
 
-// ============================================================================
-// LOW-LEVEL HTTP METHODS (Keep unchanged as requested)
-// ============================================================================
-
 export async function get(url: string, token?: string, data?: any) {
     let completeURL;
     if (data) {
@@ -80,9 +76,9 @@ export async function postForm(
     token?: string,
     contentType?: string,
 ) {
-    // Send a POST request with data formatted with FormData returning JSON
     let headers: { [key: string]: string } = {};
 
+    headers['Accept'] = 'application/json';
     if (token) headers['Authorization'] = `Bearer ${token}`;
     if (contentType) headers['Content-Type'] = contentType;
 
@@ -95,9 +91,26 @@ export async function postForm(
     return resp;
 }
 
-// ============================================================================
-// ADDITIONAL HTTP METHODS
-// ============================================================================
+export async function postFormArray(
+    url: string,
+    data?: { [key: string | number]: any },
+    token?: string,
+    contentType?: string,
+) {
+    let headers: { [key: string]: string } = {};
+
+    headers['Accept'] = 'application/json';
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (contentType) headers['Content-Type'] = contentType;
+
+    const resp = await fetch(url, {
+        method: 'POST',
+        body: data ? arrayToForm(data) : undefined,
+        headers,
+    });
+
+    return resp;
+}
 
 export async function post(url: string, token?: string): Promise<Response> {
     const resp = await fetch(url, {
@@ -116,6 +129,7 @@ export async function postFormFile(
 ): Promise<Response> {
     let headers: { [key: string]: string } = {};
 
+    headers['Accept'] = 'application/json';
     if (token) headers['Authorization'] = `Bearer ${token}`;
     if (contentType) headers['Content-Type'] = contentType;
 
@@ -544,9 +558,15 @@ export async function composeAutocompleteTags(q): Promise<any> {
     return await _selfGet(`api/v1/autocomplete/tags?q=${q}`);
 }
 
-
 export async function composeAutocompleteMentions(q): Promise<any> {
     return await _selfGet(`api/v1/autocomplete/accounts?q=${q}`);
+}
+
+export async function uploadVideo(params) {
+    const instance = Storage.getString('app.instance');
+    const token = Storage.getString('app.token');
+    const url = `https://${instance}/api/v1/studio/upload`;
+    return await postFormArray(url, params, token, 'multipart/form-data')
 }
 
 // ============================================================================
