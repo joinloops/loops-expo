@@ -1,12 +1,32 @@
 import Avatar from '@/components/Avatar';
 import { StackText, XStack, YStack } from '@/components/ui/Stack';
 import { useAuthStore } from '@/utils/authStore';
-import { Link } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function AccountListItem(props) {
     const { user } = useAuthStore();
+    const router = useRouter();
+    const isLoading = props.isLoading || false;
+
+    const handleConfirmUnfollow = (item) => {
+        Alert.alert(
+            'Confirm Unfollow',
+            `Are you sure you want to unfollow @${item?.username}?`,
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Unfollow',
+                    style: 'destructive',
+                    onPress: () => props.handleUnfollow(item?.id),
+                },
+            ]
+        );
+    }
 
     return (
         <View style={tw`px-4 py-3`}>
@@ -28,38 +48,54 @@ export default function AccountListItem(props) {
                     </YStack>
                 </XStack>
 
-                { props?.item.id == user.id ? (<Pressable 
-                    style={tw`bg-gray-200 px-6 py-2 rounded-lg`}
-                    onPress={() => {
-                        console.log('Toggle unfollow for', props.item?.id);
-                    }}
-                >
-                    <Text style={tw`font-semibold text-black text-sm`}>
-                        View
-                    </Text>
-                </Pressable>) : 
-                props.item?.is_following == true ? 
-                (<Pressable 
-                    style={tw`bg-gray-200 px-6 py-2 rounded-lg`}
-                    onPress={() => {
-                        console.log('Toggle unfollow for', props.item?.id);
-                    }}
-                >
-                    <Text style={tw`font-semibold text-black text-sm`}>
-                        Following
-                    </Text>
-                </Pressable>) : 
-                (<Pressable 
-                    style={tw`bg-[#F02C56] px-6 py-2 rounded-lg`}
-                    onPress={() => {
-                        // Handle follow/unfollow action
-                        console.log('Toggle follow for', props.item?.id);
-                    }}
-                >
-                    <Text style={tw`font-semibold text-white text-sm`}>
-                        Follow
-                    </Text>
-                </Pressable>)}
+                { props?.item.id == user.id ? (
+                    <Pressable 
+                        style={tw`bg-gray-200 px-6 py-2 rounded-lg`}
+                        onPress={() => {
+                            router.push(`/private/profile/${props.item?.id}`);
+                        }}
+                    >
+                        <Text style={tw`font-semibold text-black text-sm`}>
+                            View
+                        </Text>
+                    </Pressable>
+                ) : props.item?.is_following == true ? (
+                    <Pressable 
+                        style={tw`bg-gray-200 px-6 py-2 rounded-lg min-w-[100px] items-center justify-center`}
+                        onPress={() => {
+                            if (!isLoading) {
+                                handleConfirmUnfollow(props.item);
+                            }
+                        }}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator color="#000" size="small" />
+                        ) : (
+                            <Text style={tw`font-semibold text-black text-sm`}>
+                                Following
+                            </Text>
+                        )}
+                    </Pressable>
+                ) : (
+                    <Pressable 
+                        style={tw`bg-[#F02C56] px-6 py-2 rounded-lg min-w-[100px] items-center justify-center`}
+                        onPress={() => {
+                            if (!isLoading) {
+                                props.handleFollow(props.item?.id);
+                            }
+                        }}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                            <Text style={tw`font-semibold text-white text-sm`}>
+                                Follow
+                            </Text>
+                        )}
+                    </Pressable>
+                )}
             </XStack>
         </View>
     );

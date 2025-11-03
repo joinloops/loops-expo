@@ -1,10 +1,10 @@
 import AccountListItem from '@/components/profile/AccountListItem';
 import { StackText, YStack } from '@/components/ui/Stack';
 import { useAuthStore } from '@/utils/authStore';
-import { fetchAccountFollowers, fetchAccountFollowing, fetchAccountFriends, fetchAccountSuggested } from '@/utils/requests';
+import { fetchAccountFollowers, fetchAccountFollowing, fetchAccountFriends, fetchAccountSuggested, followAccount, unfollowAccount } from '@/utils/requests';
 import { prettyCount } from '@/utils/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -17,7 +17,9 @@ export default function Screen() {
     const [activeTab, setActiveTab] = useState('following');
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [loadingUserId, setLoadingUserId] = useState(null);
     const { user } = useAuthStore();
+    const queryClient = useQueryClient();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -72,6 +74,115 @@ export default function Screen() {
         };
         return queries[activeTab] || followersQuery;
     }, [activeTab, followersQuery, followingQuery, friendsQuery, suggestedQuery]);
+
+    const followMutation = useMutation({
+        mutationFn: async (userId) => {
+            const res = await followAccount(userId.toString());
+            return res.data;
+        },
+        onMutate: async (userId) => {
+            setLoadingUserId(userId);
+            
+            const queryKey = ['accountFollowers', id, debouncedSearch];
+            const followingKey = ['accountFollowing', id, debouncedSearch];
+            const suggestedKey = ['accountSuggested', id];
+            const friendsKey = ['accountFriends', id];
+            
+            await queryClient.cancelQueries({ queryKey });
+            
+            const previousData = queryClient.getQueryData(queryKey);
+            
+            queryClient.setQueriesData({ queryKey }, (old) => {
+                if (!old?.pages) return old;
+                return {
+                    ...old,
+                    pages: old.pages.map(page => ({
+                        ...page,
+                        data: page.data?.map(item => 
+                            item.id === userId 
+                                ? { ...item, is_following: true }
+                                : item
+                        )
+                    }))
+                };
+            });
+            
+            return { previousData };
+        },
+        onSuccess: () => {
+            setLoadingUserId(null);
+            
+            queryClient.invalidateQueries({ queryKey: ['accountFollowers', id] });
+            queryClient.invalidateQueries({ queryKey: ['accountFollowing', id] });
+            queryClient.invalidateQueries({ queryKey: ['accountSuggested', id] });
+            queryClient.invalidateQueries({ queryKey: ['accountFriends', id] });
+            queryClient.invalidateQueries({ queryKey: ['fetchAccount', id.toString()] });
+        },
+        onError: (error, variables, context) => {
+            setLoadingUserId(null);
+            
+            if (context?.previousData) {
+                queryClient.setQueryData(
+                    ['accountFollowers', id, debouncedSearch], 
+                    context.previousData
+                );
+            }
+            console.error('Follow action failed:', error);
+        },
+    });
+
+    const unfollowMutation = useMutation({
+        mutationFn: async (userId) => {
+            const res = await unfollowAccount(userId.toString());
+            return res.data;
+        },
+        onMutate: async (userId) => {
+            setLoadingUserId(userId);
+            
+            const queryKey = ['accountFollowing', id, debouncedSearch];
+            
+            await queryClient.cancelQueries({ queryKey });
+            
+            const previousData = queryClient.getQueryData(queryKey);
+            
+            queryClient.setQueriesData({ queryKey }, (old) => {
+                if (!old?.pages) return old;
+                return {
+                    ...old,
+                    pages: old.pages.map(page => ({
+                        ...page,
+                        data: page.data?.map(item => 
+                            item.id === userId 
+                                ? { ...item, is_following: false }
+                                : item
+                        )
+                    }))
+                };
+            });
+            
+            return { previousData };
+        },
+        onSuccess: () => {
+            setLoadingUserId(null);
+            
+            queryClient.invalidateQueries({ queryKey: ['accountFollowers', id] });
+            queryClient.invalidateQueries({ queryKey: ['accountFollowing', id] });
+            queryClient.invalidateQueries({ queryKey: ['accountSuggested', id] });
+            queryClient.invalidateQueries({ queryKey: ['accountFriends', id] });
+            queryClient.invalidateQueries({ queryKey: ['fetchAccount', id.toString()] });
+        },
+        onError: (error, variables, context) => {
+            setLoadingUserId(null);
+            
+            if (context?.previousData) {
+                queryClient.setQueryData(
+                    ['accountFollowing', id, debouncedSearch], 
+                    context.previousData
+                );
+            }
+            console.error('Unfollow action failed:', error);
+        },
+    });
     
     const {
         data: feed,
@@ -83,7 +194,23 @@ export default function Screen() {
         status,
     } = activeQuery;
 
-    const RenderItem = ({ item }) => <AccountListItem key={item.id} item={item} />;
+    const handleFollow = useCallback((userId) => {
+        followMutation.mutate(userId);
+    }, [followMutation]);
+
+    const handleUnfollow = useCallback((userId) => {
+        unfollowMutation.mutate(userId);
+    }, [unfollowMutation]);
+
+    const RenderItem = ({ item }) => (
+        <AccountListItem 
+            key={item.id} 
+            item={item} 
+            handleFollow={handleFollow}
+            handleUnfollow={handleUnfollow}
+            isLoading={loadingUserId === item.id}
+        />
+    );
 
     const EmptyList = useCallback(() => {
         if (isFetching || isFetchingNextPage) {
