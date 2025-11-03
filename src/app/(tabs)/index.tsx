@@ -145,6 +145,7 @@ export default function LoopsFeed({ navigation }) {
             commentsOpen={showComments && selectedVideo?.id === item.id}
             shareOpen={showShare && selectedVideo?.id === item.id}
             otherOpen={showOther && selectedVideo?.id === item.id}
+            onMorePress={handleComment}
             screenFocused={screenFocused}
             videoPlaybackRates={videoPlaybackRates}
             navigation={navigation}
