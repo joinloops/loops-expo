@@ -13,11 +13,11 @@ import {
     unblockAccount,
     unfollowAccount
 } from '@/utils/requests';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Share, Text, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function ProfileScreen() {
@@ -45,14 +45,39 @@ export default function ProfileScreen() {
         enabled: !!user,
     });
 
-    const { data: videos, isLoading: videosLoading } = useQuery({
-        queryKey: ['userVideos', id.toString(), activeTab],
-        queryFn: async () => {
-            const res = await fetchUserVideos(id.toString(), activeTab);
-            return res.data;
-        },
+    const {
+        data: videosData,
+        fetchNextPage,
+        fetchPreviousPage,
+        hasNextPage,
+        hasPreviousPage,
+        isFetchingNextPage,
+        isRefetching,
+        refetch,
+        isLoading: videosLoading,
+        isFetching,
+        status,
+        isError,
+        error,
+    } = useInfiniteQuery({
+        queryKey: ['userVideos', id.toString()],
+        queryFn: fetchUserVideos,
+        initialPageParam: undefined,
+        refetchOnWindowFocus: true,
+        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
         enabled: !!user,
     });
+
+    const videos = useMemo(() => {
+        if (!videosData?.pages?.length) return [];
+        return videosData.pages.flatMap((p) => p?.data ?? []);
+    }, [videosData]);
+
+    const handleEndReached = useCallback(() => {
+        if (hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const followMutation = useMutation({
         mutationFn: async () => {
@@ -150,6 +175,27 @@ export default function ProfileScreen() {
         setShowReportModal(false);
         router.push('/private/settings/legal/community')
     };
+
+    const handleAccountShare = async () => {
+        try {
+            const shareContent = {
+                message: `Check out @${user.username}'s account on Loops!`,
+            };
+
+            if (user.url) {
+                shareContent.url = user.url;
+                shareContent.message += `\n${user.url}`;
+            }
+
+            const result = await Share.share(shareContent);
+
+            if (result.action === Share.sharedAction) {
+                console.log('Shared successfully');
+            }
+        } catch (error) {
+            console.error('Share error:', error);
+        }
+    }
 
     const handleOnUnblockPress = () => {
          if (userState?.blocking) {
@@ -267,6 +313,15 @@ export default function ProfileScreen() {
                         renderEmpty()
                     )
                 }
+                ListFooterComponent={
+                    isFetchingNextPage ? (
+                        <YStack paddingY="$6" alignItems="center">
+                            <ActivityIndicator color="#F02C56" />
+                        </YStack>
+                    ) : null
+                }
+                onEndReachedThreshold={0.4}
+                onEndReached={handleEndReached}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
                     flexGrow: 1,
@@ -290,7 +345,18 @@ export default function ProfileScreen() {
                         <View style={tw`py-4`}>
                             <Pressable
                                 style={tw`px-6 py-4 flex-row items-center`}
-                                onPress={handleBlockPress}
+                                onPress={() => handleAccountShare()}
+                            >
+                                <Text style={tw`text-base text-gray-900 font-medium`}>
+                                    Share
+                                </Text>
+                            </Pressable>
+
+                            <View style={tw`h-px bg-gray-200 mx-6`} />
+
+                            <Pressable
+                                style={tw`px-6 py-4 flex-row items-center`}
+                                onPress={() => handleBlockPress()}
                             >
                                 <Text style={tw`text-base text-gray-900 font-medium`}>
                                     {userState?.blocked ? 'Unblock' : 'Block'}
@@ -301,7 +367,7 @@ export default function ProfileScreen() {
 
                             <Pressable
                                 style={tw`px-6 py-4 flex-row items-center`}
-                                onPress={handleReportPress}
+                                onPress={() => handleReportPress()}
                             >
                                 <Text style={tw`text-base text-red-600 font-medium`}>
                                     Report
