@@ -13,11 +13,12 @@ import {
     unblockAccount,
     unfollowAccount
 } from '@/utils/requests';
+import { shareContent } from '@/utils/sharer';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Text, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function ProfileScreen() {
@@ -178,20 +179,10 @@ export default function ProfileScreen() {
 
     const handleAccountShare = async () => {
         try {
-            const shareContent = {
+            await shareContent({
                 message: `Check out @${user.username}'s account on Loops!`,
-            };
-
-            if (user.url) {
-                shareContent.url = user.url;
-                shareContent.message += `\n${user.url}`;
-            }
-
-            const result = await Share.share(shareContent);
-
-            if (result.action === Share.sharedAction) {
-                console.log('Shared successfully');
-            }
+                url: user.url
+            })
         } catch (error) {
             console.error('Share error:', error);
         }

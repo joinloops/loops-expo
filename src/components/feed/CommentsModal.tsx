@@ -4,6 +4,7 @@ import { ReportModal } from '@/components/ReportModal';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { useAuthStore } from '@/utils/authStore';
 import { commentDelete, commentLike, commentPost, commentReplyDelete, commentReplyLike, commentReplyUnlike, commentUnlike, fetchVideoComments, fetchVideoReplies } from '@/utils/requests';
+import { shareContent } from '@/utils/sharer';
 import { timeAgo } from '@/utils/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,7 +19,6 @@ import {
     Modal,
     Platform,
     Pressable,
-    Share,
     StyleSheet,
     Text,
     TextInput,
@@ -262,20 +262,10 @@ export default function CommentsModal({
 
     const commentShare = async (item) => {
         try {
-            const shareContent = {
+            await shareContent({
                 message: `Check out this comment on Loops by @${item.account.username}!`,
-            };
-
-            if (item.url) {
-                shareContent.url = item.url;
-                shareContent.message += `\n${item.url}`;
-            }
-
-            const result = await Share.share(shareContent);
-
-            if (result.action === Share.sharedAction) {
-                console.log('Shared successfully');
-            }
+                url: item?.url
+            })
         } catch (error) {
             console.error('Share error:', error);
         }

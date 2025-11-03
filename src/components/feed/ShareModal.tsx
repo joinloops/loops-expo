@@ -1,3 +1,4 @@
+import { shareContent } from '@/utils/sharer';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
@@ -68,20 +69,12 @@ export default function ShareModal({
 
     const handleNativeShare = async () => {
         try {
-            const shareContent = {
+            const result = await shareContent({
                 message: `Check out this video by @${item.account.username}!`,
-            };
-
-            // Add URL if available
-            if (item.url) {
-                shareContent.url = item.url;
-                shareContent.message += `\n${item.url}`;
-            }
-
-            const result = await Share.share(shareContent);
+                url: item?.url
+            })
 
             if (result.action === Share.sharedAction) {
-                console.log('Shared successfully');
                 onClose();
             }
         } catch (error) {
