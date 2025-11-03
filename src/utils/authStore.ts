@@ -113,7 +113,7 @@ export const useAuthStore = create(
                 }));
             },
 
-            logOut: () => {
+            logOut: (onComplete?: () => void) => {
                 // Clear OAuth credentials
                 OAuthService.logout();
 
@@ -124,6 +124,8 @@ export const useAuthStore = create(
                     user: null,
                     server: null,
                 }));
+                
+                onComplete?.();
             },
 
             completeOnboarding: () => {

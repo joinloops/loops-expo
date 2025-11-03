@@ -10,9 +10,10 @@ export default function AccountScreen() {
     const router = useRouter();
 
     const performLogOut = () => {
-        logOut();
         router.dismissAll();
         router.replace('/sign-in');
+        
+        setTimeout(() => logOut(), 50);
     };
 
     const handleSignOut = () => {

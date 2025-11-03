@@ -14,7 +14,8 @@ export default function SettingsScreen() {
     const performLogOut = () => {
         router.dismissAll();
         router.replace('/sign-in');
-        logOut();
+        
+        setTimeout(() => logOut(), 50);
     };
 
     const handleSignOut = () => {
