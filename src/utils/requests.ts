@@ -677,6 +677,10 @@ export async function commentReplyDelete({videoId, parentId, commentId}): Promis
     return await _selfPost(`api/v1/comments/delete/${videoId}/${parentId}/${commentId}`)
 }
 
+export async function videoDelete(videoId): Promise<any> {
+    return await _selfPost(`api/v1/video/delete/${videoId}`)
+}
+
 // ============================================================================
 // ACCOUNT UPDATES
 // ============================================================================
