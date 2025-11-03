@@ -17,26 +17,27 @@ import {
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export default function VideoPlayer({ 
-    item, 
-    isActive, 
-    onLike, 
-    onComment, 
-    onShare, 
-    onOther, 
-    bottomInset, 
-    commentsOpen, 
-    screenFocused, 
-    videoPlaybackRates, 
-    shareOpen, 
-    otherOpen, 
-    navigation, 
+export default function VideoPlayer({
+    item,
+    isActive,
+    onLike,
+    onComment,
+    onShare,
+    onOther,
+    bottomInset,
+    commentsOpen,
+    screenFocused,
+    videoPlaybackRates,
+    shareOpen,
+    otherOpen,
+    navigation,
     onNavigate,
     tabBarHeight = 60
 }) {
     const [isLiked, setIsLiked] = useState(item.has_liked);
     const [showControls, setShowControls] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const manualControlRef = useRef(false);
     const isMountedRef = useRef(true);
     const wasActiveRef = useRef(false);
     const router = useRouter();
@@ -70,6 +71,10 @@ export default function VideoPlayer({
         if (!player) return;
 
         try {
+            if (manualControlRef.current) {
+                return;
+            }
+
             const shouldPlay = isActive && screenFocused;
 
             if (isActive && !wasActiveRef.current) {
@@ -90,6 +95,12 @@ export default function VideoPlayer({
         }
     }, [isActive, commentsOpen, shareOpen, otherOpen, screenFocused, player]);
 
+    useEffect(() => {
+        if (!isActive) {
+            manualControlRef.current = false;
+        }
+    }, [isActive]);
+
     const handleLike = () => {
         setIsLiked(!isLiked);
         onLike(item.id, !isLiked);
@@ -99,6 +110,8 @@ export default function VideoPlayer({
         if (!player || !isMountedRef.current) return;
 
         try {
+            manualControlRef.current = true;
+
             if (isPlaying) {
                 player.pause();
                 setIsPlaying(false);
@@ -112,15 +125,22 @@ export default function VideoPlayer({
     };
 
     const handleScreenPress = () => {
-        if (!isMountedRef.current) return;
+        if (!isMountedRef.current) {
+            return;
+        }
         setShowControls(!showControls);
+
+        if (showControls) {
+            manualControlRef.current = false;
+        }
     };
 
     return (
         <View style={styles.videoContainer}>
             <Pressable
                 style={styles.videoWrapper}
-                onPress={handleScreenPress}
+                onPress={() => handleScreenPress()}
+                disabled={showControls}
             >
                 <VideoView
                     style={styles.video}
@@ -131,8 +151,15 @@ export default function VideoPlayer({
                 />
 
                 {showControls && (
-                    <View style={styles.controlsOverlay}>
-                        <TouchableOpacity onPress={togglePlayPause} style={styles.playButton}>
+                    <View style={styles.controlsOverlay} pointerEvents="box-none">
+                        <TouchableOpacity
+                            onPress={(e) => {
+                                e?.stopPropagation?.();
+                                togglePlayPause();
+                            }}
+                            style={styles.playButton}
+                            activeOpacity={0.7}
+                        >
                             <Ionicons
                                 name={isPlaying ? 'pause' : 'play'}
                                 size={60}
@@ -169,7 +196,7 @@ export default function VideoPlayer({
 
                 <TouchableOpacity style={styles.actionButton} onPress={() => onComment(item)}>
                     <Ionicons name="chatbubble-outline" size={32} color="white" />
-                    { item.permissions?.can_comment && (
+                    {item.permissions?.can_comment && (
                         <Text style={styles.actionText}>{item.comments}</Text>
                     )}
                 </TouchableOpacity>
@@ -237,6 +264,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.3)',
+        zIndex: 10,
+        elevation: 10,
     },
     playButton: {
         width: 80,
@@ -245,11 +274,15 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.4)',
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 11,
+        elevation: 11,
     },
     rightActions: {
         position: 'absolute',
         right: 12,
         gap: 20,
+        zIndex: 5,
+        elevation: 5,
     },
     actionButton: {
         alignItems: 'center',

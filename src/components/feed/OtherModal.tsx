@@ -1,8 +1,11 @@
 import { ReportModal } from '@/components/ReportModal';
+import { videoDelete } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    Alert,
     Dimensions,
     Modal,
     Pressable,
@@ -22,15 +25,38 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
     const router = useRouter()
     const [showPlaybackSpeed, setShowPlaybackSpeed] = useState(false);
     const [showReport, setShowReport] = useState(false);
+    const queryClient = useQueryClient();
 
-    if (!item) return null;
+    const deleteMutation = useMutation({
+        mutationFn: videoDelete,
+        onSuccess: async() => {
+            queryClient.invalidateQueries(['videos', 'forYou']);
+            queryClient.invalidateQueries(['videos', 'following']);
+            queryClient.invalidateQueries(['profileVideoFeed', item?.account.id, item?.id])
+        }
+    })
+
+    if (!item) {
+        return null;
+    } 
 
     const handleReport = () => {
         setShowReport(true)
     };
 
     const handleDelete = () => {
-        console.log('Delete video:', item.id);
+        Alert.alert('Confirm Delete', 'Are you sure you want to delete this video?', [
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+
+            {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () => deleteMutation.mutate(item.id),
+            },
+        ]);
         onClose();
     };
 
