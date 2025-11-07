@@ -41,6 +41,7 @@ export default function VideoPlayer({
     const isMountedRef = useRef(true);
     const wasActiveRef = useRef(false);
     const router = useRouter();
+    const [playSensitive, setPlaySensitive] = useState(false);
 
     const playbackRate = videoPlaybackRates[item.id] || 1.0;
 
@@ -75,7 +76,7 @@ export default function VideoPlayer({
                 return;
             }
 
-            const shouldPlay = isActive && screenFocused;
+            const shouldPlay = isActive && screenFocused && !(item.is_sensitive && !playSensitive);
 
             if (isActive && !wasActiveRef.current) {
                 player.currentTime = 0;
@@ -93,11 +94,12 @@ export default function VideoPlayer({
         } catch (error) {
             console.log('Player control error:', error);
         }
-    }, [isActive, commentsOpen, shareOpen, otherOpen, screenFocused, player]);
+    }, [isActive, commentsOpen, shareOpen, otherOpen, screenFocused, player, item.is_sensitive, playSensitive]);
 
     useEffect(() => {
         if (!isActive) {
             manualControlRef.current = false;
+            setPlaySensitive(false);
         }
     }, [isActive]);
 
@@ -135,6 +137,46 @@ export default function VideoPlayer({
         }
     };
 
+    const handleViewSensitiveContent = () => {
+        setPlaySensitive(true);
+    };
+
+    
+    if(item.is_sensitive && !playSensitive) {
+        return (
+        <View style={styles.videoContainer}>
+            <View 
+                style={styles.sensitiveOverlay}
+                accessible={true}
+                accessibilityLabel="Sensitive content warning. This video may contain sensitive content."
+                accessibilityRole="alert">
+                <View style={styles.sensitiveContent}>
+                    <View style={styles.sensitiveIconWrapper}>
+                        <Ionicons name="eye-off-outline" size={48} color="white" />
+                    </View>
+                    <Text style={styles.sensitiveTitle}>Sensitive Content</Text>
+                    <Text style={styles.sensitiveDescription}>
+                        This video may contain sensitive content
+                    </Text>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={styles.viewButton}
+                            onPress={handleViewSensitiveContent}
+                            activeOpacity={0.8}
+                            accessible={true}
+                            accessibilityLabel="Watch video anyway"
+                            accessibilityRole="button"
+                            accessibilityHint="Dismisses the sensitive content warning and plays the video"
+                            >
+                            <Text style={styles.viewButtonText}>Watch anyways</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </View>
+        )
+    }
+
     return (
         <View style={styles.videoContainer}>
             <Pressable
@@ -147,6 +189,9 @@ export default function VideoPlayer({
                     player={player}
                     allowsPictureInPicture={false}
                     nativeControls={false}
+                    accessible={true}
+                    accessibilityLabel={item.media.alt_text || "Video content"}
+                    accessibilityHint="Double tap to play or pause"
                     contentFit="contain"
                 />
 
@@ -244,6 +289,7 @@ export default function VideoPlayer({
         </View>
     );
 };
+
 const styles = StyleSheet.create({
     videoContainer: {
         width: SCREEN_WIDTH,
@@ -276,6 +322,53 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 11,
         elevation: 11,
+    },
+    sensitiveOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.99)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 15,
+        elevation: 15,
+    },
+    sensitiveContent: {
+        alignItems: 'center',
+        paddingHorizontal: 40,
+        width: '100%',
+    },
+    sensitiveIconWrapper: {
+        padding: 20,
+        borderRadius: 90,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)'
+    },
+    sensitiveTitle: {
+        color: 'white',
+        fontSize: 24,
+        fontWeight: '700',
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    sensitiveDescription: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 24,
+    },
+    buttonContainer: {
+        width: '100%',
+    },
+    viewButton: {
+        backgroundColor: 'white',
+        paddingHorizontal: 40,
+        paddingVertical: 14,
+        borderRadius: 8,
+        width: '100%',
+        alignItems: 'center',
+    },
+    viewButtonText: {
+        color: '#000',
+        fontSize: 16,
+        fontWeight: '700',
     },
     rightActions: {
         position: 'absolute',
