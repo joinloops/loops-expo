@@ -69,6 +69,9 @@ export default function NotificationScreen() {
     }, [data]);
 
     const handleOnPress = (item: any) => {
+        if(item.type === 'new_follower') {
+            router.push(`/private/profile/${item?.actor?.id}`);
+        }
         if (!item.read_at) {
             readMutation.mutate(item.id);
         }
@@ -77,6 +80,10 @@ export default function NotificationScreen() {
             router.push(`/private/profile/feed/${item.video_id}?profileId=${item.video_pid}`);
         }
     };
+
+    const handleOnProfilePress = (item) => {
+        router.push(`/private/profile/${item?.id}`);
+    }
 
     const renderEmpty = () => (
         <YStack paddingY="$8" alignItems="center" justifyContent="center">
@@ -98,7 +105,7 @@ export default function NotificationScreen() {
             <FlatList
                 data={notifications}
                 keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => <NotificationItem item={item} onPress={handleOnPress} />}
+                renderItem={({ item }) => <NotificationItem item={item} onPress={handleOnPress} onProfilePress={handleOnProfilePress}/>}
                 ListEmptyComponent={
                     videosLoading || isFetching ? (
                         <YStack paddingVertical="$8" alignItems="center">

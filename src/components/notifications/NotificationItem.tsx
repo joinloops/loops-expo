@@ -24,15 +24,22 @@ interface NotificationItemProps {
         created_at: string;
     };
     onPress: (item: any) => void;
+    onProfilePress: (actor: Actor) => void;
 }
 
-export const NotificationItem: React.FC<NotificationItemProps> = ({ item, onPress }) => {
+export const NotificationItem: React.FC<NotificationItemProps> = ({ 
+    item, 
+    onPress, 
+    onProfilePress 
+}) => {
     const isUnread = item.read_at === null;
 
     const getNotificationText = () => {
         switch (item.type) {
             case 'video.like':
                 return 'liked your video.';
+            case 'new_follower':
+                return 'followed you.';
             case 'video.commentReply':
                 return 'replied to your comment.';
             case 'video.comment':
@@ -48,6 +55,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ item, onPres
 
     const getBadgeIcon = () => {
         switch (item.type) {
+            case 'new_follower':
+                return <Ionicons name="person-add" size={16} color="#007AFF" />;
             case 'video.like':
                 return <Ionicons name="heart" size={16} color="#FF2D55" />;
             case 'video.commentReply':
@@ -58,12 +67,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ item, onPres
         }
     };
 
-    //const showActionButtons = item.type === 'video.commentReply' || item.type === 'video.comment';
     const showActionButtons = false;
 
     return (
-        <Pressable
-            onPress={() => onPress(item)}
+        <View
             style={[
                 tw`flex-row items-center py-3 px-4`,
                 styles.notificationItem
@@ -73,7 +80,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ item, onPres
                 <View style={tw`w-2 h-2 rounded-full bg-blue-500 mr-2 mt-1.5`} />
             )}
 
-            <View style={tw`relative mr-3`}>
+            <Pressable 
+                onPress={() => onProfilePress(item.actor)}
+                style={tw`relative mr-3`}
+            >
                 <Image
                     source={{ uri: item.actor.avatar }}
                     style={tw`w-12 h-12 rounded-full`}
@@ -86,41 +96,46 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ item, onPres
                         {getBadgeIcon()}
                     </View>
                 )}
-            </View>
+            </Pressable>
 
-            <View style={tw`flex-1 mr-2`}>
-                <Text style={tw`text-base`}>
-                    <Text style={tw`font-semibold`}>{item.actor.name}</Text>
-                    <Text style={tw`text-gray-700`}> {getNotificationText()}</Text>
-                </Text>
+            <Pressable 
+                onPress={() => onPress(item)}
+                style={tw`flex-1 flex-row items-center`}
+            >
+                <View style={tw`flex-1 mr-2`}>
+                    <Text style={tw`text-base`}>
+                        <Text style={tw`font-semibold`}>{item.actor.name}</Text>
+                        <Text style={tw`text-gray-700`}> {getNotificationText()}</Text>
+                    </Text>
 
-                <Text style={tw`text-gray-500 text-sm mt-0.5`}>
-                    {timeAgo(item.created_at)}
-                </Text>
+                    <Text style={tw`text-gray-500 text-sm mt-0.5`}>
+                        {timeAgo(item.created_at)}
+                    </Text>
 
-                {showActionButtons && (
-                    <View style={tw`flex-row mt-2 gap-4`}>
-                        <Pressable style={tw`flex-row items-center gap-1`}>
-                            <Ionicons name="chatbubble-outline" size={18} color="#666" />
-                            <Text style={tw`text-gray-600`}>Reply</Text>
-                        </Pressable>
-                        <Pressable style={tw`flex-row items-center gap-1`}>
-                            <Ionicons name="heart-outline" size={18} color="#666" />
-                            <Text style={tw`text-gray-600`}>Like</Text>
-                        </Pressable>
-                    </View>
+                    {showActionButtons && (
+                        <View style={tw`flex-row mt-2 gap-4`}>
+                            <Pressable style={tw`flex-row items-center gap-1`}>
+                                <Ionicons name="chatbubble-outline" size={18} color="#666" />
+                                <Text style={tw`text-gray-600`}>Reply</Text>
+                            </Pressable>
+                            <Pressable style={tw`flex-row items-center gap-1`}>
+                                <Ionicons name="heart-outline" size={18} color="#666" />
+                                <Text style={tw`text-gray-600`}>Like</Text>
+                            </Pressable>
+                        </View>
+                    )}
+                </View>
+
+                {item.video_thumbnail && (
+                    <Image
+                        source={{ uri: item.video_thumbnail }}
+                        style={tw`w-14 h-14 rounded-lg`}
+                    />
                 )}
-            </View>
 
-            {item.video_thumbnail && (
-                <Image
-                    source={{ uri: item.video_thumbnail }}
-                    style={tw`w-14 h-14 rounded-lg`}
-                />
-            )}
-
-            <Ionicons name="chevron-forward" size={20} color="#999" style={tw`ml-2`} />
-        </Pressable>
+                <Ionicons name="chevron-forward" size={20} color="#999" style={tw`ml-2`} />
+            </Pressable>
+        </View>
     );
 };
 
