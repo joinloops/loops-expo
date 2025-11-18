@@ -569,6 +569,13 @@ export async function uploadVideo(params) {
     return await postFormArray(url, params, token, 'multipart/form-data')
 }
 
+export async function uploadDuet(params) {
+    const instance = Storage.getString('app.instance');
+    const token = Storage.getString('app.token');
+    const url = `https://${instance}/api/v1/studio/duet/upload`;
+    return await postFormArray(url, params, token, 'multipart/form-data')
+}
+
 // ============================================================================
 // FEED & CONTENT
 // ============================================================================

@@ -94,6 +94,12 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
         router.push(`/private/video/edit/${item.id}`)
     }
 
+
+    const handleDuet = () => {
+        onClose()
+        router.push(`/private/video/duet/${item.id}?duetVideoUri=${item.media.src_url}`)
+    }
+
     if (showReport) {
         return (
             <ReportModal
@@ -180,6 +186,15 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
         //     onPress: handleDownload,
         //     show: true,
         // })
+    }
+
+    if (item.permissions.can_duet) {
+        options.unshift({
+            icon: 'duplicate-outline',
+            label: 'Duet',
+            onPress: handleDuet,
+            show: true,
+        })
     }
 
     if (item.is_owner) {
