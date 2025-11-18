@@ -89,6 +89,11 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
         router.push('/private/settings/legal/community')
     }
 
+    const handleEdit = () => {
+        onClose()
+        router.push(`/private/video/edit/${item.id}`)
+    }
+
     if (showReport) {
         return (
             <ReportModal
@@ -147,7 +152,7 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
 
     const options = [
         {
-            icon: 'speedometer-outline',
+            icon: 'film-outline',
             label: 'Playback speed',
             onPress: () => setShowPlaybackSpeed(true),
             show: true,
@@ -175,6 +180,15 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
         //     onPress: handleDownload,
         //     show: true,
         // })
+    }
+
+    if (item.is_owner) {
+        options.unshift({
+            icon: 'create-outline',
+            label: 'Edit',
+            onPress: handleEdit,
+            show: true,
+        })
     }
 
     return (
