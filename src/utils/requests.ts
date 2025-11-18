@@ -606,6 +606,14 @@ export async function fetchSelfAccountVideos({
     return await _selfGet(url);
 }
 
+export async function fetchVideo(id): Promise<any> {
+    return await _selfGet(`api/v1/video/${id}`);
+}
+
+export async function updateVideoEdit(id, params): Promise<any> {
+    return await _selfPost(`api/v1/video/edit/${id}`, params);
+}
+
 export async function fetchVideoComments(id, pageParam = false): Promise<any> {
     const url = pageParam
         ? `api/v1/video/comments/${id}?cursor=${pageParam}`
