@@ -265,7 +265,7 @@ export default function VideoPlayer({
                 >
                     <Text style={styles.username}>@{item.account.username}</Text>
                 </TouchableOpacity>
-                <LinkifiedCaption
+                { item.caption && (<LinkifiedCaption
                     caption={item.caption}
                     tags={item.tags || []}
                     mentions={item.mentions || []}
@@ -280,7 +280,7 @@ export default function VideoPlayer({
                         router.push(`/private/profile/${profileId}`)
                     }}
                     onMorePress={() => onComment(item)}
-                />
+                />) }
                 <View style={styles.audioInfo}>
                     <Ionicons name="musical-notes" size={14} color="white" />
                     <Text style={styles.audioText}>Original Audio</Text>
