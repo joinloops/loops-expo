@@ -281,10 +281,26 @@ export default function VideoPlayer({
                     }}
                     onMorePress={() => onComment(item)}
                 />) }
+
+                {item?.meta?.contains_ai && (
+                    <View>
+                        <View style={styles.aiLabelWrapper}>
+                            <Text style={styles.aiLabelText}>Creator labeled as AI-generated</Text>
+                        </View>
+                    </View>
+                )}
+
                 <View style={styles.audioInfo}>
                     <Ionicons name="musical-notes" size={14} color="white" />
                     <Text style={styles.audioText}>Original Audio</Text>
                 </View>
+                {item?.meta?.contains_ad && (
+                    <View>
+                        <View style={styles.aiLabelWrapper}>
+                            <Text style={styles.aiLabelText}>Sponsored</Text>
+                        </View>
+                    </View>
+                )}
             </View>
         </View>
     );
@@ -423,5 +439,17 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         height: '50%',
+    },
+    aiLabelWrapper: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 6,
+        marginVertical: 6,
+        alignSelf: 'flex-start',
+    },
+    aiLabelText: {
+        color: '#ffffff',
+        fontWeight: 500,
     }
 });
