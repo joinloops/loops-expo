@@ -155,7 +155,7 @@ export const useAuthStore = create(
             },
         }),
         {
-            name: 'auth-store.v0.2',
+            name: 'auth-store.v0.3',
             storage: createJSONStorage(() => ({
                 setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
                 getItem: (key: string) => SecureStore.getItemAsync(key),
