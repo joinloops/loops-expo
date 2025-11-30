@@ -48,6 +48,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 return 'viewed your profile.';
             case 'video.repost':
                 return 'reposted your video.';
+            case 'comment.like':
+                return 'liked your comment';
             default:
                 return 'interacted with your content.';
         }
