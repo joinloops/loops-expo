@@ -34,6 +34,7 @@ export default function TabsLayout() {
                 name="index"
                 options={{
                     title: 'Home',
+                    tabBarAccessibilityLabel: "Home",
                     tabBarShowLabel: false,
                     headerShown: false,
                     tabBarIcon: ({ color }) => <Feather size={28} name="home" color={color} />,
@@ -43,6 +44,7 @@ export default function TabsLayout() {
                 name="create"
                 options={{
                     title: 'Create',
+                    tabBarAccessibilityLabel: "Create",
                     tabBarShowLabel: false,
                     headerShown: false,
                     tabBarIcon: ({ color }) => <Feather size={28} name="video" color={color} />,
@@ -52,6 +54,7 @@ export default function TabsLayout() {
                 name="profile"
                 options={{
                     title: 'Profile',
+                    tabBarAccessibilityLabel: "Profile",
                     tabBarShowLabel: false,
                     tabBarIcon: ({ color }) => <Feather size={28} name="user" color={color} />,
                 }}
