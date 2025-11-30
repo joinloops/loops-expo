@@ -17,6 +17,10 @@ export default function AccountTabs({ activeTab, onTabChange }) {
                     <Pressable
                         key={tab.id}
                         onPress={() => onTabChange(tab.id)}
+                        accessibilityLabel={`${tab.id} tab`}
+                        accessibilityState={{
+                            selected: (activeTab === tab.id)
+                        }}
                         style={{
                             flex: 1,
                             alignItems: 'center',
