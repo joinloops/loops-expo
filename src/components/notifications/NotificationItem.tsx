@@ -48,6 +48,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 return 'viewed your profile.';
             case 'video.repost':
                 return 'reposted your video.';
+            case 'comment.like':
+                return 'liked your comment';
             default:
                 return 'interacted with your content.';
         }
@@ -58,6 +60,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             case 'new_follower':
                 return <Ionicons name="person-add" size={16} color="#007AFF" />;
             case 'video.like':
+            case 'comment.like':
                 return <Ionicons name="heart" size={16} color="#FF2D55" />;
             case 'video.commentReply':
             case 'video.comment':
