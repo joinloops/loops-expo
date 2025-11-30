@@ -7,6 +7,8 @@ import tw from 'twrnc';
 export const SettingsItem = ({ icon, label, onPress, showChevron = true }) => (
     <PressableHaptics
         onPress={onPress}
+        accessibilityLabel={label}
+        accessibilityRole="button"
         style={({ pressed }) => [
             tw`flex-row items-center py-4 px-5 bg-white`,
             pressed && tw`bg-gray-50`,

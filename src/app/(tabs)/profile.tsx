@@ -91,12 +91,22 @@ export default function ProfileScreen() {
                     headerShown: true,
                     headerTitle: 'My Profile',
                     headerLeft: () => (
-                        <Pressable onPress={() => handleNotificationsPress()} style={tw`ml-3`}>
+                        <Pressable 
+                            accessibilityLabel="Notifications" 
+                            accessibilityRole="button" 
+                            onPress={() => handleNotificationsPress()} 
+                            style={tw`ml-3`}
+                        >
                             <Ionicons name="notifications-outline" size={30} />
                         </Pressable>
                     ),
                     headerRight: () => (
-                        <Pressable onPress={() => handleSettingsPress()} style={tw`mr-3`}>
+                        <Pressable 
+                            accessibilityLabel="Settings" 
+                            accessibilityRole="button" 
+                            onPress={() => handleSettingsPress()} 
+                            style={tw`mr-3`}
+                        >
                             <Ionicons name="menu" size={30} />
                         </Pressable>
                     ),

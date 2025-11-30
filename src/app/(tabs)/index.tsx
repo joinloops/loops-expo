@@ -188,6 +188,11 @@ export default function LoopsFeed({ navigation }) {
             <View style={[styles.header, { top: insets.top + 10 }]}>
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
+                        accessibilityRole="tab"
+                        accessibilityLabel="Following"
+                        accessibilityState={{
+                            selected: (activeTab === 'following')
+                        }}
                         style={[styles.tab, activeTab === 'following' && styles.activeTab]}
                         onPress={() => {
                             setActiveTab('following');
@@ -205,6 +210,11 @@ export default function LoopsFeed({ navigation }) {
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
+                        accessibilityRole="tab"
+                        accessibilityLabel="For You"
+                        accessibilityState={{
+                            selected: (activeTab === 'forYou')
+                        }}
                         style={[styles.tab, activeTab === 'forYou' && styles.activeTab]}
                         onPress={() => {
                             setActiveTab('forYou');
@@ -223,6 +233,8 @@ export default function LoopsFeed({ navigation }) {
                     </TouchableOpacity>
                 </View>
                 <TouchableOpacity
+                    accessibilityLabel="Search"
+                    accessibilityRole="button"
                     style={styles.searchButton}
                     onPress={() => router.push('/private/search')}
                 >
