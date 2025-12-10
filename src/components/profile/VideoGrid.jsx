@@ -30,6 +30,24 @@ export default function VideoGrid({ video, onPress }) {
                     pointerEvents="none"
                 />
 
+                { video.pinned && (
+                    <YStack
+                        position="absolute"
+                        top={8}
+                        left={8}
+                        flexDirection="row"
+                        alignItems="center"
+                        gap={1}
+                        backgroundColor="#fb2c36"
+                        paddingY={1}
+                        paddingX={2}
+                        style={{ borderRadius: 4}}>
+                        <StackText fontSize={10} fontWeight={600} style={{color: '#fff'}}>
+                            Pinned
+                        </StackText>
+                    </YStack>
+                )}
+
                 <YStack
                     position="absolute"
                     bottom={8}
