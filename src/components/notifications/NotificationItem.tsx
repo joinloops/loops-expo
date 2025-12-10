@@ -46,10 +46,18 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 return 'commented on your video.';
             case 'profile.view':
                 return 'viewed your profile.';
-            case 'video.repost':
-                return 'reposted your video.';
+            case 'video.share':
+                return 'shared your video.';
             case 'comment.like':
-                return 'liked your comment';
+                return 'liked your comment.';
+            case 'comment.share':
+                return 'shared your comment.';
+            case 'commentReply.like':
+                return 'liked your reply.';
+            case 'commentReply.share':
+                return 'shared your reply.';
+            case 'video.duet':
+                return 'dueted your video.';
             default:
                 return 'interacted with your content.';
         }
@@ -61,10 +69,15 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 return <Ionicons name="person-add" size={16} color="#007AFF" />;
             case 'video.like':
             case 'comment.like':
+            case 'commentReply.like':
                 return <Ionicons name="heart" size={16} color="#FF2D55" />;
             case 'video.commentReply':
             case 'video.comment':
                 return <Ionicons name="chatbubble" size={16} color="#007AFF" />;
+            case 'comment.share':
+            case 'commentReply.share':
+            case 'video.share':
+                return <Ionicons name="sync" size={16} color="#FF2D55" />;
             default:
                 return null;
         }
@@ -107,7 +120,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             >
                 <View style={tw`flex-1 mr-2`}>
                     <Text style={tw`text-base`}>
-                        <Text style={tw`font-semibold`}>{item.actor.name}</Text>
+                        <Text style={tw`font-semibold`}>{item.actor.username}</Text>
                         <Text style={tw`text-gray-700`}> {getNotificationText()}</Text>
                     </Text>
 
