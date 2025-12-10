@@ -1,12 +1,13 @@
 import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stack';
 import { useAuthStore } from '@/utils/authStore';
 import { Stack, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function AccountScreen() {
-    const { logOut } = useAuthStore();
+    const { server, logOut } = useAuthStore();
     const router = useRouter();
 
     const performLogOut = () => {
@@ -15,6 +16,10 @@ export default function AccountScreen() {
         
         setTimeout(() => logOut(), 50);
     };
+
+    const handleDeleteAccount = async () => {
+        await WebBrowser.openBrowserAsync(`https://${server}/dashboard/account/delete`);
+    }
 
     const handleSignOut = () => {
         Alert.alert('Confirm Sign out', 'Are you sure you want to sign out?', [
@@ -62,13 +67,13 @@ export default function AccountScreen() {
                 />
 
                 <SectionHeader title="Account Control" />
+                <SettingsItem icon="trash-outline" label="Delete account" onPress={() => handleDeleteAccount()} />
+                <Divider />
                 <SettingsItem
                     icon="log-out-outline"
                     label="Sign out"
                     onPress={() => handleSignOut()}
                 />
-                {/* <Divider /> */}
-                {/* <SettingsItem icon="trash-outline" label="Delete account" onPress={() => {}} /> */}
             </ScrollView>
         </View>
     );
