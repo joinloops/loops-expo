@@ -46,20 +46,22 @@ export default function AccountHeader(props) {
                     </Pressable>
                 </Link>
 
-                <YStack justifyContent="center" alignItems="center">
-                    <StackText fontSize="$5" fontWeight="bold">
-                        {prettyCount(props.user?.likes_count, {precision: props.user?.likes_count > 1000 ? 1 : 0})}
-                    </StackText>
-                    <StackText fontSize="$3" color="#86878B">
-                        Likes
-                    </StackText>
-                </YStack>
+                <View accessible={true}>
+                    <YStack justifyContent="center" alignItems="center">
+                        <StackText fontSize="$5" fontWeight="bold">
+                            {prettyCount(props.user?.likes_count, {precision: props.user?.likes_count > 1000 ? 1 : 0})}
+                        </StackText>
+                        <StackText fontSize="$3" color="#86878B">
+                            Likes
+                        </StackText>
+                    </YStack>
+                </View>
             </XStack>
 
             <XStack gap="$2" width="100%" paddingHorizontal="$3">
                 {isOwner ? (
                     <>
-                        <Link href="/private/settings/account/edit" asChild style={{ flex: 1 }}>
+                        <Link href="/private/settings/account/edit" role="button" asChild style={{ flex: 1 }}>
                             <Button title="Edit Profile" />
                         </Link>
                     </>
@@ -83,6 +85,9 @@ export default function AccountHeader(props) {
 
                         <Pressable
                             onPress={props.onMenuPress}
+                            accessibilityLabel="More options"
+                            accessibilityHint="To share, block, or report this profile" // Be sure to update this if more options are added in the future.
+                            accessibilityRole="button"
                             style={{
                                 borderWidth: 1,
                                 borderColor: '#E5E5E5',
@@ -98,7 +103,7 @@ export default function AccountHeader(props) {
             </XStack>
 
             {props.user?.bio && (
-                <View style={{ paddingHorizontal: 20 }}>
+                <View accessible={true} accessibilityLabel={`Profile biography: ${props.user?.bio}`} style={{ paddingHorizontal: 20 }}>
                     <StackText fontSize="$2" textAlign="center" fontWeight="500" color="#161823">
                         {props.user?.bio}
                     </StackText>
