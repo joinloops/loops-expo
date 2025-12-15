@@ -322,6 +322,29 @@ export async function verifyCredentials(domain: string, token: string): Promise<
     return resp.json();
 }
 
+export async function getConfiguration(): Promise<any> {
+    try {
+        const server = Storage.getString('app.instance');
+        const url = `https://${server}/api/v1/config`;
+
+        const resp = await fetch(url, {
+            method: 'GET',
+            redirect: 'follow',
+        });
+
+        if (!resp.ok) {
+            console.log('Config endpoint not available, using defaults');
+            return { fyf: false };
+        }
+
+        const data = await resp.json();
+        return data;
+    } catch (error) {
+        console.log('Error fetching config, using defaults:', error);
+        return { fyf: false };
+    }
+}
+
 // ============================================================================
 // GENERIC API QUERY
 // ============================================================================
@@ -580,7 +603,7 @@ export async function uploadDuet(params) {
 // FEED & CONTENT
 // ============================================================================
 
-export async function fetchForYouFeed({ 
+export async function fetchLocalFeed({ 
     pageParam = false 
 }: { 
     pageParam?: string | false;
@@ -588,6 +611,17 @@ export async function fetchForYouFeed({
     const url = pageParam
         ? `api/v1/feed/for-you?cursor=${pageParam}`
         : `api/v1/feed/for-you`;
+    return await _selfGet(url);
+}
+
+export async function fetchForYouFeed({ 
+    pageParam = false 
+}: { 
+    pageParam?: string | false;
+} = {}): Promise<any> {
+    const url = pageParam
+        ? `api/v0/feed/recommended?cursor=${pageParam}`
+        : `api/v0/feed/recommended`;
     return await _selfGet(url);
 }
 
@@ -694,6 +728,16 @@ export async function commentReplyDelete({videoId, parentId, commentId}): Promis
 
 export async function videoDelete(videoId): Promise<any> {
     return await _selfPost(`api/v1/video/delete/${videoId}`)
+}
+
+export async function recordImpression(videoId: string, watchDuration: number, completed: boolean): Promise<any> {
+    return await _selfPost(`api/v0/feed/recommended/impression`, 
+        {
+            video_id: videoId,
+            watch_duration: Math.floor(watchDuration),
+            completed,
+        }
+    )
 }
 
 // ============================================================================

@@ -1,5 +1,6 @@
 import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stack';
 import { useAuthStore } from '@/utils/authStore';
+import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
@@ -9,8 +10,10 @@ import tw from 'twrnc';
 export default function AccountScreen() {
     const { server, logOut } = useAuthStore();
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const performLogOut = () => {
+        queryClient.clear();
         router.dismissAll();
         router.replace('/sign-in');
         

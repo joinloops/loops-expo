@@ -2,13 +2,13 @@ import CommentsModal from '@/components/feed/CommentsModal';
 import OtherModal from '@/components/feed/OtherModal';
 import ShareModal from '@/components/feed/ShareModal';
 import VideoPlayer from '@/components/feed/VideoPlayer';
-import { fetchFollowingFeed, fetchForYouFeed, videoLike, videoUnlike } from '@/utils/requests';
+import { fetchFollowingFeed, fetchForYouFeed, fetchLocalFeed, getConfiguration, recordImpression, videoLike, videoUnlike } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -25,6 +25,9 @@ const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 60;
 
 const fetchVideos = async ({ pageParam = null, tab }) => {
+    if (tab === 'local') {
+        return await fetchLocalFeed({ pageParam });
+    }
     if (tab === 'forYou') {
         return await fetchForYouFeed({ pageParam });
     }
@@ -33,7 +36,7 @@ const fetchVideos = async ({ pageParam = null, tab }) => {
 
 export default function LoopsFeed({ navigation }) {
     const insets = useSafeAreaInsets();
-    const [activeTab, setActiveTab] = useState('forYou');
+    const [activeTab, setActiveTab] = useState('local');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [showComments, setShowComments] = useState(false);
@@ -43,6 +46,8 @@ export default function LoopsFeed({ navigation }) {
     const [screenFocused, setScreenFocused] = useState(true);
     const flatListRef = useRef(null);
     const router = useRouter();
+    const currentVideoRef = useRef(null);
+    const watchStartTimeRef = useRef(null);
 
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 50,
@@ -56,6 +61,35 @@ export default function LoopsFeed({ navigation }) {
             };
         }, [])
     );
+
+    const { data: appConfig } = useQuery({
+        queryKey: ['appConfig'],
+        queryFn: getConfiguration
+    });
+
+    const forYouEnabled = appConfig?.fyf === true;
+
+    useEffect(() => {
+        if (!forYouEnabled && activeTab === 'forYou') {
+            setActiveTab('local');
+        }
+    }, [forYouEnabled, activeTab]);
+
+    const recordVideoImpression = useCallback(async (video, duration) => {
+        if (activeTab !== 'forYou' || !video) {
+            return;
+        }
+        
+        if (duration < 1) {
+            return;
+        }
+
+        const videoDuration = video.media.duration || 0;
+        const completed = videoDuration > 0 && duration >= (videoDuration * 0.9);
+
+        await recordImpression(video.id, duration, completed);
+    }, [activeTab]);
+
 
     const {
         data,
@@ -91,11 +125,52 @@ export default function LoopsFeed({ navigation }) {
 
     const videos = data?.pages?.flatMap(page => page.data) || [];
 
+    const videosWithEnd = React.useMemo(() => {
+        if (activeTab === 'forYou' && !hasNextPage && videos.length == 0) {
+            return [...videos, { id: 'end-of-feed', isEndMarker: true }];
+        }
+        return videos;
+    }, [videos, activeTab, hasNextPage]);
+
     const onViewableItemsChanged = useCallback(({ viewableItems }) => {
         if (viewableItems.length > 0) {
-            setCurrentIndex(viewableItems[0].index || 0);
+            const newIndex = viewableItems[0].index || 0;
+            const newVideo = videos[newIndex];
+
+            if (currentVideoRef.current && watchStartTimeRef.current) {
+                const watchDuration = (Date.now() - watchStartTimeRef.current) / 1000;
+                recordVideoImpression(currentVideoRef.current, watchDuration);
+            }
+
+            setCurrentIndex(newIndex);
+            currentVideoRef.current = newVideo;
+            watchStartTimeRef.current = Date.now();
         }
-    }, []);
+    }, [videos, recordVideoImpression]);
+
+    useEffect(() => {
+        return () => {
+            if (currentVideoRef.current && watchStartTimeRef.current) {
+                const watchDuration = (Date.now() - watchStartTimeRef.current) / 1000;
+                recordVideoImpression(currentVideoRef.current, watchDuration);
+            }
+        };
+    }, [activeTab, recordVideoImpression]);
+
+    useFocusEffect(
+        useCallback(() => {
+            setScreenFocused(true);
+            
+            return () => {
+                setScreenFocused(false);
+                if (currentVideoRef.current && watchStartTimeRef.current) {
+                    const watchDuration = (Date.now() - watchStartTimeRef.current) / 1000;
+                    recordVideoImpression(currentVideoRef.current, watchDuration);
+                }
+            };
+        }, [recordVideoImpression])
+    );
+
 
     const handleLike = (videoId, liked) => {
         const dir = liked ? 'like' : 'unlike'
@@ -132,27 +207,41 @@ export default function LoopsFeed({ navigation }) {
         setShowOther(false);
     };
 
-    const renderItem = useCallback(({ item, index }) => (
-        <VideoPlayer
-            key={item.id}
-            item={item}
-            isActive={index === currentIndex}
-            onLike={handleLike}
-            onComment={handleComment}
-            onShare={handleShare}
-            onOther={handleOther}
-            bottomInset={insets.bottom}
-            commentsOpen={showComments && selectedVideo?.id === item.id}
-            shareOpen={showShare && selectedVideo?.id === item.id}
-            otherOpen={showOther && selectedVideo?.id === item.id}
-            onMorePress={handleComment}
-            screenFocused={screenFocused}
-            videoPlaybackRates={videoPlaybackRates}
-            navigation={navigation}
-            onNavigate={handleNavigate}
-            tabBarHeight={TAB_BAR_HEIGHT}
-        />
-    ), [currentIndex, insets.bottom, showComments, showShare, showOther, selectedVideo, screenFocused, videoPlaybackRates, navigation]);
+    const renderItem = useCallback(({ item, index }) => {
+        if (item.isEndMarker) {
+            return (
+                <View style={styles.endOfFeedContainer}>
+                    <Text style={styles.endOfFeedEmoji}>🌟</Text>
+                    <Text style={styles.endOfFeedTitle}>You're all caught up!</Text>
+                    <Text style={styles.endOfFeedSubtitle}>
+                        We're curating more Loops for you. Check back soon.
+                    </Text>
+                </View>
+            );
+        }
+
+        return (
+            <VideoPlayer
+                key={item.id}
+                item={item}
+                isActive={index === currentIndex}
+                onLike={handleLike}
+                onComment={handleComment}
+                onShare={handleShare}
+                onOther={handleOther}
+                bottomInset={insets.bottom}
+                commentsOpen={showComments && selectedVideo?.id === item.id}
+                shareOpen={showShare && selectedVideo?.id === item.id}
+                otherOpen={showOther && selectedVideo?.id === item.id}
+                onMorePress={handleComment}
+                screenFocused={screenFocused}
+                videoPlaybackRates={videoPlaybackRates}
+                navigation={navigation}
+                onNavigate={handleNavigate}
+                tabBarHeight={TAB_BAR_HEIGHT}
+            />
+        );
+    }, [currentIndex, insets.bottom, showComments, showShare, showOther, selectedVideo, screenFocused, videoPlaybackRates, navigation]);
 
     const refreshing = isFetching && !isFetchingNextPage;
 
@@ -211,13 +300,13 @@ export default function LoopsFeed({ navigation }) {
                     </TouchableOpacity>
                     <TouchableOpacity
                         accessibilityRole="tab"
-                        accessibilityLabel="For You"
+                        accessibilityLabel="Local"
                         accessibilityState={{
-                            selected: (activeTab === 'forYou')
+                            selected: (activeTab === 'local')
                         }}
-                        style={[styles.tab, activeTab === 'forYou' && styles.activeTab]}
+                        style={[styles.tab, activeTab === 'local' && styles.activeTab]}
                         onPress={() => {
-                            setActiveTab('forYou');
+                            setActiveTab('local');
                             setCurrentIndex(0);
                             flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
                         }}
@@ -225,12 +314,36 @@ export default function LoopsFeed({ navigation }) {
                         <Text
                             style={[
                                 styles.tabText,
-                                activeTab === 'forYou' && styles.activeTabText,
+                                activeTab === 'local' && styles.activeTabText,
                             ]}
                         >
-                            For You
+                            Local
                         </Text>
                     </TouchableOpacity>
+                    {forYouEnabled && (
+                        <TouchableOpacity
+                            accessibilityRole="tab"
+                            accessibilityLabel="For You"
+                            accessibilityState={{
+                                selected: (activeTab === 'forYou')
+                            }}
+                            style={[styles.tab, activeTab === 'forYou' && styles.activeTab]}
+                            onPress={() => {
+                                setActiveTab('forYou');
+                                setCurrentIndex(0);
+                                flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+                            }}
+                        >
+                            <Text
+                                style={[
+                                    styles.tabText,
+                                    activeTab === 'forYou' && styles.activeTabText,
+                                ]}
+                            >
+                                For You
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
                 <TouchableOpacity
                     accessibilityLabel="Search"
@@ -244,7 +357,7 @@ export default function LoopsFeed({ navigation }) {
 
             <FlatList
                 ref={flatListRef}
-                data={videos}
+                data={videosWithEnd}
                 renderItem={renderItem}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 pagingEnabled
@@ -351,5 +464,29 @@ const styles = StyleSheet.create({
         height: SCREEN_HEIGHT,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    endOfFeedContainer: {
+        height: SCREEN_HEIGHT,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 40,
+        backgroundColor: '#000',
+    },
+    endOfFeedEmoji: {
+        fontSize: 64,
+        marginBottom: 16,
+    },
+    endOfFeedTitle: {
+        color: 'white',
+        fontSize: 24,
+        fontWeight: '700',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    endOfFeedSubtitle: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 22,
     }
 });

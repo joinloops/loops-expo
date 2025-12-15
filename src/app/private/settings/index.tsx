@@ -2,17 +2,20 @@ import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stac
 import { useAuthStore } from '@/utils/authStore';
 import { openBrowser } from '@/utils/requests';
 import { shareContent } from '@/utils/sharer';
+import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function SettingsScreen() {
     const { logOut, resetOnboarding, user } = useAuthStore();
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const performLogOut = () => {
+        queryClient.clear();
         router.dismissAll();
         router.replace('/sign-in');
         
@@ -116,6 +119,9 @@ export default function SettingsScreen() {
                     label="Sign out"
                     onPress={() => handleSignOut()}
                 />
+                <View style={tw`flex justify-center items-center mt-5`}>
+                    <Text style={tw`text-gray-500`}>Loops v1.0.0.18</Text>
+                </View>
             </ScrollView>
         </View>
     );
