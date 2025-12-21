@@ -677,6 +677,14 @@ export async function videoUnlike(id): Promise<any> {
     return await _selfPost(`api/v1/video/unlike/${id}`);
 }
 
+export async function videoBookmark(id): Promise<any> {
+    return await _selfPost(`api/v1/video/bookmark/${id}`);
+}
+
+export async function videoUnbookmark(id): Promise<any> {
+    return await _selfPost(`api/v1/video/unbookmark/${id}`);
+}
+
 export async function fetchNotifications({ 
     pageParam 
 }: { 
@@ -690,6 +698,10 @@ export async function fetchNotifications({
 
 export async function notificationMarkAsRead(id) {
     return await _selfPost(`api/v1/account/notifications/${id}/read`);
+}
+
+export async function notificationBadgeCount() {
+    return await _selfGet(`api/v1/account/notifications/count`);
 }
 
 export async function commentPost({id, commentText, parentId}): Promise<any> {
