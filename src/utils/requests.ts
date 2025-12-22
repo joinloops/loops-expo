@@ -279,7 +279,7 @@ export async function _selfPostForm(
 // ============================================================================
 
 export async function loginPreflightCheck(server: string): Promise<boolean> {
-    const url = 'https://' + server + '/nodeinfo/2.1';
+    const url = 'https://' + server + '/api/v1/config';
 
     try {
         const res = await getJsonWithTimeout(url, undefined, undefined, undefined, 5000);
@@ -291,22 +291,46 @@ export async function loginPreflightCheck(server: string): Promise<boolean> {
         }
 
         if (
-            !json.software ||
-            !json.software.name ||
-            !json.software.version ||
-            !json.software.repository
+            !json.app ||
+            !json.app.software ||
+            json.app.software != 'loops'
         ) {
-            Alert.alert('Error', 'Cannot reach server. Invalid software');
+            Alert.alert('Error', 'Invalid server type, this app is only compatible with Loops');
+            return false;
+        }
+    } catch (_e) {
+        Alert.alert('Error', 'This server is not compatible or is unavailable.');
+        return false;
+    }
+
+    return true;
+}
+
+export async function registerPreflightCheck(server: string): Promise<boolean> {
+    const url = 'https://' + server + '/api/v1/config';
+
+    try {
+        const res = await getJsonWithTimeout(url, undefined, undefined, undefined, 5000);
+        const json = await res.json();
+        
+        if (!json) {
+            Alert.alert('Error', 'This server is not compatible or is unavailable.');
             return false;
         }
 
-        if (json.software.name !== 'loops') {
+        if (
+            !json.app ||
+            !json.app.software ||
+            json.app.software != 'loops'
+        ) {
             Alert.alert('Error', 'Invalid server type, this app is only compatible with Loops');
             return false;
         }
 
-        if (json.software.repository !== 'https://github.com/joinloops/loops-server') {
-            Alert.alert('Error', 'Invalid server type, this app is only compatible with Loops');
+        if (
+            !json.registration
+        ) {
+            Alert.alert('Error', 'Registration is not enabled on this server');
             return false;
         }
     } catch (_e) {
@@ -378,7 +402,7 @@ export async function fetchUserVideos({
     queryKey: any[]; 
     pageParam?: string | false;
 }): Promise<any> {
-    const [, id] = queryKey;
+    const [, id, sort] = queryKey;
     
     let url = `api/v1/feed/account/${id}`;
 
@@ -386,6 +410,10 @@ export async function fetchUserVideos({
     
     if (pageParam) {
         params.append('cursor', pageParam);
+    }
+    
+    if (sort) {
+        params.append('sort', sort);
     }
     
     const queryString = params.toString();
@@ -637,13 +665,29 @@ export async function fetchFollowingFeed({
 }
 
 export async function fetchSelfAccountVideos({ 
+    queryKey,
     pageParam = false 
 }: { 
+    queryKey?: any[];
     pageParam?: string | false;
 } = {}): Promise<any> {
-    const url = pageParam
-        ? `api/v1/feed/account/self?cursor=${pageParam}`
+    const sort = queryKey?.[1];
+    
+    const params = new URLSearchParams();
+    
+    if (pageParam) {
+        params.append('cursor', pageParam);
+    }
+    
+    if (sort) {
+        params.append('sort', sort);
+    }
+    
+    const queryString = params.toString();
+    const url = queryString 
+        ? `api/v1/feed/account/self?${queryString}`
         : `api/v1/feed/account/self`;
+    
     return await _selfGet(url);
 }
 
