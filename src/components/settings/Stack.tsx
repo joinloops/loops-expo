@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Switch, Text, View } from 'react-native';
 import tw from 'twrnc';
+import { XStack, YStack } from '../ui/Stack';
 
 export const SettingsItem = ({ icon, label, onPress, showChevron = true }) => (
     <PressableHaptics
@@ -31,7 +32,24 @@ export const SettingsToggleItem = ({ icon, label, value, onValueChange }) => (
     <View style={tw`flex-row items-center py-4 px-5 bg-white`}>
         <Ionicons name={icon} size={24} color="#333" style={tw`mr-4`} />
         <Text style={tw`flex-1 text-base font-medium text-gray-900`}>{label}</Text>
-        <Switch value={value} onValueChange={onValueChange} />
+        <Switch value={value} onValueChange={onValueChange} ios_backgroundColor="#ccc" />
+    </View>
+);
+
+export const SettingsToggleItemDescription = ({ icon, label, description, value, onValueChange }) => (
+    <View style={tw`flex-row items-center py-4 px-5 bg-white`}>
+        <XStack flex={1}>
+            <YStack flex={1}>
+                <XStack style={tw`mt-1`}>
+                    <Ionicons name={icon} size={24} color="#333" style={tw`mr-4`} />
+                    <YStack>
+                        <Text style={tw`flex-1 text-base font-medium text-gray-900`}>{label}</Text>
+                        <Text style={tw`flex-1 mt-3 text-sm text-gray-500`}>{description}</Text>
+                    </YStack>
+                </XStack>
+            </YStack>
+            <Switch value={value} onValueChange={onValueChange} ios_backgroundColor="#ccc" />
+        </XStack>
     </View>
 );
 
