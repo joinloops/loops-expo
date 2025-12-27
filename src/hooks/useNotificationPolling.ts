@@ -2,7 +2,7 @@ import { useNotificationStore } from '@/utils/notificationStore';
 import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
-export function useNotificationPolling(intervalMs: number = 60000) {
+export function useNotificationPolling(intervalMs: number = 900000) {
     const { fetchBadgeCount } = useNotificationStore();
     const appState = useRef(AppState.currentState);
     const pollInterval = useRef<NodeJS.Timeout | null>(null);
