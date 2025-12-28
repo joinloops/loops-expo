@@ -17,7 +17,7 @@ import { shareContent } from '@/utils/sharer';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Text, View } from 'react-native';
 import tw from 'twrnc';
 
@@ -28,6 +28,7 @@ export default function ProfileScreen() {
     const [activeTab, setActiveTab] = useState('videos');
     const [showMenuModal, setShowMenuModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [sortBy, setSortBy] = useState('Latest');
 
     const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['fetchAccount', id.toString()],
@@ -61,7 +62,7 @@ export default function ProfileScreen() {
         isError,
         error,
     } = useInfiniteQuery({
-        queryKey: ['userVideos', id.toString()],
+        queryKey: ['userVideos', id.toString(), sortBy],
         queryFn: fetchUserVideos,
         initialPageParam: undefined,
         refetchOnWindowFocus: true,
@@ -291,7 +292,7 @@ export default function ProfileScreen() {
                             onUnblockPress={() => handleOnUnblockPress()}
                             isFollowLoading={followMutation.isPending}
                         />
-                        <AccountTabs activeTab={activeTab} onTabChange={setActiveTab} />
+                        <AccountTabs activeTab={activeTab} onTabChange={setActiveTab} sortBy={sortBy} onSortChange={setSortBy} />
                     </>
                 }
                 renderItem={({ item }) => <VideoGrid video={item} onPress={handleVideoPress} />}
