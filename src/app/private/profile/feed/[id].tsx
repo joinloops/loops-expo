@@ -2,7 +2,7 @@ import CommentsModal from '@/components/feed/CommentsModal';
 import OtherModal from '@/components/feed/OtherModal';
 import ShareModal from '@/components/feed/ShareModal';
 import VideoPlayer from '@/components/feed/VideoPlayer';
-import { fetchUserVideoCursor, videoLike, videoUnlike } from '@/utils/requests';
+import { fetchUserVideoCursor, videoBookmark, videoLike, videoUnbookmark, videoUnlike } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
@@ -85,6 +85,24 @@ export default function ProfileFeed({navigation}) {
         },
     });
 
+
+    const videoBookmarkMutation = useMutation({
+        mutationFn: async (data) => {
+            const dir = data.type
+
+            if (dir == 'bookmark') {
+                return await videoBookmark(data.id);
+            }
+            if (dir == 'unbookmark') {
+                return await videoUnbookmark(data.id);
+            }
+        },
+        onSuccess: (res) => {
+        },
+        onError: (error) => {
+        },
+    });
+
     const videos = data?.pages?.flatMap(page => page.data) || [];
 
     const onViewableItemsChanged = useCallback(({ viewableItems }) => {
@@ -97,6 +115,11 @@ export default function ProfileFeed({navigation}) {
         const dir = liked ? 'like' : 'unlike'
         videoLikeMutation.mutate({ type: dir, id: videoId })
     };
+
+    const handleBookmark = (videoId, bookmarked) => {
+        const dir = bookmarked ? 'bookmark' : 'unbookmark'
+        videoBookmarkMutation.mutate({ type: dir, id: videoId })
+    }
 
     const handleComment = (video) => {
         setSelectedVideo(video);
@@ -112,6 +135,7 @@ export default function ProfileFeed({navigation}) {
         setSelectedVideo(video);
         setShowOther(true);
     };
+    
 
     const handlePlaybackSpeedChange = (speed) => {
         if (selectedVideo) {
@@ -137,6 +161,7 @@ export default function ProfileFeed({navigation}) {
             onComment={handleComment}
             onShare={handleShare}
             onOther={handleOther}
+            onBookmark={handleBookmark}
             bottomInset={insets.bottom}
             commentsOpen={showComments && selectedVideo?.id === item.id}
             shareOpen={showShare && selectedVideo?.id === item.id}
@@ -164,6 +189,7 @@ export default function ProfileFeed({navigation}) {
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
+                <Stack.Screen options={{headerShown: false}} />
                 <ActivityIndicator size="large" color="#fff" />
             </View>
         );
