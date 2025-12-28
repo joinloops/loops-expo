@@ -24,7 +24,7 @@ interface NotificationItemProps {
         created_at: string;
     };
     onPress: (item: any) => void;
-    onProfilePress: (actor: Actor) => void;
+    onProfilePress: (actor: Actor, item: any) => void;
 }
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({ 
@@ -93,11 +93,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             ]}
         >
             {isUnread && (
-                <View style={tw`w-2 h-2 rounded-full bg-blue-500 mr-2 mt-1.5`} />
+                <View style={tw`w-2 h-2 rounded-full bg-red-500 mr-2 mt-1.5`} />
             )}
 
             <Pressable 
-                onPress={() => onProfilePress(item.actor)}
+                onPress={() => onProfilePress(item.actor, item)}
                 style={tw`relative mr-3`}
             >
                 <Image
