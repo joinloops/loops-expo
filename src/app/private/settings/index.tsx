@@ -1,5 +1,6 @@
 import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stack';
 import { useAuthStore } from '@/utils/authStore';
+import { useNotificationStore } from '@/utils/notificationStore';
 import { openBrowser } from '@/utils/requests';
 import { shareContent } from '@/utils/sharer';
 import { useQueryClient } from '@tanstack/react-query';
@@ -13,12 +14,13 @@ export default function SettingsScreen() {
     const { logOut, resetOnboarding, user } = useAuthStore();
     const router = useRouter();
     const queryClient = useQueryClient();
+    const notificationStore = useNotificationStore();
 
-    const performLogOut = () => {
+    const performLogOut = async () => {
         queryClient.clear();
         router.dismissAll();
-        router.replace('/sign-in');
-        
+        router.replace('/');
+        notificationStore.resetBadgeCount();
         setTimeout(() => logOut(), 100);
     };
 
@@ -52,6 +54,8 @@ export default function SettingsScreen() {
         }
     }
 
+
+
     return (
         <View style={tw`flex-1 bg-gray-100`}>
             <StatusBar style="dark" />
@@ -82,9 +86,15 @@ export default function SettingsScreen() {
                     label="Security & permissions"
                     onPress={() => router.push('/private/settings/security')}
                 />
+
+                <Divider />
+                <SectionHeader title="Content & Display" />
+                <SettingsItem icon="phone-portrait-outline" label="Feeds" onPress={() => router.push('/private/settings/content/feeds')} />
+                <Divider />
+                <SettingsItem icon="play-circle-outline" label="Playback" onPress={() => router.push('/private/settings/content/playback')} />
                 <Divider />
                 <SettingsItem icon="share-outline" label="Share profile" onPress={() => handleShare()} />
-
+                <Divider />
                 {/* <SectionHeader title="Content & Display" />
                 <SettingsItem
                     icon="notifications-outline"
@@ -94,9 +104,9 @@ export default function SettingsScreen() {
                 <Divider />
                 <SettingsItem icon="musical-notes-outline" label="Music" onPress={() => {}} />
                 <Divider />
-                <SettingsItem icon="time-outline" label="Activity center" onPress={() => {}} />
-                <Divider />
                 <SettingsItem icon="film-outline" label="Content preferences" onPress={() => {}} />
+                <Divider />
+                <SettingsItem icon="time-outline" label="Activity center" onPress={() => {}} />
                 <Divider />
                 <SettingsItem icon="language-outline" label="Language" onPress={() => {}} /> */}
                 <SectionHeader title="Support & About" />
