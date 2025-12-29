@@ -1,4 +1,6 @@
 import { LoopsUser, OAuthService } from '@/services/oauth';
+import { useNotificationStore } from '@/utils//notificationStore';
+import { getPreferences, updatePreferences } from '@/utils/requests';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -10,7 +12,15 @@ type UserState = {
     _hasHydrated: boolean;
     user: LoopsUser | null;
     server: string | null;
+    hideForYouFeed: boolean;
+    defaultFeed: 'following' | 'local' | 'forYou';
+    autoplayVideos: boolean;
+    loopVideos: boolean;
+    muteOnOpen: boolean;
+    autoExpandCw: boolean;
+    appearance: 'light' | 'dark' | 'system';
     loginWithOAuth: (server: string, scopes?: string) => Promise<boolean>;
+    registerWithWebBrowser: (server: string) => Promise<boolean>;
     refreshAccessToken: () => Promise<boolean>;
     logOut: () => void;
     completeOnboarding: () => void;
@@ -19,6 +29,10 @@ type UserState = {
     setUser: (user: LoopsUser, server: string) => void;
     clearUser: () => void;
     syncAuthState: () => void;
+    syncPreferencesFromServer: () => Promise<void>;
+    setHideForYouFeed: (value: boolean) => Promise<void>;
+    setDefaultFeed: (feed: 'following' | 'local' | 'forYou') => Promise<void>;
+    updatePreference: (key: string, value: any) => Promise<void>;
 };
 
 export const useAuthStore = create(
@@ -30,17 +44,22 @@ export const useAuthStore = create(
             _hasHydrated: false,
             user: null,
             server: null,
+            hideForYouFeed: false,
+            defaultFeed: 'local',
+            autoplayVideos: true,
+            loopVideos: true,
+            muteOnOpen: false,
+            autoExpandCw: false,
+            appearance: 'light',
 
-            /**
-             * Initiates OAuth login flow with a Loops instance
-             */
             loginWithOAuth: async (server: string, scopes?: string) => {
                 try {
                     const success = await OAuthService.login(server, scopes);
 
                     if (success) {
-                        // After successful OAuth, sync the auth state
                         get().syncAuthState();
+                        await get().syncPreferencesFromServer();
+                        await useNotificationStore.getState().refetchBadgeCount();
                     }
 
                     return success;
@@ -50,18 +69,30 @@ export const useAuthStore = create(
                 }
             },
 
-            /**
-             * Refreshes the OAuth access token
-             */
+            registerWithWebBrowser: async (server: string) => {
+                try {
+                    const success = await OAuthService.registerWithWebBrowser(server);
+
+                    if (success) {
+                        get().syncAuthState();
+                        await get().syncPreferencesFromServer();
+                        await useNotificationStore.getState().refetchBadgeCount();
+                    }
+
+                    return success;
+                } catch (error) {
+                    console.error('Registration failed:', error);
+                    return false;
+                }
+            },
+
             refreshAccessToken: async () => {
                 try {
                     const success = await OAuthService.refreshToken();
 
                     if (success) {
-                        // Sync auth state after token refresh
                         get().syncAuthState();
                     } else {
-                        // If refresh fails, log out the user
                         get().logOut();
                     }
 
@@ -73,9 +104,6 @@ export const useAuthStore = create(
                 }
             },
 
-            /**
-             * Syncs auth state from storage (called after OAuth success or app restart)
-             */
             syncAuthState: () => {
                 const user = OAuthService.getCurrentUser();
                 const server = OAuthService.getCurrentServer();
@@ -90,8 +118,65 @@ export const useAuthStore = create(
             },
 
             /**
-             * Sets user data in the store
+             * Syncs preferences from the server
              */
+            syncPreferencesFromServer: async () => {
+                try {
+                    const prefs = await getPreferences();
+                    
+                    if (prefs && prefs.settings) {
+                        set((state) => ({
+                            ...state,
+                            hideForYouFeed: prefs.settings.hide_for_you_feed ?? state.hideForYouFeed,
+                            defaultFeed: prefs.settings.default_feed ?? state.defaultFeed,
+                            autoplayVideos: prefs.settings.autoplay_videos ?? state.autoplayVideos,
+                            loopVideos: prefs.settings.loop_videos ?? state.loopVideos,
+                            muteOnOpen: prefs.settings.mute_on_open ?? state.muteOnOpen,
+                            autoExpandCw: prefs.settings.auto_expand_cw ?? state.autoExpandCw,
+                            appearance: prefs.settings.appearance ?? state.appearance,
+                        }));
+                    }
+                } catch (error) {
+                    console.error('Failed to sync preferences from server:', error);
+                }
+            },
+
+            /**
+             * Updates a preference both locally and on the server
+             */
+            updatePreference: async (key: string, value: any) => {
+                set((state) => ({
+                    ...state,
+                    [key]: value,
+                }));
+
+                const keyMap: Record<string, string> = {
+                    hideForYouFeed: 'hide_for_you_feed',
+                    defaultFeed: 'default_feed',
+                    autoplayVideos: 'autoplay_videos',
+                    loopVideos: 'loop_videos',
+                    muteOnOpen: 'mute_on_open',
+                    autoExpandCw: 'auto_expand_cw',
+                    appearance: 'appearance',
+                };
+
+                const apiKey = keyMap[key] || key;
+                
+                try {
+                    await updatePreferences({ [apiKey]: value });
+                } catch (error) {
+                    console.error('Failed to update preference on server:', error);
+                }
+            },
+
+            setHideForYouFeed: async (value: boolean) => {
+                await get().updatePreference('hideForYouFeed', value);
+            },
+
+            setDefaultFeed: async (feed: 'following' | 'local' | 'forYou') => {
+                await get().updatePreference('defaultFeed', feed);
+            },
+
             setUser: (user: LoopsUser, server: string) => {
                 set((state) => ({
                     ...state,
@@ -101,9 +186,6 @@ export const useAuthStore = create(
                 }));
             },
 
-            /**
-             * Clears user data from the store
-             */
             clearUser: () => {
                 set((state) => ({
                     ...state,
@@ -114,10 +196,6 @@ export const useAuthStore = create(
             },
 
             logOut: (onComplete?: () => void) => {
-                // Clear OAuth credentials
-                OAuthService.logout();
-
-                // Clear store state
                 set((state) => ({
                     ...state,
                     isLoggedIn: false,
@@ -125,6 +203,8 @@ export const useAuthStore = create(
                     server: null,
                 }));
                 
+                OAuthService.logout();
+
                 onComplete?.();
             },
 
@@ -148,14 +228,16 @@ export const useAuthStore = create(
                     _hasHydrated: value,
                 }));
 
-                // After hydration, sync auth state from storage
                 if (value) {
                     get().syncAuthState();
+                    if (get().isLoggedIn) {
+                        get().syncPreferencesFromServer();
+                    }
                 }
             },
         }),
         {
-            name: 'auth-store.v0.3',
+            name: 'auth-store.v0.4',
             storage: createJSONStorage(() => ({
                 setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
                 getItem: (key: string) => SecureStore.getItemAsync(key),
@@ -170,6 +252,13 @@ export const useAuthStore = create(
             partialize: (state) => ({
                 shouldCreateAccount: state.shouldCreateAccount,
                 hasCompletedOnboarding: state.hasCompletedOnboarding,
+                hideForYouFeed: state.hideForYouFeed,
+                defaultFeed: state.defaultFeed,
+                autoplayVideos: state.autoplayVideos,
+                loopVideos: state.loopVideos,
+                muteOnOpen: state.muteOnOpen,
+                autoExpandCw: state.autoExpandCw,
+                appearance: state.appearance,
             }),
         },
     ),
