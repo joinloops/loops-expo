@@ -188,14 +188,14 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
         // })
     }
 
-    if (item.permissions.can_duet) {
-        options.unshift({
-            icon: 'duplicate-outline',
-            label: 'Duet',
-            onPress: handleDuet,
-            show: true,
-        })
-    }
+    // if (item.permissions.can_duet) {
+    //     options.unshift({
+    //         icon: 'duplicate-outline',
+    //         label: 'Duet',
+    //         onPress: handleDuet,
+    //         show: true,
+    //     })
+    // }
 
     if (item.is_owner) {
         options.unshift({
