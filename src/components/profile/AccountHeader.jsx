@@ -26,7 +26,7 @@ export default function AccountHeader(props) {
     }
 
     const openLink = async (path) => {
-        await openBrowser(path)
+        await openBrowser(path, { presentationStyle: 'popover', showTitle: false})
     }
 
     return (
@@ -161,7 +161,7 @@ export default function AccountHeader(props) {
                     }}
                 >
                     {props.user?.links.slice(0, 4).map((link, index) => (
-                        <Pressable key={index} onPress={() => openLink(link.url)} style={tw`bg-gray-100 p-1 rounded-xl px-3`}>
+                        <Pressable key={index} onPress={() => openLink(link.link)} style={tw`bg-gray-100 p-1 rounded-xl px-3`}>
                             <XStack gap="$1" alignItems="center">
                                 <Ionicons name="link" size={14} color="#fb2c36" style={{ transform: [{ rotate: '-40deg' }] }} />
                                 <StackText fontSize="$2" fontWeight="semibold" color="#86878B" textDecorationLine="underline">

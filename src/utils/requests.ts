@@ -19,8 +19,8 @@ const DEFAULT_APP_PREFERENCES = {
     } 
 };
 
-export async function openBrowser(url) {
-    await WebBrowser.openBrowserAsync(url);
+export async function openBrowser(url, options) {
+    await WebBrowser.openBrowserAsync(url, options);
 }
 
 export async function openLocalLink(path, options = {}) {
