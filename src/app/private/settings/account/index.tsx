@@ -1,5 +1,6 @@
 import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stack';
 import { useAuthStore } from '@/utils/authStore';
+import { useNotificationStore } from '@/utils/notificationStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -11,13 +12,14 @@ export default function AccountScreen() {
     const { server, logOut } = useAuthStore();
     const router = useRouter();
     const queryClient = useQueryClient();
+    const notificationStore = useNotificationStore();
 
     const performLogOut = () => {
         queryClient.clear();
         router.dismissAll();
-        router.replace('/sign-in');
-        
-        setTimeout(() => logOut(), 50);
+        router.replace('/');
+        notificationStore.resetBadgeCount();
+        setTimeout(() => logOut(), 100);
     };
 
     const handleDeleteAccount = async () => {
