@@ -23,6 +23,7 @@ export default function VideoPlayer({
     onLike,
     onComment,
     onShare,
+    onBookmark,
     onOther,
     bottomInset,
     commentsOpen,
@@ -35,6 +36,7 @@ export default function VideoPlayer({
     tabBarHeight = 60
 }) {
     const [isLiked, setIsLiked] = useState(item.has_liked);
+    const [isBookmarked, setIsBookmarked] = useState(item.has_bookmarked);
     const [showControls, setShowControls] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const manualControlRef = useRef(false);
@@ -42,12 +44,12 @@ export default function VideoPlayer({
     const wasActiveRef = useRef(false);
     const router = useRouter();
     const [playSensitive, setPlaySensitive] = useState(false);
+    const controlsTimeoutRef = useRef(null);
 
     const playbackRate = videoPlaybackRates[item.id] || 1.0;
 
     const player = useVideoPlayer(item.media.src_url, (player) => {
         player.loop = true;
-        player.muted = false;
         player.playbackRate = playbackRate;
     });
 
@@ -108,6 +110,11 @@ export default function VideoPlayer({
         onLike(item.id, !isLiked);
     };
 
+    const handleBookmark = () => {
+        setIsBookmarked(!isBookmarked)
+        onBookmark(item.id, !isBookmarked)
+    }
+
     const togglePlayPause = () => {
         if (!player || !isMountedRef.current) return;
 
@@ -130,12 +137,35 @@ export default function VideoPlayer({
         if (!isMountedRef.current) {
             return;
         }
-        setShowControls(!showControls);
+        
+        const newShowControls = !showControls;
+        setShowControls(newShowControls);
 
-        if (showControls) {
+        // Clear any existing timeout
+        if (controlsTimeoutRef.current) {
+            clearTimeout(controlsTimeoutRef.current);
+            controlsTimeoutRef.current = null;
+        }
+
+        if (newShowControls) {
+            controlsTimeoutRef.current = setTimeout(() => {
+                if (isMountedRef.current) {
+                    setShowControls(false);
+                    manualControlRef.current = false;
+                }
+            }, 3000);
+        } else {
             manualControlRef.current = false;
         }
     };
+
+    useEffect(() => {
+        return () => {
+            if (controlsTimeoutRef.current) {
+                clearTimeout(controlsTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleViewSensitiveContent = () => {
         setPlaySensitive(true);
@@ -230,7 +260,7 @@ export default function VideoPlayer({
 
                 <PressableHaptics style={styles.actionButton} onPress={handleLike}>
                     <Ionicons
-                        name={isLiked ? 'heart' : 'heart-outline'}
+                        name={'heart'}
                         size={35}
                         color={isLiked ? '#FF2D55' : 'white'}
                     />
@@ -240,14 +270,19 @@ export default function VideoPlayer({
                 </PressableHaptics>
 
                 <TouchableOpacity style={styles.actionButton} onPress={() => onComment(item)}>
-                    <Ionicons name="chatbubble-outline" size={32} color="white" />
+                    <Ionicons name="chatbubble" size={32} color="white" />
                     {item.permissions?.can_comment && (
                         <Text style={styles.actionText}>{item.comments}</Text>
                     )}
                 </TouchableOpacity>
 
+                <TouchableOpacity style={styles.actionButton} onPress={handleBookmark}>
+                    <Ionicons name="bookmark" size={32} color={isBookmarked ? '#FF2D55' : 'white'} />
+                    <Text style={styles.actionText}>{item.bookmarks  + (isBookmarked && !item.has_bookmarked ? 1 : 0)}</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.actionButton} onPress={() => onShare(item)}>
-                    <Ionicons name="arrow-redo-outline" size={32} color="white" />
+                    <Ionicons name="arrow-redo" size={32} color="white" />
                     <Text style={styles.actionText}>{item.shares}</Text>
                 </TouchableOpacity>
 
@@ -395,6 +430,12 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         alignItems: 'center',
+        borderRadius: 50,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 4,
     },
     avatarContainer: {
         borderWidth: 2,
@@ -406,6 +447,11 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: '600',
         marginTop: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 4,
     },
     bottomInfo: {
         position: 'absolute',
@@ -417,17 +463,32 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         marginBottom: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 4,
     },
     caption: {
         color: 'white',
         fontSize: 16,
         marginBottom: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 4,
     },
     audioInfo: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        opacity: 0.6
+        opacity: 0.6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 4,
     },
     audioText: {
         color: 'white',
