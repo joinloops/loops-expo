@@ -1,10 +1,22 @@
+import { useNotificationPolling } from '@/hooks/useNotificationPolling';
 import { useAuthStore } from '@/utils/authStore';
+import { useNotificationStore } from '@/utils/notificationStore';
 import Feather from '@expo/vector-icons/Feather';
 import { Tabs } from 'expo-router';
+import { useMemo } from 'react';
 import { Platform } from 'react-native';
 
 export default function TabsLayout() {
     const { user } = useAuthStore();
+    const { badgeCount } = useNotificationStore();
+
+    const displayBadgeCount = useMemo(() => {
+        if (badgeCount == 0) return undefined;
+        if (badgeCount > 99) return '99+';
+        return badgeCount;
+    }, [badgeCount]);
+
+    useNotificationPolling(900000);
 
     return (
         <Tabs
@@ -41,6 +53,16 @@ export default function TabsLayout() {
                 }}
             />
             <Tabs.Screen
+                name="explore"
+                options={{
+                    title: 'Explore',
+                    tabBarAccessibilityLabel: "Explore",
+                    tabBarShowLabel: false,
+                    headerShown: false,
+                    tabBarIcon: ({ color }) => <Feather size={28} name="compass" color={color} />,
+                }}
+            />
+            <Tabs.Screen
                 name="create"
                 options={{
                     title: 'Create',
@@ -48,6 +70,17 @@ export default function TabsLayout() {
                     tabBarShowLabel: false,
                     headerShown: false,
                     tabBarIcon: ({ color }) => <Feather size={28} name="video" color={color} />,
+                }}
+            />
+            <Tabs.Screen
+                name="notifications"
+                options={{
+                    title: 'Notifications',
+                    tabBarAccessibilityLabel: "Notifications",
+                    tabBarShowLabel: false,
+                    tabBarBadge: displayBadgeCount,
+                    tabBarBadgeStyle: { fontSize: 12 },
+                    tabBarIcon: ({ color }) => <Feather size={28} name="inbox" color={color} />,
                 }}
             />
             <Tabs.Screen
