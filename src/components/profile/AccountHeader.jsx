@@ -1,15 +1,33 @@
 import Avatar from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { StackText, XStack, YStack } from '@/components/ui/Stack';
+import { openBrowser } from '@/utils/requests';
+import { shareContent } from '@/utils/sharer';
 import { prettyCount } from '@/utils/ui';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
+import tw from 'twrnc';
 
 export default function AccountHeader(props) {
     const isOwner = props?.is_owner || props.user?.is_owner;
 
     const state = props?.userState;
+
+    const handleShare = async () => {
+        try {
+            await shareContent({
+                message: `Check out my account on Loops!`,
+                url: props.user?.url
+            })
+        } catch (error) {
+            console.error('Share error:', error);
+        }
+    }
+
+    const openLink = async (path) => {
+        await openBrowser(path)
+    }
 
     return (
         <YStack paddingX="$5" paddingY="$3" alignItems="center" gap="$3" bg="white">
@@ -21,13 +39,13 @@ export default function AccountHeader(props) {
                 </StackText>
             </XStack>
 
-            <XStack justifyContent="center" alignItems="center" gap="$8">
+            <XStack justifyContent="center" alignItems="center" gap="$10">
                 <Pressable>
                     <YStack justifyContent="center" alignItems="center">
                         <StackText fontSize="$5" fontWeight="bold">
                             { prettyCount(props.user?.post_count || 0)}
                         </StackText>
-                        <StackText fontSize="$3" color="#86878B">
+                        <StackText fontSize="$2" textColor="text-gray-500">
                             Videos
                         </StackText>
                     </YStack>
@@ -39,7 +57,7 @@ export default function AccountHeader(props) {
                             <StackText fontSize="$5" fontWeight="bold">
                                 {prettyCount(props.user?.follower_count, {precision: props.user?.follower_count > 1000 ? 1 : 0})}
                             </StackText>
-                            <StackText fontSize="$3" color="#86878B">
+                            <StackText fontSize="$2" textColor="text-gray-500">
                                 Followers
                             </StackText>
                         </YStack>
@@ -51,7 +69,7 @@ export default function AccountHeader(props) {
                         <StackText fontSize="$5" fontWeight="bold">
                             {prettyCount(props.user?.likes_count, {precision: props.user?.likes_count > 1000 ? 1 : 0})}
                         </StackText>
-                        <StackText fontSize="$3" color="#86878B">
+                        <StackText fontSize="$2" textColor="text-gray-500">
                             Likes
                         </StackText>
                     </YStack>
@@ -60,30 +78,47 @@ export default function AccountHeader(props) {
 
             <XStack gap="$2" width="100%" paddingHorizontal="$3">
                 {isOwner ? (
-                    <>
-                        <Link href="/private/settings/account/edit" role="button" asChild style={{ flex: 1 }}>
-                            <Button title="Edit Profile" />
+                    props.showActions ? <>
+                    <XStack flex={1} justifyContent='center' alignItems='center' gap="$4">
+
+                        <Link href="/private/settings/account/edit" role="button" asChild>
+                            <Button title="Edit profile" theme="light" />
                         </Link>
-                    </>
+                        <Button title="Share profile" theme="light" onPress={handleShare}  />
+                    </XStack>
+                    </> : null
                 ) : (
-                    <>
-                        <View style={{ flex: 1 }}>
+                    <XStack flex={1} justifyContent='center' alignItems='center' gap="$3">
+                        <View>
                             { state?.blocking && (
                                 <Button
                                     title={'Unblock'}
-                                    variant={'danger'}
+                                    theme={'danger'}
+                                    loading={!state}
                                     onPress={props.onUnblockPress}
+                                    style={tw`px-10`}
                                 />
                             )}
                             { !state?.blocking && (<Button
                                 title={state?.following ? 'Following' : 'Follow'}
-                                variant={state?.following ? 'secondary' : 'primary'}
+                                theme={state?.following ? 'primary-outlined' : 'primary'}
+                                loading={!state}
+                                style={tw`px-10`}
                                 onPress={props.onFollowPress}
                             />
                             )}
                         </View>
 
-                        <Pressable
+                        <Button
+                            onPress={props.onMenuPress}
+                            theme="light"
+                            accessibilityLabel="More options"
+                            accessibilityHint="To share, block, or report this profile"
+                            accessibilityRole="button"
+                            title={<MaterialIcons name="keyboard-arrow-down" size={26} color="#333" />}>
+                        </Button>
+
+                        {/* <Pressable
                             onPress={props.onMenuPress}
                             accessibilityLabel="More options"
                             accessibilityHint="To share, block, or report this profile" // Be sure to update this if more options are added in the future.
@@ -97,8 +132,8 @@ export default function AccountHeader(props) {
                                 alignItems: 'center',
                             }}>
                             <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
-                        </Pressable>
-                    </>
+                        </Pressable> */}
+                    </XStack>
                 )}
             </XStack>
 
@@ -110,17 +145,32 @@ export default function AccountHeader(props) {
                 </View>
             )}
 
-            {props.user?.link && (
-                <Link href={props.user?.link} asChild>
-                    <Pressable>
-                        <XStack gap="$1" alignItems="center">
-                            <Ionicons name="link" size={14} color="#86878B" />
-                            <StackText fontSize="$2" color="#86878B" textDecorationLine="underline">
-                                {props.user?.link.replace(/^https?:\/\//, '')}
-                            </StackText>
-                        </XStack>
-                    </Pressable>
-                </Link>
+            { isOwner && props.user?.bio.length == 0 && (
+                <Button theme="light" size="small" title="Add bio" onPress={props.onEditBio} style={tw`px-10 py-1 rounded-2xl`}></Button>
+            )}
+
+            {props.user?.links && props.user?.links.length > 0 && (
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        gap: 10,
+                        paddingHorizontal: 20 
+                    }}
+                >
+                    {props.user?.links.slice(0, 4).map((link, index) => (
+                        <Pressable key={index} onPress={() => openLink(link.url)} style={tw`bg-gray-100 p-1 rounded-xl px-3`}>
+                            <XStack gap="$1" alignItems="center">
+                                <Ionicons name="link" size={14} color="#fb2c36" style={{ transform: [{ rotate: '-40deg' }] }} />
+                                <StackText fontSize="$2" fontWeight="semibold" color="#86878B" textDecorationLine="underline">
+                                    {link.url.replace(/^https?:\/\//, '')}
+                                </StackText>
+                            </XStack>
+                        </Pressable>
+                    ))}
+                </ScrollView>
             )}
         </YStack>
     );
