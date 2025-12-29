@@ -1,4 +1,6 @@
+import { StackText, XStack } from '@/components/ui/Stack';
 import { useAuthStore } from '@/utils/authStore';
+import { openBrowser, registerPreflightCheck } from '@/utils/requests';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
@@ -27,17 +29,20 @@ import tw from 'twrnc';
 
 const POPULAR_SERVERS = [
     { label: 'loops.video', value: 'loops.video' },
-    // { label: 'loops.one', value: 'loops.one' },
+    // { label: 'getloops.social', value: 'getloops.social' },
     { label: 'Other…', value: 'other' },
 ];
 
 type FlowStep =
     | 'initial'
     | 'signin-server'
-    | 'signin-custom-url';
+    | 'signin-custom-url'
+    | 'register-server'
+    | 'register-custom-url';
 
 export default function SignInScreen() {
     const loginWithOAuth = useAuthStore((state) => state.loginWithOAuth);
+    const registerWithWebBrowser = useAuthStore((state) => state.registerWithWebBrowser);
 
     const [currentStep, setCurrentStep] = useState<FlowStep>('initial');
     const [isLoading, setIsLoading] = useState(false);
@@ -66,6 +71,20 @@ export default function SignInScreen() {
         transitionToStep('signin-server');
     };
 
+    const handleRegisterStart = () => {
+        transitionToStep('register-server');
+    };
+
+    const onTermsOfService = async (domain) => {
+        const url = `https://${domain}/terms`;
+        await openBrowser(url)
+    }
+
+    const onPrivacyPolicy = async () => {
+        const url = `https://${domain}/privacy`;
+        await openBrowser(url)
+    }
+
     const handleSignInServerSelected = async () => {
         if (selectedServer === 'other') {
             transitionToStep('signin-custom-url');
@@ -73,6 +92,15 @@ export default function SignInScreen() {
             return;
         }
         await handleSignInSubmit(selectedServer);
+    };
+
+    const handleRegisterServerSelected = async () => {
+        if (selectedServer === 'other') {
+            transitionToStep('register-custom-url');
+            setTimeout(() => customUrlRef.current?.focus(), 300);
+            return;
+        }
+        await handleRegisterSubmit(selectedServer);
     };
 
     const handleSignInSubmit = async (serverUrl: string) => {
@@ -94,10 +122,35 @@ export default function SignInScreen() {
         }
     };
 
+    const handleRegisterSubmit = async (serverUrl: string) => {
+        const cleanedUrl = serverUrl.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+        setIsLoading(true);
+
+        try {
+            const precheck = await registerPreflightCheck(serverUrl)
+            if (!precheck) {
+                return false;
+            }
+            const success = await registerWithWebBrowser(cleanedUrl);
+            if (success) {
+                router.replace('/(tabs)');
+            } else {
+                Alert.alert('Registration Failed', 'Unable to complete registration. Please try again.');
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleBack = () => {
         const backMap: Record<FlowStep, FlowStep> = {
             'signin-server': 'initial',
             'signin-custom-url': 'signin-server',
+            'register-server': 'initial',
+            'register-custom-url': 'register-server',
             'initial': 'initial',
         };
         transitionToStep(backMap[currentStep]);
@@ -127,6 +180,18 @@ export default function SignInScreen() {
                     ]}
                 >
                     <Text style={tw`text-black text-base font-bold`}>Sign In</Text>
+                </Pressable>
+            </View>
+
+            <View style={tw`gap-3 mt-5`}>
+                <Pressable
+                    onPress={handleRegisterStart}
+                    style={({ pressed }) => [
+                        tw`h-14 rounded-2xl justify-center items-center border-2 border-[#FFE500]`,
+                        pressed && tw`opacity-80`,
+                    ]}
+                >
+                    <Text style={tw`text-[#FFE500] text-base font-bold`}>Create Account</Text>
                 </Pressable>
             </View>
         </Animated.View>
@@ -173,6 +238,83 @@ export default function SignInScreen() {
 
                 <Pressable
                     onPress={handleSignInServerSelected}
+                    disabled={isLoading}
+                    style={({ pressed }) => [
+                        tw`h-14 rounded-2xl justify-center items-center`,
+                        isLoading ? tw`bg-[#FFE500]/60` : tw`bg-[#FFE500]`,
+                        pressed && !isLoading && tw`opacity-80`,
+                    ]}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={tw`text-black text-base font-bold`}>Continue</Text>
+                    )}
+                </Pressable>
+            </Animated.View>
+        </View>
+    );
+
+    const renderRegisterServer = () => (
+        <View style={tw`flex-1 px-6 pt-16`}>
+            <LinearGradient
+                colors={['#151518ff', '#000']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={tw`absolute inset-0`}
+            />
+            <Animated.View entering={SlideInLeft} exiting={SlideOutRight}>
+                <Pressable onPress={handleBack} style={tw`mb-8`}>
+                    <Text style={tw`text-blue-400 text-base`}>← Back</Text>
+                </Pressable>
+            </Animated.View>
+
+            <Animated.View entering={SlideInRight} exiting={SlideOutLeft}>
+                <Text style={tw`text-white text-3xl font-bold mb-2`}>Choose your server</Text>
+                <Text style={tw`text-gray-400 text-base mb-8`}>Select where to create your account</Text>
+
+                <View style={tw`flex-row flex-wrap gap-2 mb-8`}>
+                    {POPULAR_SERVERS.map((srv) => {
+                        const active = selectedServer === srv.value;
+                        return (
+                            <Pressable
+                                key={srv.value}
+                                onPress={() => setSelectedServer(srv.value)}
+                                style={({ pressed }) => [
+                                    tw`px-4 py-4 rounded-2xl border-2`,
+                                    tw`${active ? 'bg-transparent border-[#FFE500]' : 'bg-transparent border-gray-700'}`,
+                                    pressed && tw`opacity-80`,
+                                ]}
+                            >
+                                <Text style={tw`${active ? 'text-[#FFE500]' : 'text-white'} text-base font-semibold`}>
+                                    {srv.label}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
+                </View>
+                { selectedServer && selectedServer != 'other' && (<XStack style={tw`mb-6`}>
+                    <StackText textColor="text-gray-300 text-xs">
+                        By creating an account, you agree to the{' '}
+                        <Text 
+                            style={tw`text-blue-400 text-xs font-bold`}
+                            onPress={() => onTermsOfService(selectedServer)}
+                        >
+                            Terms of Service
+                        </Text>
+                        {' '}and{' '}
+                        <Text 
+                            style={tw`text-blue-400 text-xs font-bold`}
+                            onPress={() => onPrivacyPolicy(selectedServer)}
+                            >
+                            Privacy Policy
+                        </Text>
+                        .
+                    </StackText>
+                </XStack>) }
+
+                <Pressable
+                    onPress={handleRegisterServerSelected}
                     disabled={isLoading}
                     style={({ pressed }) => [
                         tw`h-14 rounded-2xl justify-center items-center`,
@@ -248,6 +390,84 @@ export default function SignInScreen() {
         </View>
     );
 
+    const renderRegisterCustomUrl = () => (
+        <View style={tw`flex-1 px-6 pt-16`}>
+            <LinearGradient
+                colors={['#151518ff', '#000']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={tw`absolute inset-0`}
+            />
+            <Animated.View entering={SlideInLeft} exiting={SlideOutRight}>
+                <Pressable onPress={handleBack} style={tw`mb-8`}>
+                    <Text style={tw`text-blue-400 text-base`}>← Back</Text>
+                </Pressable>
+            </Animated.View>
+
+            <Animated.View entering={SlideInRight} exiting={SlideOutLeft}>
+                <Text style={tw`text-white text-3xl font-bold mb-2`}>Enter server URL</Text>
+                <Text style={tw`text-gray-400 text-base mb-8`}>Type your Loops server address</Text>
+
+                <View style={tw`mb-8`}>
+                    <View style={styles.inputRow}>
+                        <Text style={styles.prefix}>https://</Text>
+                        <TextInput
+                            ref={customUrlRef}
+                            style={styles.textInput}
+                            placeholder="your.loops.instance"
+                            placeholderTextColor="#666"
+                            value={customServerUrl}
+                            onChangeText={setCustomServerUrl}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            keyboardType="url"
+                            returnKeyType="go"
+                            editable={!isLoading}
+                            onSubmitEditing={() => isValidUrl(customServerUrl) && handleRegisterSubmit(customServerUrl)}
+                        />
+                    </View>
+                    <Text style={tw`text-gray-500 text-xs mt-2`}>Example: loops.video or your.loops.instance</Text>
+                </View>
+
+                { customServerUrl && isValidUrl(customServerUrl) && (<XStack style={tw`mb-6`}>
+                    <StackText textColor="text-gray-300 text-xs">
+                        By creating an account, you agree to the{' '}
+                        <Text 
+                            style={tw`text-blue-400 text-xs font-bold`}
+                            onPress={() => onTermsOfService(customServerUrl)}
+                        >
+                            Terms of Service
+                        </Text>
+                        {' '}and{' '}
+                        <Text 
+                            style={tw`text-blue-400 text-xs font-bold`}
+                            onPress={() => onPrivacyPolicy(customServerUrl)}
+                            >
+                            Privacy Policy
+                        </Text>
+                        .
+                    </StackText>
+                </XStack>) }
+
+                <Pressable
+                    onPress={() => handleRegisterSubmit(customServerUrl)}
+                    disabled={isLoading || !isValidUrl(customServerUrl)}
+                    style={({ pressed }) => [
+                        tw`h-14 rounded-2xl justify-center items-center`,
+                        isLoading || !isValidUrl(customServerUrl) ? tw`bg-[#FFE500]/40` : tw`bg-[#FFE500]`,
+                        pressed && isValidUrl(customServerUrl) && !isLoading && tw`opacity-80`,
+                    ]}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={[isLoading || !isValidUrl(customServerUrl) ? tw`text-black/40` : tw`text-black`, tw`text-base font-bold`]}>Create Account</Text>
+                    )}
+                </Pressable>
+            </Animated.View>
+        </View>
+    );
+
     return (
         <KeyboardAvoidingView
             style={tw`flex-1 bg-black`}
@@ -256,6 +476,8 @@ export default function SignInScreen() {
             {currentStep === 'initial' && renderInitial()}
             {currentStep === 'signin-server' && renderSignInServer()}
             {currentStep === 'signin-custom-url' && renderSignInCustomUrl()}
+            {currentStep === 'register-server' && renderRegisterServer()}
+            {currentStep === 'register-custom-url' && renderRegisterCustomUrl()}
         </KeyboardAvoidingView>
     );
 }
