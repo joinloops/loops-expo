@@ -46,13 +46,94 @@ export class OAuthService {
     }
 
     /**
+     * Initiates the registration flow via WebBrowser
+     */
+    static async registerWithWebBrowser(server: string): Promise<boolean> {
+        try {
+            const url = `https://${server}`;
+            
+            const REDIRECT_URI = Linking.createURL('register-callback');
+
+            const registerUrl = `${url}/auth/app/register?mobile=true&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+
+            const authResult = await WebBrowser.openAuthSessionAsync(registerUrl, REDIRECT_URI, {
+                showInRecents: true,
+                createTask: false,
+            });
+
+            if (authResult.type === 'success') {
+                return await this.handleRegistrationCallback(authResult.url, server);
+            } else if (authResult.type === 'cancel') {
+                return false;
+            } else {
+                Alert.alert('Error', 'Registration was unsuccessful. Please try again.');
+                return false;
+            }
+        } catch (error) {
+            Alert.alert('Error', 'An error occurred during registration. Please try again.');
+            return false;
+        }
+    }
+
+    /**
+     * Handles the registration callback with token
+     */
+    private static async handleRegistrationCallback(url: string, server: string): Promise<boolean> {
+        try {
+            console.log('Handling registration callback URL:', url);
+
+            const { queryParams } = Linking.parse(url);
+
+            if (queryParams?.cancelled === 'true') {
+                console.log('Registration was cancelled');
+                return false;
+            }
+
+            if (queryParams?.error) {
+                Alert.alert('Error', queryParams.error as string);
+                return false;
+            }
+
+            const token = queryParams?.token as string;
+            const userJson = queryParams?.user as string;
+
+            if (!token || !userJson) {
+                Alert.alert('Error', 'Registration data not received.');
+                return false;
+            }
+
+            let user: LoopsUser;
+            try {
+                user = JSON.parse(userJson);
+            } catch (error) {
+                console.error('Failed to parse user data:', error);
+                Alert.alert('Error', 'Invalid user data received.');
+                return false;
+            }
+
+            Storage.set('user.token', token);
+            Storage.set('user.profile', JSON.stringify(user));
+            Storage.set('user.server', server);
+            Storage.set('app.instance', server);
+            Storage.set('app.token', token);
+
+            console.log('Registration successful for user:', user.username);
+
+            return true;
+        } catch (error) {
+            console.error('Registration callback error:', error);
+            Alert.alert('Error', 'Failed to complete registration. Please try again.');
+            return false;
+        }
+    }
+
+    /**
      * Initiates the OAuth login flow
      */
     static async login(server: string, enabledScopes?: string): Promise<boolean> {
         try {
             const scopes = enabledScopes || this.DEFAULT_SCOPES;
 
-            // Perform preflight check
             const precheck = await loginPreflightCheck(server);
             if (!precheck) {
                 Alert.alert(
@@ -67,17 +148,14 @@ export class OAuthService {
 
             console.log('OAuth Redirect URI:', REDIRECT_URI);
 
-            // Register OAuth application
             const app = await this.registerApp(url, REDIRECT_URI, scopes);
             if (!app) {
                 Alert.alert('Error', 'Failed to register application with server.');
                 return false;
             }
 
-            // Store app credentials
             this.storeAppCredentials(app);
 
-            // Build authorization URL
             const authUrl =
                 `${url}/oauth/authorize` +
                 `?client_id=${app.client_id}` +
@@ -87,7 +165,6 @@ export class OAuthService {
 
             console.log('Opening auth URL:', authUrl);
 
-            // Open OAuth authorization in browser
             const authResult = await WebBrowser.openAuthSessionAsync(authUrl, REDIRECT_URI, {
                 showInRecents: true,
                 createTask: false,
@@ -132,7 +209,6 @@ export class OAuthService {
             const response = await postForm(`${instanceUrl}/api/v1/apps`, formBody);
             const app = await response.json();
 
-            // Extract server domain from instanceUrl
             const server = instanceUrl.replace('https://', '').replace('http://', '');
 
             return {
@@ -165,7 +241,6 @@ export class OAuthService {
 
             const { queryParams } = Linking.parse(url);
 
-            // Check for errors in callback
             if (queryParams?.message || queryParams?.error) {
                 Alert.alert('Error', (queryParams.message || queryParams.error) as string);
                 return false;
@@ -176,7 +251,6 @@ export class OAuthService {
                 return false;
             }
 
-            // Retrieve stored app credentials
             const instance = Storage.getString('app.instance');
             const clientId = Storage.getString('app.client_id');
             const clientSecret = Storage.getString('app.client_secret');
@@ -188,7 +262,6 @@ export class OAuthService {
             const api = `https://${instance}`;
             const REDIRECT_URI = this.getRedirectUri();
 
-            // Exchange authorization code for access token
             const token = await this.exchangeCodeForToken(
                 api,
                 clientId,
@@ -202,17 +275,14 @@ export class OAuthService {
                 return false;
             }
 
-            // Store token data
             this.storeTokenData(token);
 
-            // Verify credentials and get user profile
             const user = await this.verifyCredentials(api, token.access_token);
             if (!user) {
                 Alert.alert('Error', 'Failed to verify user credentials.');
                 return false;
             }
 
-            // Store user profile
             Storage.set('user.profile', JSON.stringify(user));
             Storage.set('user.server', instance);
             Storage.set('user.token', token.access_token);
@@ -325,7 +395,6 @@ export class OAuthService {
      * Logs out the user by clearing all stored credentials
      */
     static logout(): void {
-        // Clear app credentials
         Storage.remove('app.client_id');
         Storage.remove('app.client_secret');
         Storage.remove('app.instance');
@@ -335,7 +404,6 @@ export class OAuthService {
         Storage.remove('app.refresh_token');
         Storage.remove('app.expires_in');
 
-        // Clear user data
         Storage.remove('user.profile');
         Storage.remove('user.server');
         Storage.remove('user.token');
