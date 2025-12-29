@@ -292,7 +292,7 @@ export default function NotificationScreen() {
 
     return (
         <View style={tw`flex-1 bg-white`}>
-            <StatusBar style="dark" />
+            <StatusBar style="dark" animated={true} />
 
             <Stack.Screen
                 options={{
@@ -332,7 +332,7 @@ export default function NotificationScreen() {
                     ))}
 
                     {suggestedAccounts.length > 0 && (
-                        <View style={tw`mt-6`}>
+                        <View style={tw`my-6`}>
                             <View style={tw`px-4 py-2`}>
                                 <StackText fontSize="$5" fontWeight="semibold">
                                     Suggested accounts

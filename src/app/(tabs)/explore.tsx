@@ -261,7 +261,6 @@ export default function ExploreScreen() {
     if (tagsLoading || accountsLoading) {
         return (
             <View style={tw`flex-1 bg-black items-center justify-center`}>
-                <StatusBar style="light" />
                 <ActivityIndicator size="large" color="white" />
             </View>
         );
@@ -269,7 +268,7 @@ export default function ExploreScreen() {
 
     return (
         <SafeAreaView edges={['top']} style={{flex: 1, backgroundColor: 'black'}}>
-            <StatusBar style="light" />
+            <StatusBar style="light" animated={true} />
             <View style={tw`flex flex-1 bg-black`}>
                 
                 <ScrollView
