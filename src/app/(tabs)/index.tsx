@@ -2,7 +2,8 @@ import CommentsModal from '@/components/feed/CommentsModal';
 import OtherModal from '@/components/feed/OtherModal';
 import ShareModal from '@/components/feed/ShareModal';
 import VideoPlayer from '@/components/feed/VideoPlayer';
-import { fetchFollowingFeed, fetchForYouFeed, fetchLocalFeed, getConfiguration, recordImpression, videoLike, videoUnlike } from '@/utils/requests';
+import { useAuthStore } from '@/utils/authStore';
+import { fetchFollowingFeed, fetchForYouFeed, fetchLocalFeed, getConfiguration, recordImpression, videoBookmark, videoLike, videoUnbookmark, videoUnlike } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
@@ -36,7 +37,9 @@ const fetchVideos = async ({ pageParam = null, tab }) => {
 
 export default function LoopsFeed({ navigation }) {
     const insets = useSafeAreaInsets();
-    const [activeTab, setActiveTab] = useState('local');
+    const hideForYouFeed = useAuthStore((state) => state.hideForYouFeed);
+    const defaultFeed = useAuthStore((state) => state.defaultFeed);
+    const [activeTab, setActiveTab] = useState(defaultFeed);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [showComments, setShowComments] = useState(false);
@@ -62,18 +65,20 @@ export default function LoopsFeed({ navigation }) {
         }, [])
     );
 
-    const { data: appConfig } = useQuery({
+    const { data: appConfig, isLoading: isConfigLoading } = useQuery({
         queryKey: ['appConfig'],
         queryFn: getConfiguration
-    });
+    })
 
-    const forYouEnabled = appConfig?.fyf === true;
+    const forYouEnabled = appConfig?.fyf === true && !hideForYouFeed;
 
     useEffect(() => {
-        if (!forYouEnabled && activeTab === 'forYou') {
-            setActiveTab('local');
+        if (!isConfigLoading && appConfig) {
+            if (!forYouEnabled && activeTab === 'forYou') {
+                setActiveTab('local');
+            }
         }
-    }, [forYouEnabled, activeTab]);
+    }, [isConfigLoading, appConfig, forYouEnabled, activeTab]);
 
     const recordVideoImpression = useCallback(async (video, duration) => {
         if (activeTab !== 'forYou' || !video) {
@@ -115,6 +120,23 @@ export default function LoopsFeed({ navigation }) {
             }
             if (dir == 'unlike') {
                 return await videoUnlike(data.id);
+            }
+        },
+        onSuccess: (res) => {
+        },
+        onError: (error) => {
+        },
+    });
+
+    const videoBookmarkMutation = useMutation({
+        mutationFn: async (data) => {
+            const dir = data.type
+
+            if (dir == 'bookmark') {
+                return await videoBookmark(data.id);
+            }
+            if (dir == 'unbookmark') {
+                return await videoUnbookmark(data.id);
             }
         },
         onSuccess: (res) => {
@@ -177,6 +199,11 @@ export default function LoopsFeed({ navigation }) {
         videoLikeMutation.mutate({ type: dir, id: videoId })
     };
 
+    const handleBookmark = (videoId, bookmarked) => {
+        const dir = bookmarked ? 'bookmark' : 'unbookmark'
+        videoBookmarkMutation.mutate({ type: dir, id: videoId })
+    }
+
     const handleComment = (video) => {
         setSelectedVideo(video);
         setShowComments(true);
@@ -228,6 +255,7 @@ export default function LoopsFeed({ navigation }) {
                 onLike={handleLike}
                 onComment={handleComment}
                 onShare={handleShare}
+                onBookmark={handleBookmark}
                 onOther={handleOther}
                 bottomInset={insets.bottom}
                 commentsOpen={showComments && selectedVideo?.id === item.id}
