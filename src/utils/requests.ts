@@ -6,14 +6,27 @@ import { Alert } from 'react-native';
 // UTILITY HELPERS
 // ============================================================================
 
+const DEFAULT_APP_PREFERENCES = { 
+    account: { username: 'user', profile_id: null},         
+    settings: {
+        autoplay_videos: true,
+        loop_videos: true,
+        default_feed: "local",
+        hide_for_you_feed: false,
+        mute_on_open: false,
+        auto_expand_cw: false,
+        appearance: "light"
+    } 
+};
+
 export async function openBrowser(url) {
     await WebBrowser.openBrowserAsync(url);
 }
 
-export async function openLocalLink(path) {
+export async function openLocalLink(path, options = {}) {
     const instance = Storage.getString('app.instance');
     const url = `https://${instance}/${path}`
-    await WebBrowser.openBrowserAsync(url);
+    await WebBrowser.openBrowserAsync(url, options);
 }
 
 export function getMimeType(filename: string): string {
@@ -346,6 +359,10 @@ export async function verifyCredentials(domain: string, token: string): Promise<
     return resp.json();
 }
 
+// ============================================================================
+// SERVER CONFIG & PREFERENCES
+// ============================================================================
+
 export async function getConfiguration(): Promise<any> {
     try {
         const server = Storage.getString('app.instance');
@@ -366,6 +383,74 @@ export async function getConfiguration(): Promise<any> {
     } catch (error) {
         console.log('Error fetching config, using defaults:', error);
         return { fyf: false };
+    }
+}
+
+export async function getPreferences(): Promise<any> {
+    try {
+        const server = Storage.getString('app.instance');
+        const token = Storage.getString('app.token');
+
+        const url = `https://${server}/api/v1/app/preferences`;
+
+        const resp = await fetch(url, {
+            method: 'GET',
+            redirect: 'follow',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        if (!resp.ok) {
+            console.log('App preferences endpoint not available, using defaults');
+            return DEFAULT_APP_PREFERENCES;
+        }
+
+        const data = await resp.json();
+        return data.data;
+    } catch (error) {
+        console.log('Error fetching config, using defaults:', error);
+        return DEFAULT_APP_PREFERENCES;
+    }
+}
+
+export async function updatePreferences(preferences: {
+    autoplay_videos?: boolean;
+    loop_videos?: boolean;
+    default_feed?: 'local' | 'following' | 'forYou';
+    hide_for_you_feed?: boolean;
+    mute_on_open?: boolean;
+    auto_expand_cw?: boolean;
+    appearance?: 'light' | 'dark' | 'system';
+}): Promise<any> {
+    try {
+        const server = Storage.getString('app.instance');
+        const token = Storage.getString('app.token');
+
+        if (!server || !token) {
+            console.log('No server or token available');
+            return null;
+        }
+
+        const url = `https://${server}/api/v1/app/preferences`;
+
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(preferences),
+        });
+
+        if (!resp.ok) {
+            console.log('Failed to update preferences on server');
+            return null;
+        }
+
+        const data = await resp.json();
+        return data.data;
+    } catch (error) {
+        console.error('Error updating preferences:', error);
+        return null;
     }
 }
 
@@ -729,25 +814,6 @@ export async function videoUnbookmark(id): Promise<any> {
     return await _selfPost(`api/v1/video/unbookmark/${id}`);
 }
 
-export async function fetchNotifications({ 
-    pageParam 
-}: { 
-    pageParam?: string | undefined;
-} = {}): Promise<any> {
-    const url = pageParam
-        ? `api/v1/account/notifications?cursor=${pageParam}`
-        : `api/v1/account/notifications`;
-    return await _selfGet(url);
-}
-
-export async function notificationMarkAsRead(id) {
-    return await _selfPost(`api/v1/account/notifications/${id}/read`);
-}
-
-export async function notificationBadgeCount() {
-    return await _selfGet(`api/v1/account/notifications/count`);
-}
-
 export async function commentPost({id, commentText, parentId}): Promise<any> {
     const params = parentId ? {
         comment: commentText,
@@ -796,6 +862,89 @@ export async function recordImpression(videoId: string, watchDuration: number, c
     )
 }
 
+export async function fetchAccountFavorites({pageParam}) {
+    const url = pageParam
+        ? `api/v1/account/favourites?cursor=${pageParam}`
+        : `api/v1/account/favourites`
+    return await _selfGet(url)
+}
+
+export async function fetchAccountLikes({pageParam}) {
+    const url = pageParam
+        ? `api/v1/account/videos/likes?cursor=${pageParam}`
+        : `api/v1/account/videos/likes`
+    return await _selfGet(url)
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+export async function fetchNotifications({ 
+    pageParam 
+}: { 
+    pageParam?: string | undefined;
+} = {}): Promise<any> {
+    const url = pageParam
+        ? `api/v1/account/notifications?cursor=${pageParam}`
+        : `api/v1/account/notifications`;
+    return await _selfGet(url);
+}
+
+export async function fetchActivityNotifications({ 
+    pageParam 
+}: { 
+    pageParam?: string | undefined;
+} = {}): Promise<any> {
+    const url = pageParam
+        ? `api/v1/account/notifications?type=activity&cursor=${pageParam}`
+        : `api/v1/account/notifications?type=activity`;
+    return await _selfGet(url);
+}
+
+export async function fetchFollowerNotifications({ 
+    pageParam 
+}: { 
+    pageParam?: string | undefined;
+} = {}): Promise<any> {
+    const url = pageParam
+        ? `api/v1/account/notifications?type=followers&cursor=${pageParam}`
+        : `api/v1/account/notifications?type=followers`;
+    return await _selfGet(url);
+}
+
+export async function fetchSystemNotifications({ 
+    pageParam 
+}: { 
+    pageParam?: string | undefined;
+} = {}): Promise<any> {
+    const url = pageParam
+        ? `api/v1/account/notifications?type=system&cursor=${pageParam}`
+        : `api/v1/account/notifications?type=system`;
+    return await _selfGet(url);
+}
+
+export async function fetchSystemNotificationItem(id): Promise<any> {
+    const url = `api/v1/account/notifications/system/${id}`;
+    return await _selfGet(url);
+}
+
+export async function notificationMarkAsRead(id) {
+    return await _selfPost(`api/v1/account/notifications/${id}/read`);
+}
+
+export async function notificationBadgeCount() {
+    return await _selfGet(`api/v1/account/notifications/count`);
+}
+
+export async function notificationTypeMarkAllAsRead(type): Promise<any> {
+    const params = {
+        type: type
+    }
+    return await _selfPost('api/v1/account/notifications/mark-all-read', params);
+}
+
+
 // ============================================================================
 // ACCOUNT UPDATES
 // ============================================================================
@@ -822,6 +971,59 @@ export async function updateAccountPrivacy(params: any): Promise<any> {
 
 export async function updateAccountPassword(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/update-password', params);
+}
+
+// ============================================================================
+// EXPLORE
+// ============================================================================
+
+interface Tag {
+    id: number;
+    name: string;
+    count: number;
+}
+
+export async function getExploreTags(): Promise<any> {
+    const res =  await _selfGet('api/v1/explore/tags');
+    return res.data as Tag[];
+}
+
+interface Account {
+    id: string;
+    name: string;
+    avatar: string;
+    username: string;
+    bio: string;
+    follower_count: number;
+}
+
+export async function getExploreAccounts(): Promise<any> {
+    const res =  await _selfGet('api/v1/accounts/suggested');
+    return res.data as Account[];
+}
+
+export async function getExploreTagsFeed({ 
+    queryKey,
+    pageParam = false 
+}: { 
+    queryKey?: any[];
+    pageParam?: string | false;
+} = {}): Promise<any> {
+    const tag = queryKey?.[2];
+    if (!tag) {
+        return { data: [], meta: { next_cursor: null } };
+    }
+    
+    const url = pageParam 
+        ? `api/v1/explore/tag-feed/${tag}?cursor=${pageParam}`
+        : `api/v1/explore/tag-feed/${tag}`;
+    
+    return await _selfGet(url);
+}
+
+export async function postExploreAccountHideSuggestion(id) {
+    const params = { profile_id: id}
+    return await _selfPost('api/v1/accounts/suggested/hide', params)
 }
 
 // ============================================================================
