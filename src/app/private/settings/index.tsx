@@ -88,13 +88,14 @@ export default function SettingsScreen() {
                 />
 
                 <Divider />
+                <SettingsItem icon="share-outline" label="Share profile" onPress={() => handleShare()} />
+                <Divider />
                 <SectionHeader title="Content & Display" />
                 <SettingsItem icon="phone-portrait-outline" label="Feeds" onPress={() => router.push('/private/settings/content/feeds')} />
                 <Divider />
-                <SettingsItem icon="play-circle-outline" label="Playback" onPress={() => router.push('/private/settings/content/playback')} />
-                <Divider />
-                <SettingsItem icon="share-outline" label="Share profile" onPress={() => handleShare()} />
-                <Divider />
+                {/* <SettingsItem icon="play-circle-outline" label="Playback" onPress={() => router.push('/private/settings/content/playback')} />
+                <Divider /> */}
+                {/* <Divider /> */}
                 {/* <SectionHeader title="Content & Display" />
                 <SettingsItem
                     icon="notifications-outline"
@@ -130,7 +131,7 @@ export default function SettingsScreen() {
                     onPress={() => handleSignOut()}
                 />
                 <View style={tw`flex justify-center items-center mt-5`}>
-                    <Text style={tw`text-gray-500`}>Loops v1.0.0.18</Text>
+                    <Text style={tw`text-gray-500`}>Loops v1.0.0.19</Text>
                 </View>
             </ScrollView>
         </View>
