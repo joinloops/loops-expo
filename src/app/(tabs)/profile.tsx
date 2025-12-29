@@ -2,18 +2,19 @@ import AccountHeader from '@/components/profile/AccountHeader';
 import AccountTabs from '@/components/profile/AccountTabs';
 import VideoGrid from '@/components/profile/VideoGrid';
 import { StackText, YStack } from '@/components/ui/Stack';
-import { fetchSelfAccount, fetchSelfAccountVideos } from '@/utils/requests';
+import { fetchAccountFavorites, fetchAccountLikes, fetchSelfAccount, fetchSelfAccountVideos } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function ProfileScreen() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('videos');
+    const [sortBy, setSortBy] = useState('Latest');
 
     const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['fetchSelfAccount', 'self'],
@@ -25,30 +26,124 @@ export default function ProfileScreen() {
 
     const {
         data: videosData,
-        fetchNextPage,
-        fetchPreviousPage,
-        hasNextPage,
-        hasPreviousPage,
-        isFetchingNextPage,
-        isRefetching,
-        refetch,
+        fetchNextPage: videosFetchNextPage,
+        hasNextPage: videosHasNextPage,
+        isFetchingNextPage: videosIsFetchingNextPage,
+        refetch: videosRefetch,
         isLoading: videosLoading,
-        isFetching,
-        status,
-        isError,
-        error,
+        isFetching: videosIsFetching,
     } = useInfiniteQuery({
-        queryKey: ['userSelfVideos', 'user'],
+        queryKey: ['userSelfVideos', sortBy],
         queryFn: fetchSelfAccountVideos,
         initialPageParam: undefined,
         refetchOnWindowFocus: true,
         getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
     });
 
+    const {
+        data: favoritesData,
+        fetchNextPage: favoritesFetchNextPage,
+        hasNextPage: favoritesHasNextPage,
+        isFetchingNextPage: favoritesIsFetchingNextPage,
+        refetch: favoritesRefetch,
+        isLoading: favoritesLoading,
+        isFetching: favoritesIsFetching,
+    } = useInfiniteQuery({
+        queryKey: ['userSelfFavorites'],
+        queryFn: fetchAccountFavorites,
+        initialPageParam: undefined,
+        refetchOnWindowFocus: true,
+        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
+        enabled: activeTab === 'favorites',
+    });
+
+    const {
+        data: likesData,
+        fetchNextPage: likesFetchNextPage,
+        hasNextPage: likesHasNextPage,
+        isFetchingNextPage: likesIsFetchingNextPage,
+        refetch: likesRefetch,
+        isLoading: likesLoading,
+        isFetching: likesIsFetching,
+    } = useInfiniteQuery({
+        queryKey: ['userSelfLikes'],
+        queryFn: fetchAccountLikes,
+        initialPageParam: undefined,
+        refetchOnWindowFocus: true,
+        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
+        enabled: activeTab === 'likes',
+    });
+
     const videos = useMemo(() => {
         if (!videosData?.pages?.length) return [];
         return videosData.pages.flatMap((p: any) => p?.data ?? []);
     }, [videosData]);
+
+    const favorites = useMemo(() => {
+        if (!favoritesData?.pages?.length) return [];
+        return favoritesData.pages.flatMap((p: any) => p?.data ?? []);
+    }, [favoritesData]);
+
+    const likes = useMemo(() => {
+        if (!likesData?.pages?.length) return [];
+        return likesData.pages.flatMap((p: any) => p?.data ?? []);
+    }, [likesData]);
+
+    const activeData = useMemo(() => {
+        switch (activeTab) {
+            case 'favorites':
+                return favorites;
+            case 'likes':
+                return likes;
+            case 'videos':
+            default:
+                return videos;
+        }
+    }, [activeTab, videos, favorites, likes]);
+
+    const isLoading = useMemo(() => {
+        switch (activeTab) {
+            case 'favorites':
+                return favoritesLoading;
+            case 'likes':
+                return likesLoading;
+            default:
+                return videosLoading;
+        }
+    }, [activeTab, favoritesLoading, likesLoading, videosLoading]);
+
+    const isFetching = useMemo(() => {
+        switch (activeTab) {
+            case 'favorites':
+                return favoritesIsFetching;
+            case 'likes':
+                return likesIsFetching;
+            default:
+                return videosIsFetching;
+        }
+    }, [activeTab, favoritesIsFetching, likesIsFetching, videosIsFetching]);
+
+    const isFetchingNextPage = useMemo(() => {
+        switch (activeTab) {
+            case 'favorites':
+                return favoritesIsFetchingNextPage;
+            case 'likes':
+                return likesIsFetchingNextPage;
+            default:
+                return videosIsFetchingNextPage;
+        }
+    }, [activeTab, favoritesIsFetchingNextPage, likesIsFetchingNextPage, videosIsFetchingNextPage]);
+
+    const hasNextPage = useMemo(() => {
+        switch (activeTab) {
+            case 'favorites':
+                return favoritesHasNextPage;
+            case 'likes':
+                return likesHasNextPage;
+            default:
+                return videosHasNextPage;
+        }
+    }, [activeTab, favoritesHasNextPage, likesHasNextPage, videosHasNextPage]);
 
     const handleVideoPress = (video) => {
         router.push(`/private/profile/feed/${video.id}?profileId=${video.account.id}`);
@@ -57,9 +152,43 @@ export default function ProfileScreen() {
     const handleSettingsPress = () => {
         router.push(`/private/settings`);
     };
+    
+    const handleEditBio = () => {
+        router.push(`/private/settings/account/edit-bio`);
+    };
 
     const handleNotificationsPress = () => {
-        router.push(`/private/notifications`);
+        router.push(`/notifications`);
+    };
+
+    const handleEndReached = () => {
+        if (hasNextPage && !isFetchingNextPage) {
+            switch (activeTab) {
+                case 'favorites':
+                    favoritesFetchNextPage();
+                    break;
+                case 'likes':
+                    likesFetchNextPage();
+                    break;
+                default:
+                    videosFetchNextPage();
+                    break;
+            }
+        }
+    };
+
+    const handleRefresh = () => {
+        switch (activeTab) {
+            case 'favorites':
+                favoritesRefetch();
+                break;
+            case 'likes':
+                likesRefetch();
+                break;
+            default:
+                videosRefetch();
+                break;
+        }
     };
 
     const renderEmpty = () => (
@@ -67,6 +196,7 @@ export default function ProfileScreen() {
             <StackText fontSize="$4" color="#86878B">
                 {activeTab === 'videos' && 'No videos yet'}
                 {activeTab === 'favorites' && 'No favorites yet'}
+                {activeTab === 'likes' && 'No likes yet'}
                 {activeTab === 'reblogs' && 'No reblogs'}
             </StackText>
         </YStack>
@@ -90,21 +220,12 @@ export default function ProfileScreen() {
                     headerBackTitleVisible: false,
                     headerShown: true,
                     headerTitle: 'My Profile',
-                    headerLeft: () => (
-                        <Pressable 
-                            accessibilityLabel="Notifications" 
-                            accessibilityRole="button" 
-                            onPress={() => handleNotificationsPress()} 
-                            style={tw`ml-3`}
-                        >
-                            <Ionicons name="notifications-outline" size={30} />
-                        </Pressable>
-                    ),
+                   
                     headerRight: () => (
                         <Pressable 
                             accessibilityLabel="Settings" 
                             accessibilityRole="button" 
-                            onPress={() => handleSettingsPress()} 
+                            onPress={handleSettingsPress} 
                             style={tw`mr-3`}
                         >
                             <Ionicons name="menu" size={30} />
@@ -114,19 +235,25 @@ export default function ProfileScreen() {
             />
 
             <FlatList
-                data={videos}
+                data={activeData}
                 numColumns={3}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => `${activeTab}-${item.id}`}
                 ListHeaderComponent={
                     <>
-                        <AccountHeader user={user} isOwner={true} loading={userLoading} />
-                        <AccountTabs activeTab={activeTab} onTabChange={setActiveTab} />
+                        <AccountHeader user={user} isOwner={true} showActions={true} loading={userLoading} onEditBio={handleEditBio} />
+                        <AccountTabs 
+                            activeTab={activeTab} 
+                            isOwner={true} 
+                            onTabChange={setActiveTab} 
+                            sortBy={sortBy} 
+                            onSortChange={setSortBy} 
+                        />
                     </>
                 }
                 renderItem={({ item }) => <VideoGrid video={item} onPress={handleVideoPress} />}
                 ListEmptyComponent={
-                    videosLoading || isFetching ? (
-                        <YStack paddingVertical="$8" alignItems="center">
+                    isLoading || isFetching ? (
+                        <YStack style={tw`my-6`} alignItems="center">
                             <ActivityIndicator size="large" />
                         </YStack>
                     ) : (
@@ -141,13 +268,9 @@ export default function ProfileScreen() {
                     ) : null
                 }
                 onEndReachedThreshold={0.4}
-                onEndReached={() => {
-                    if (hasNextPage && !isFetchingNextPage) {
-                        fetchNextPage();
-                    }
-                }}
+                onEndReached={handleEndReached}
                 refreshing={isFetching && !isFetchingNextPage}
-                onRefresh={() => refetch()}
+                onRefresh={handleRefresh}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ flexGrow: 1 }}
             />
