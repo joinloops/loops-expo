@@ -30,7 +30,7 @@ export default function AccountHeader(props) {
     }
 
     return (
-        <YStack paddingX="$5" paddingY="$3" alignItems="center" gap="$3" bg="white">
+        <YStack paddingX="$5" paddingY="$3" alignItems="center" gap="$3">
             <Avatar url={props.user?.avatar} theme="xl" />
 
             <XStack gap="$2" alignItems="center">
@@ -102,7 +102,7 @@ export default function AccountHeader(props) {
                             { state?.blocking && (
                                 <Button
                                     title={'Unblock'}
-                                    theme={'danger'}
+                                    theme={'primary'}
                                     loading={!state}
                                     onPress={props.onUnblockPress}
                                     style={tw`px-10`}
