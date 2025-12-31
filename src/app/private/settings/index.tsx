@@ -131,7 +131,7 @@ export default function SettingsScreen() {
                     onPress={() => handleSignOut()}
                 />
                 <View style={tw`flex justify-center items-center mt-5`}>
-                    <Text style={tw`text-gray-500`}>Loops v1.0.0.19</Text>
+                    <Text style={tw`text-gray-500`}>Loops v1.0.1.20</Text>
                 </View>
             </ScrollView>
         </View>
