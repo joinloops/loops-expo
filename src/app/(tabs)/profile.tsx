@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import tw from 'twrnc';
 
@@ -15,6 +15,7 @@ export default function ProfileScreen() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('videos');
     const [sortBy, setSortBy] = useState('Latest');
+    const flatListRef = useRef(null);
 
     const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['fetchSelfAccount', 'self'],
@@ -23,6 +24,10 @@ export default function ProfileScreen() {
             return res.data;
         },
     });
+
+    useEffect(() => {
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }, [activeTab]);
 
     const {
         data: videosData,
@@ -193,24 +198,9 @@ export default function ProfileScreen() {
         }
     };
 
-    const renderHeader = useMemo(() => (
-        <>
-            <AccountHeader 
-                user={user} 
-                isOwner={true} 
-                showActions={true} 
-                loading={userLoading} 
-                onEditBio={handleEditBio} 
-            />
-            <AccountTabs 
-                activeTab={activeTab} 
-                isOwner={true} 
-                onTabChange={setActiveTab} 
-                sortBy={sortBy} 
-                onSortChange={setSortBy} 
-            />
-        </>
-    ), [user, userLoading, activeTab, sortBy]);
+    const renderItem = useCallback(({ item }) => (
+        <VideoGrid video={item} onPress={handleVideoPress} />
+    ), [handleVideoPress]);
 
     const renderEmpty = () => (
         <YStack paddingY="$8" alignItems="center" justifyContent="center">
@@ -256,14 +246,32 @@ export default function ProfileScreen() {
             />
 
             <FlatList
+                ref={flatListRef}
                 data={activeData}
                 numColumns={3}
                 keyExtractor={(item, index) => {
                     const id = item?.id;
                     return id != null ? `${activeTab}-${id}` : `${activeTab}-idx-${index}`;
                 }}
-                ListHeaderComponent={renderHeader}
-                renderItem={({ item }) => <VideoGrid video={item} onPress={handleVideoPress} />}
+                ListHeaderComponent={
+                    <>
+                        <AccountHeader 
+                            user={user} 
+                            isOwner={true} 
+                            showActions={true} 
+                            loading={userLoading} 
+                            onEditBio={handleEditBio} 
+                        />
+                        <AccountTabs 
+                            activeTab={activeTab} 
+                            isOwner={true} 
+                            onTabChange={setActiveTab} 
+                            sortBy={sortBy} 
+                            onSortChange={setSortBy} 
+                        />
+                    </>
+                }
+                renderItem={renderItem}
                 ListEmptyComponent={
                     isLoading || isFetching ? (
                         <YStack style={tw`my-6`} alignItems="center">

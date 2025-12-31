@@ -17,9 +17,31 @@ import { shareContent } from '@/utils/sharer';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Text, View } from 'react-native';
 import tw from 'twrnc';
+
+const EmptyVideos = memo(({ activeTab }) => (
+    <YStack paddingY="$8" alignItems="center" justifyContent="center">
+        <StackText fontSize="$4" color="#86878B">
+            {activeTab === 'videos' && 'No videos yet'}
+            {activeTab === 'favorites' && 'No favorites yet'}
+            {activeTab === 'reblogs' && 'No reblogs yet'}
+        </StackText>
+    </YStack>
+));
+
+const LoadingIndicator = memo(() => (
+    <YStack paddingY="$8" alignItems="center">
+        <ActivityIndicator size="large" color="#FE2C55" />
+    </YStack>
+));
+
+const FooterLoader = memo(() => (
+    <YStack paddingY="$6" alignItems="center">
+        <ActivityIndicator color="#F02C56" />
+    </YStack>
+));
 
 export default function ProfileScreen() {
     const { id } = useLocalSearchParams();
@@ -30,50 +52,48 @@ export default function ProfileScreen() {
     const [showReportModal, setShowReportModal] = useState(false);
     const [sortBy, setSortBy] = useState('Latest');
 
-    const { data: user, isLoading: userLoading } = useQuery({
-        queryKey: ['fetchAccount', id.toString()],
+    const { data: user, isLoading: userLoading, error: userError } = useQuery({
+        queryKey: ['fetchAccount', id?.toString()],
         queryFn: async () => {
             const res = await fetchAccount(id.toString());
             return res.data;
         },
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000,
     });
 
     const { data: userState, refetch: refetchUserState } = useQuery({
-        queryKey: ['fetchAccountState', id.toString()],
+        queryKey: ['fetchAccountState', id?.toString()],
         queryFn: async () => {
             const res = await fetchAccountState(id.toString());
             return res.data;
         },
-        enabled: !!user,
+        enabled: !!user && !!id,
+        staleTime: 2 * 60 * 1000,
     });
 
     const {
         data: videosData,
         fetchNextPage,
-        fetchPreviousPage,
         hasNextPage,
-        hasPreviousPage,
         isFetchingNextPage,
-        isRefetching,
         refetch,
         isLoading: videosLoading,
-        isFetching,
-        status,
-        isError,
-        error,
+        isError: videosError,
     } = useInfiniteQuery({
-        queryKey: ['userVideos', id.toString(), sortBy],
+        queryKey: ['userVideos', id?.toString(), sortBy],
         queryFn: fetchUserVideos,
         initialPageParam: undefined,
-        refetchOnWindowFocus: true,
-        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
-        enabled: !!user,
+        getNextPageParam: (lastPage) => lastPage?.meta?.next_cursor ?? undefined,
+        enabled: !!user && !!id,
+        staleTime: 60 * 1000,
+        gcTime: 5 * 60 * 1000,
     });
 
     const videos = useMemo(() => {
-        if (!videosData?.pages?.length) return [];
-        return videosData.pages.flatMap((p) => p?.data ?? []);
-    }, [videosData]);
+        if (!videosData?.pages) return [];
+        return videosData.pages.flatMap((page) => page?.data ?? []);
+    }, [videosData?.pages]);
 
     const handleEndReached = useCallback(() => {
         if (hasNextPage && !isFetchingNextPage) {
@@ -83,35 +103,37 @@ export default function ProfileScreen() {
 
     const followMutation = useMutation({
         mutationFn: async () => {
+            if (!id) throw new Error('No user ID');
+            
             if (userState?.pending_follow_request) {
-                const res = await cancelFollowRequest(id.toString());
-                return res.data;
+                return (await cancelFollowRequest(id.toString())).data;
             } else if (userState?.following) {
-                const res = await unfollowAccount(id.toString());
-                return res.data;
+                return (await unfollowAccount(id.toString())).data;
             } else {
-                const res = await followAccount(id.toString());
-                return res.data;
+                return (await followAccount(id.toString())).data;
             }
+        },
+        onMutate: async () => {
+            await queryClient.cancelQueries({ queryKey: ['fetchAccountState', id?.toString()] });
         },
         onSuccess: async () => {
             await refetchUserState();
-            
-            queryClient.invalidateQueries(['fetchAccount', id.toString()]);
+            queryClient.invalidateQueries({ queryKey: ['fetchAccount', id?.toString()] });
         },
         onError: (error) => {
             console.error('Follow action failed:', error);
+            Alert.alert('Error', 'Failed to update follow status. Please try again.');
         },
     });
 
     const blockMutation = useMutation({
         mutationFn: async () => {
+            if (!id) throw new Error('No user ID');
+            
             if (userState?.blocking) {
-                const res = await unblockAccount(id.toString());
-                return res.data;
+                return (await unblockAccount(id.toString())).data;
             } else {
-                const res = await blockAccount(id.toString());
-                return res.data;
+                return (await blockAccount(id.toString())).data;
             }
         },
         onSuccess: async () => {
@@ -120,142 +142,141 @@ export default function ProfileScreen() {
         },
         onError: (error) => {
             console.error('Block action failed:', error);
+            Alert.alert('Error', 'Failed to update block status. Please try again.');
         },
     });
 
-    const handleVideoPress = (video) => {
+    const handleVideoPress = useCallback((video) => {
+        if (!video?.id || !video?.account?.id) return;
         router.push(`/private/profile/feed/${video.id}?profileId=${video.account.id}`);
-    };
+    }, [router]);
 
-    const handleOnOpenMenu = () => {
+    const handleOnOpenMenu = useCallback(() => {
         setShowMenuModal(true);
-    };
+    }, []);
 
-    const handleBlockPress = () => {
+    const handleBlockPress = useCallback(() => {
+        if (!user || blockMutation.isPending) return;
+        
         setShowMenuModal(false);
         
-        if (userState?.blocked) {
+        if (userState?.blocking) {
             Alert.alert(
                 'Unblock User',
-                `Unblock @${user?.username}?`,
+                `Unblock @${user.username}?`,
                 [
-                    {
-                        text: 'Cancel',
-                        style: 'cancel',
-                    },
-                    {
-                        text: 'Unblock',
-                        onPress: () => blockMutation.mutate(),
-                    },
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Unblock', onPress: () => blockMutation.mutate() },
                 ]
             );
         } else {
             Alert.alert(
                 'Block User',
-                `Block @${user?.username}? They won't be able to see your profile or contact you.`,
+                `Block @${user.username}? They won't be able to see your profile or contact you.`,
                 [
-                    {
-                        text: 'Cancel',
-                        style: 'cancel',
-                    },
-                    {
-                        text: 'Block',
-                        style: 'destructive',
-                        onPress: () => blockMutation.mutate(),
-                    },
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Block', style: 'destructive', onPress: () => blockMutation.mutate() },
                 ]
             );
         }
-    };
+    }, [user, userState?.blocking, blockMutation]);
 
-    const handleReportPress = () => {
+    const handleReportPress = useCallback(() => {
         setShowMenuModal(false);
         setShowReportModal(true);
-    };
+    }, []);
 
-    const handleCommunityGuidelines = () => {
+    const handleCommunityGuidelines = useCallback(() => {
         setShowReportModal(false);
-        router.push('/private/settings/legal/community')
-    };
+        router.push('/private/settings/legal/community');
+    }, [router]);
 
-    const handleAccountShare = async () => {
+    const handleAccountShare = useCallback(async () => {
+        if (!user) return;
+        
         try {
             await shareContent({
                 message: `Check out @${user.username}'s account on Loops!`,
                 url: user.url
-            })
+            });
         } catch (error) {
             console.error('Share error:', error);
         }
-    }
+    }, [user]);
 
-    const handleOnUnblockPress = () => {
-         if (userState?.blocking) {
-            Alert.alert(
-                'Unblock User',
-                `Are you sure you want to unblock @${user?.username}?`,
-                [
-                    {
-                        text: 'No',
-                        style: 'cancel',
-                    },
-                    {
-                        text: 'Unblock',
-                        style: 'destructive',
-                        onPress: () => blockMutation.mutate(),
-                    },
-                ]
-            );
-        }
-    }
+    const handleOnUnblockPress = useCallback(() => {
+        if (!user || !userState?.blocking || blockMutation.isPending) return;
+        
+        Alert.alert(
+            'Unblock User',
+            `Are you sure you want to unblock @${user.username}?`,
+            [
+                { text: 'No', style: 'cancel' },
+                { text: 'Unblock', style: 'destructive', onPress: () => blockMutation.mutate() },
+            ]
+        );
+    }, [user, userState?.blocking, blockMutation]);
 
-    const handleOnFollowPress = () => {
+    const handleOnFollowPress = useCallback(() => {
+        if (!user || followMutation.isPending) return;
+        
         if (userState?.pending_follow_request) {
             Alert.alert(
                 'Cancel Follow Request',
-                `Cancel your follow request to @${user?.username}?`,
+                `Cancel your follow request to @${user.username}?`,
                 [
-                    {
-                        text: 'No',
-                        style: 'cancel',
-                    },
-                    {
-                        text: 'Yes',
-                        style: 'destructive',
-                        onPress: () => followMutation.mutate(),
-                    },
+                    { text: 'No', style: 'cancel' },
+                    { text: 'Yes', style: 'destructive', onPress: () => followMutation.mutate() },
                 ]
             );
         } else if (userState?.following) {
             Alert.alert(
                 'Unfollow',
-                `Unfollow @${user?.username}?`,
+                `Unfollow @${user.username}?`,
                 [
-                    {
-                        text: 'Cancel',
-                        style: 'cancel',
-                    },
-                    {
-                        text: 'Unfollow',
-                        style: 'destructive',
-                        onPress: () => followMutation.mutate(),
-                    },
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Unfollow', style: 'destructive', onPress: () => followMutation.mutate() },
                 ]
             );
         } else {
             followMutation.mutate();
         }
-    };
+    }, [user, userState, followMutation]);
 
-    const renderEmpty = () => (
-        <YStack paddingY="$8" alignItems="center" justifyContent="center">
-            <StackText fontSize="$4" color="#86878B">
-                {activeTab === 'videos' && 'No videos yet'}
-                {activeTab === 'favorites' && 'No favorites yet'}
-                {activeTab === 'reblogs' && 'No reblogs yet'}
-            </StackText>
-        </YStack>
-    );
+    const renderEmpty = useCallback(() => {
+        if (videosLoading) {
+            return <LoadingIndicator />;
+        }
+        return <EmptyVideos activeTab={activeTab} />;
+    }, [videosLoading, activeTab]);
+
+    const renderFooter = useCallback(() => {
+        return isFetchingNextPage ? <FooterLoader /> : null;
+    }, [isFetchingNextPage]);
+
+    const renderItem = useCallback(({ item }) => (
+        <VideoGrid video={item} onPress={handleVideoPress} />
+    ), [handleVideoPress]);
+
+    const keyExtractor = useCallback((item) => item?.id?.toString() ?? '', []);
+
+    if (userLoading) {
+        return (
+            <View style={tw`flex-1 bg-white justify-center items-center`}>
+                <ActivityIndicator size="large" color="#FE2C55" />
+            </View>
+        );
+    }
+
+    if (userError || !user) {
+        return (
+            <View style={tw`flex-1 bg-white justify-center items-center px-6`}>
+                <Text style={tw`text-base text-gray-900 text-center`}>
+                    Unable to load profile. Please try again.
+                </Text>
+            </View>
+        );
+    }
 
     return (
         <View style={tw`flex-1 bg-white`}>
@@ -274,14 +295,15 @@ export default function ProfileScreen() {
                     headerShadowVisible: false,
                     headerBackTitleVisible: false,
                     headerShown: true,
-                    headerTitle: user?.name ? `${user.name}` : 'Profile',
+                    headerTitle: user.name || 'Profile',
                 }}
             />
 
             <FlatList
-                data={videos || []}
+                data={videos}
                 numColumns={3}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={keyExtractor}
+                renderItem={renderItem}
                 ListHeaderComponent={
                     <>
                         <AccountHeader 
@@ -289,35 +311,28 @@ export default function ProfileScreen() {
                             userState={userState} 
                             onFollowPress={handleOnFollowPress}
                             onMenuPress={handleOnOpenMenu}
-                            onUnblockPress={() => handleOnUnblockPress()}
+                            onUnblockPress={handleOnUnblockPress}
                             isFollowLoading={followMutation.isPending}
                         />
-                        <AccountTabs activeTab={activeTab} onTabChange={setActiveTab} sortBy={sortBy} onSortChange={setSortBy} />
+                        <AccountTabs 
+                            activeTab={activeTab} 
+                            onTabChange={setActiveTab} 
+                            sortBy={sortBy} 
+                            onSortChange={setSortBy} 
+                        />
                     </>
                 }
-                renderItem={({ item }) => <VideoGrid video={item} onPress={handleVideoPress} />}
-                ListEmptyComponent={
-                    videosLoading ? (
-                        <YStack paddingY="$8" alignItems="center">
-                            <ActivityIndicator size="large" color="#FE2C55" />
-                        </YStack>
-                    ) : (
-                        renderEmpty()
-                    )
-                }
-                ListFooterComponent={
-                    isFetchingNextPage ? (
-                        <YStack paddingY="$6" alignItems="center">
-                            <ActivityIndicator color="#F02C56" />
-                        </YStack>
-                    ) : null
-                }
+                ListEmptyComponent={renderEmpty}
+                ListFooterComponent={renderFooter}
                 onEndReachedThreshold={0.4}
                 onEndReached={handleEndReached}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{
-                    flexGrow: 1,
-                }}
+                contentContainerStyle={{ flexGrow: 1 }}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={9}
+                initialNumToRender={9}
+                windowSize={5}
+                updateCellsBatchingPeriod={50}
             />
 
             <Modal
@@ -337,7 +352,7 @@ export default function ProfileScreen() {
                         <View style={tw`py-4`}>
                             <Pressable
                                 style={tw`px-6 py-4 flex-row items-center`}
-                                onPress={() => handleAccountShare()}
+                                onPress={handleAccountShare}
                             >
                                 <Text style={tw`text-base text-gray-900 font-medium`}>
                                     Share
@@ -348,10 +363,11 @@ export default function ProfileScreen() {
 
                             <Pressable
                                 style={tw`px-6 py-4 flex-row items-center`}
-                                onPress={() => handleBlockPress()}
+                                onPress={handleBlockPress}
+                                disabled={blockMutation.isPending}
                             >
-                                <Text style={tw`text-base text-gray-900 font-medium`}>
-                                    {userState?.blocked ? 'Unblock' : 'Block'}
+                                <Text style={tw`text-base text-gray-900 font-medium ${blockMutation.isPending ? 'opacity-50' : ''}`}>
+                                    {userState?.blocking ? 'Unblock' : 'Block'}
                                 </Text>
                             </Pressable>
 
@@ -359,7 +375,7 @@ export default function ProfileScreen() {
 
                             <Pressable
                                 style={tw`px-6 py-4 flex-row items-center`}
-                                onPress={() => handleReportPress()}
+                                onPress={handleReportPress}
                             >
                                 <Text style={tw`text-base text-red-600 font-medium`}>
                                     Report
@@ -381,16 +397,14 @@ export default function ProfileScreen() {
                 </Pressable>
             </Modal>
 
-            {user && (
-                <ReportModal
-                    visible={showReportModal}
-                    userState={userState}
-                    onClose={() => setShowReportModal(false)}
-                    onCommunityGuidelines={handleCommunityGuidelines}
-                    reportType="profile"
-                    item={user}
-                />
-            )}
+            <ReportModal
+                visible={showReportModal}
+                userState={userState}
+                onClose={() => setShowReportModal(false)}
+                onCommunityGuidelines={handleCommunityGuidelines}
+                reportType="profile"
+                item={user}
+            />
         </View>
     );
 }

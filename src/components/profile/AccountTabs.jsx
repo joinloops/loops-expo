@@ -1,6 +1,6 @@
 import { XStack } from '@/components/ui/Stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dimensions, Modal, Pressable, Text, View } from 'react-native';
 import tw from 'twrnc';
 
@@ -35,6 +35,13 @@ export default function AccountTabs({ activeTab, onTabChange, isOwner = false, s
     const [showSortMenu, setShowSortMenu] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
     const videosTabRef = useRef(null);
+    const mounted = useRef(true);
+
+    useEffect(() => {
+        return () => {
+            mounted.current = false;
+        };
+    }, []);
     
     const tabs = [
         { id: 'videos', icon: 'apps-sharp', iconActive: 'apps-sharp', customIcon: true },
@@ -52,6 +59,9 @@ export default function AccountTabs({ activeTab, onTabChange, isOwner = false, s
         const dropdownWidth = 160;
         
         videosTabRef.current?.measure((x, y, width, height, pageX, pageY) => {
+            if (!mounted.current) {
+                return;
+            }
             const centeredX = pageX + (width / 2) - (dropdownWidth / 2);
             setDropdownPosition({ x: centeredX, y: pageY + height });
             setShowSortMenu(true);
@@ -78,6 +88,7 @@ export default function AccountTabs({ activeTab, onTabChange, isOwner = false, s
                                     onTabChange(tab.id);
                                 }
                             }}
+                            collapsable={false} 
                             accessibilityLabel={`${tab.id} tab`}
                             accessibilityState={{
                                 selected: (activeTab === tab.id)

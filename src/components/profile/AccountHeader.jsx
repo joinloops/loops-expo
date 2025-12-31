@@ -51,7 +51,7 @@ export default function AccountHeader(props) {
                     </YStack>
                 </Pressable>
 
-                <Link href={`/private/profile/followers/${props.user?.id}?username=${props.user?.username}&followersCount=${props.user?.follower_count}&followingCount=${props.user?.following_count}`} asChild>
+                { props.user?.id ? (<Link href={`/private/profile/followers/${props.user?.id}?username=${props.user?.username}&followersCount=${props.user?.follower_count}&followingCount=${props.user?.following_count}`} asChild>
                     <Pressable>
                         <YStack justifyContent="center" alignItems="center">
                             <StackText fontSize="$5" fontWeight="bold">
@@ -62,7 +62,16 @@ export default function AccountHeader(props) {
                             </StackText>
                         </YStack>
                     </Pressable>
-                </Link>
+                </Link>) : (
+                    <YStack justifyContent="center" alignItems="center">
+                        <StackText fontSize="$5" fontWeight="bold">
+                            {prettyCount(props.user?.follower_count, {precision: props.user?.follower_count > 1000 ? 1 : 0})}
+                        </StackText>
+                        <StackText fontSize="$2" textColor="text-gray-500">
+                            Followers
+                        </StackText>
+                    </YStack>
+                )}
 
                 <View accessible={true}>
                     <YStack justifyContent="center" alignItems="center">
@@ -117,27 +126,11 @@ export default function AccountHeader(props) {
                             accessibilityRole="button"
                             title={<MaterialIcons name="keyboard-arrow-down" size={26} color="#333" />}>
                         </Button>
-
-                        {/* <Pressable
-                            onPress={props.onMenuPress}
-                            accessibilityLabel="More options"
-                            accessibilityHint="To share, block, or report this profile" // Be sure to update this if more options are added in the future.
-                            accessibilityRole="button"
-                            style={{
-                                borderWidth: 1,
-                                borderColor: '#E5E5E5',
-                                borderRadius: 4,
-                                padding: 10,
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            }}>
-                            <MaterialIcons name="keyboard-arrow-down" size={20} color="black" />
-                        </Pressable> */}
                     </XStack>
                 )}
             </XStack>
 
-            {props.user?.bio && (
+            {props.user?.bio && props.user?.bio?.length && (
                 <View accessible={true} accessibilityLabel={`Profile biography: ${props.user?.bio}`} style={{ paddingHorizontal: 20 }}>
                     <StackText fontSize="$2" textAlign="center" fontWeight="500" color="#161823">
                         {props.user?.bio}
@@ -145,11 +138,11 @@ export default function AccountHeader(props) {
                 </View>
             )}
 
-            { isOwner && props.user?.bio.length == 0 && (
+            { isOwner && props.user?.bio?.length === 0 && (
                 <Button theme="light" size="small" title="Add bio" onPress={props.onEditBio} style={tw`px-10 py-1 rounded-2xl`}></Button>
             )}
 
-            {props.user?.links && props.user?.links.length > 0 && (
+            {props.user?.links && props.user?.links?.length > 0 && (
                 <ScrollView 
                     horizontal 
                     showsHorizontalScrollIndicator={false}
@@ -160,12 +153,12 @@ export default function AccountHeader(props) {
                         paddingHorizontal: 20 
                     }}
                 >
-                    {props.user?.links.slice(0, 4).map((link, index) => (
+                    {props.user?.links?.slice(0, 4).map((link, index) => (
                         <Pressable key={index} onPress={() => openLink(link.link)} style={tw`bg-gray-100 p-1 rounded-xl px-3`}>
                             <XStack gap="$1" alignItems="center">
                                 <Ionicons name="link" size={14} color="#fb2c36" style={{ transform: [{ rotate: '-40deg' }] }} />
                                 <StackText fontSize="$2" fontWeight="semibold" color="#86878B" textDecorationLine="underline">
-                                    {link.url.replace(/^https?:\/\//, '')}
+                                    {link?.url?.replace(/^https?:\/\//, '')}
                                 </StackText>
                             </XStack>
                         </Pressable>
