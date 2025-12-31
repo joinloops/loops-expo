@@ -76,7 +76,7 @@ export default function AccountTabs({ activeTab, onTabChange, isOwner = false, s
     return (
         <>
             <View style={tw`border-b-2 border-gray-200`}>
-                <XStack justifyContent="space-around" alignItems="center" paddingX="$3" bg="white">
+                <XStack justifyContent="space-around" alignItems="center" paddingX="$3">
                     {tabs.map((tab) => (
                         <Pressable
                             key={tab.id}
