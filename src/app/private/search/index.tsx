@@ -207,7 +207,7 @@ export default function SearchScreen() {
                             router.push(`/private/profile/${item.id}`);
                         }}
                     >
-                        <Text style={tw`text-dark font-semibold text-sm`}>View</Text>
+                        <Text style={tw`text-black font-semibold text-sm`}>View</Text>
                     </PressableHaptics>
                 ) : (
                     <PressableHaptics
@@ -226,7 +226,7 @@ export default function SearchScreen() {
                                 color={isFollowing ? '#000' : '#fff'} 
                             />
                         ) : (
-                            <Text style={tw`${isFollowing ? 'text-dark' : 'text-white'} font-semibold text-sm`}>
+                            <Text style={tw`${isFollowing ? 'text-black' : 'text-white'} font-semibold text-sm`}>
                                 {isFollowing ? 'Following' : 'Follow'}
                             </Text>
                         )}
