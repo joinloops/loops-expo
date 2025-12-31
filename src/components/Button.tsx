@@ -2,7 +2,6 @@ import React from 'react';
 import { ActivityIndicator, Pressable, PressableProps, Text, ViewStyle } from 'react-native';
 import tw from 'twrnc';
 
-// Tamagui-style button sizes
 type ButtonSize = 'small' | 'medium' | 'large' | 'xlarge';
 
 type ButtonTheme =
@@ -24,7 +23,6 @@ type ButtonProps = {
     style?: ViewStyle;
 } & Omit<PressableProps, 'style'>;
 
-// Color definitions
 const COLORS = {
     primary: '#F02C56',
     action: '#0095f6',
@@ -35,7 +33,6 @@ const COLORS = {
     transparent: 'transparent',
 };
 
-// Size mappings for padding and text
 const sizeConfig = {
     small: {
         paddingX: 'px-3',
@@ -63,7 +60,6 @@ const sizeConfig = {
     },
 };
 
-// Theme configuration
 const themeConfig: Record<
     ButtonTheme,
     {
@@ -134,19 +130,17 @@ export function Button({
     ...rest
 }: ButtonProps) {
     const isDisabled = disabled || loading;
-    const themeStyles = themeConfig[theme];
+    const safeTheme = themeConfig[theme] ? theme : 'primary';
+    const themeStyles = themeConfig[safeTheme];
     const sizeStyles = sizeConfig[size];
 
-    // Determine spinner color based on theme
     const getSpinnerColor = (): string => {
-        if (theme.includes('outlined')) {
-            // For outlined buttons, use the border color
-            if (theme === 'primary-outlined') return COLORS.primary;
-            if (theme === 'action-outlined') return COLORS.action;
+        if (safeTheme.includes('outlined')) {
+            if (safeTheme === 'primary-outlined') return COLORS.primary;
+            if (safeTheme === 'action-outlined') return COLORS.action;
             return COLORS.gray;
         }
-        // For filled buttons, use white or black based on background
-        return theme === 'light' ? COLORS.black : COLORS.white;
+        return safeTheme === 'light' ? COLORS.black : COLORS.white;
     };
 
     return (
@@ -161,12 +155,9 @@ export function Button({
                     sizeStyles.rounded,
                     themeStyles.bg,
                     themeStyles.border,
-                    // Pressed state
                     pressed && !isDisabled && themeStyles.pressedBg,
-                    // Disabled state
                     isDisabled && themeStyles.disabledBg,
                     isDisabled && 'opacity-60',
-                    // Full width
                     full && 'flex-1',
                 ),
                 style,
@@ -180,7 +171,6 @@ export function Button({
                         'font-semibold tracking-wide',
                         sizeStyles.textSize,
                         themeStyles.text,
-                        // Disabled text color for outlined variants
                         isDisabled && themeStyles.disabledText,
                     )}>
                     {title}
