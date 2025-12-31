@@ -37,7 +37,8 @@ export default function ProfileScreen() {
         queryFn: fetchSelfAccountVideos,
         initialPageParam: undefined,
         refetchOnWindowFocus: true,
-        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
+        getNextPageParam: (lastPage) => lastPage?.meta?.next_cursor ?? undefined,
+        enabled: activeTab === 'videos',
     });
 
     const {
@@ -53,7 +54,7 @@ export default function ProfileScreen() {
         queryFn: fetchAccountFavorites,
         initialPageParam: undefined,
         refetchOnWindowFocus: true,
-        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
+        getNextPageParam: (lastPage) => lastPage?.meta?.next_cursor ?? undefined,
         enabled: activeTab === 'favorites',
     });
 
@@ -70,7 +71,7 @@ export default function ProfileScreen() {
         queryFn: fetchAccountLikes,
         initialPageParam: undefined,
         refetchOnWindowFocus: true,
-        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
+        getNextPageParam: (lastPage) => lastPage?.meta?.next_cursor ?? undefined,
         enabled: activeTab === 'likes',
     });
 
@@ -90,15 +91,12 @@ export default function ProfileScreen() {
     }, [likesData]);
 
     const activeData = useMemo(() => {
-        switch (activeTab) {
-            case 'favorites':
-                return favorites;
-            case 'likes':
-                return likes;
-            case 'videos':
-            default:
-                return videos;
-        }
+        const list =
+            activeTab === 'favorites' ? favorites :
+            activeTab === 'likes' ? likes :
+            videos;
+
+        return (list ?? []).filter((x) => x && x.id != null);
     }, [activeTab, videos, favorites, likes]);
 
     const isLoading = useMemo(() => {
@@ -146,6 +144,10 @@ export default function ProfileScreen() {
     }, [activeTab, favoritesHasNextPage, likesHasNextPage, videosHasNextPage]);
 
     const handleVideoPress = (video) => {
+        if (!video?.id || !video?.account?.id) {
+            console.warn('Invalid video data:', video);
+            return;
+        }
         router.push(`/private/profile/feed/${video.id}?profileId=${video.account.id}`);
     };
 
@@ -190,6 +192,25 @@ export default function ProfileScreen() {
                 break;
         }
     };
+
+    const renderHeader = useMemo(() => (
+        <>
+            <AccountHeader 
+                user={user} 
+                isOwner={true} 
+                showActions={true} 
+                loading={userLoading} 
+                onEditBio={handleEditBio} 
+            />
+            <AccountTabs 
+                activeTab={activeTab} 
+                isOwner={true} 
+                onTabChange={setActiveTab} 
+                sortBy={sortBy} 
+                onSortChange={setSortBy} 
+            />
+        </>
+    ), [user, userLoading, activeTab, sortBy]);
 
     const renderEmpty = () => (
         <YStack paddingY="$8" alignItems="center" justifyContent="center">
@@ -237,19 +258,11 @@ export default function ProfileScreen() {
             <FlatList
                 data={activeData}
                 numColumns={3}
-                keyExtractor={(item) => `${activeTab}-${item.id}`}
-                ListHeaderComponent={
-                    <>
-                        <AccountHeader user={user} isOwner={true} showActions={true} loading={userLoading} onEditBio={handleEditBio} />
-                        <AccountTabs 
-                            activeTab={activeTab} 
-                            isOwner={true} 
-                            onTabChange={setActiveTab} 
-                            sortBy={sortBy} 
-                            onSortChange={setSortBy} 
-                        />
-                    </>
-                }
+                keyExtractor={(item, index) => {
+                    const id = item?.id;
+                    return id != null ? `${activeTab}-${id}` : `${activeTab}-idx-${index}`;
+                }}
+                ListHeaderComponent={renderHeader}
                 renderItem={({ item }) => <VideoGrid video={item} onPress={handleVideoPress} />}
                 ListEmptyComponent={
                     isLoading || isFetching ? (
