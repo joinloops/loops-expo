@@ -8,6 +8,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     Dimensions,
+    Platform,
     Pressable,
     StyleSheet,
     Text,
@@ -430,12 +431,26 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         alignItems: 'center',
-        borderRadius: 50,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
-        elevation: 4,
+        ...Platform.select({
+            ios: {
+                borderRadius: 50,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 3,
+            },
+            android: {
+                filter: [
+                {
+                dropShadow: {
+                    offsetX: 0,
+                    offsetY: 2,
+                    standardDeviation: '3px',
+                    color: '#0000004D', // 30% opacity
+                    },
+                }],
+            }
+        })
     },
     avatarContainer: {
         borderWidth: 2,
