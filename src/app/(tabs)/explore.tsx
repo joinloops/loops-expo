@@ -156,14 +156,14 @@ export default function ExploreScreen() {
         const isFollowing = followingAccountId === item.id;
         const isHiding = hidingAccountId === item.id;
         return (
-            <View style={tw`mr-3 bg-zinc-900 rounded-xl overflow-hidden`}>
+            <View style={tw`mr-3 bg-gray-100 rounded-xl overflow-hidden`}>
                 <View style={tw`w-[${ACCOUNT_CARD_WIDTH}px] p-3 items-center`}>
                     <PressableHaptics
-                        style={tw`absolute top-2 right-2 z-10 bg-black bg-opacity-50 rounded-full p-1`}
+                        style={tw`absolute top-2 right-2 z-10 bg-opacity-50 rounded-full p-1`}
                         onPress={onHideSuggestion}
                         disabled={isHiding}
                     >
-                        <Feather name="x" size={16} color="white" />
+                        <Feather name="x" size={16} color="gray" />
                     </PressableHaptics>
 
                     <Pressable onPress={() => router.push(`/private/profile/${item.id}`)}>
@@ -174,12 +174,12 @@ export default function ExploreScreen() {
                     </Pressable>
 
                     <Pressable onPress={() => router.push(`/private/profile/${item.id}`)}>
-                        <Text style={tw`text-white font-semibold text-sm mb-1`} numberOfLines={1}>
+                        <Text style={tw`text-black font-semibold text-sm mb-1`} numberOfLines={1}>
                             {item.name}
                         </Text>
                     </Pressable>
 
-                    <Text style={tw`text-gray-400 text-xs text-center mb-1`} numberOfLines={1}>
+                    <Text style={tw`text-gray-800 text-xs text-center mb-1`} numberOfLines={1}>
                         {item.bio}
                     </Text>
     
@@ -193,8 +193,8 @@ export default function ExploreScreen() {
                     </XStack>
                     
                     <PressableHaptics onPress={onHandleFollow} disabled={isFollowing}>
-                        <View style={tw`bg-white rounded-full px-4 py-1.5`}>
-                            <Text style={tw`text-black font-semibold text-xs`}>{isFollowing ? 'Following...' : 'Follow'}</Text>
+                        <View style={[tw`rounded-full px-4 py-1.5`, {backgroundColor: '#f02b55'}]}>
+                            <Text style={tw`text-white font-semibold text-xs`}>{isFollowing ? 'Following...' : 'Follow'}</Text>
                         </View> 
                     </PressableHaptics>
                 </View>
@@ -208,20 +208,20 @@ export default function ExploreScreen() {
             <TouchableOpacity
                 style={[
                     tw`mr-2.5 rounded-xl px-4 py-2.5`,
-                    isSelected ? tw`bg-white` : tw`bg-zinc-900`
+                    isSelected ? tw`bg-black` : tw`bg-gray-100`
                 ]}
                 onPress={() => setSelectedTag(item.name)}
             >
                 <View style={tw`w-[${TAG_CARD_WIDTH}px] items-center`}>
                     <Text style={[
                         tw`font-bold text-base mb-0.5`,
-                        isSelected ? tw`text-black` : tw`text-white`
+                        isSelected ? tw`text-white` : tw`text-black`
                     ]}>
                         #{item.name}
                     </Text>
                     <Text style={[
                         tw`text-xs`,
-                        isSelected ? tw`text-gray-700` : tw`text-gray-400`
+                        isSelected ? tw`text-gray-200` : tw`text-gray-600`
                     ]}>
                         {item.count.toLocaleString()} videos
                     </Text>
@@ -239,7 +239,7 @@ export default function ExploreScreen() {
                 <Image
                     source={{ uri: item.media.thumbnail }}
                     style={[
-                        tw`rounded-lg bg-zinc-900`,
+                        tw`rounded-lg bg-gray-900`,
                         { width: VIDEO_THUMBNAIL_WIDTH, height: VIDEO_THUMBNAIL_WIDTH * 16/9 }
                     ]}
                     resizeMode="cover"
@@ -267,9 +267,9 @@ export default function ExploreScreen() {
     }
 
     return (
-        <SafeAreaView edges={['top']} style={{flex: 1, backgroundColor: 'black'}}>
+        <SafeAreaView edges={['top']} style={{flex: 1, backgroundColor: 'white'}}>
             <StatusBar style="light" animated={true} />
-            <View style={tw`flex flex-1 bg-black`}>
+            <View style={tw`flex flex-1 bg-white`}>
                 
                 <ScrollView
                     style={tw`flex-1`}
@@ -288,15 +288,15 @@ export default function ExploreScreen() {
                     scrollEventThrottle={16}
                 >
                     <View style={tw`px-4 pt-4 pb-3 flex justify-between items-center flex-row`}>
-                        <Text style={tw`text-white text-4xl font-bold`}>Explore</Text>
+                        <Text style={tw`text-black text-4xl font-bold`}>Explore</Text>
                         <Pressable onPress={() => router.push('/private/search')}>
-                            <Feather name="search" color="white" size={30} />
+                            <Feather name="search" color="black" size={30} />
                         </Pressable>
                     </View>
 
                     {accountsData && accountsData.length > 0 && (
                         <View style={tw`my-5`}>
-                            <Text style={tw`text-white text-lg font-bold px-4 mb-3`}>
+                            <Text style={tw`text-black text-lg font-bold px-4 mb-3`}>
                                 Suggested for you
                             </Text>
                             <FlatList
@@ -317,7 +317,7 @@ export default function ExploreScreen() {
 
                     {tagsData && tagsData.length > 0 && (
                         <View style={tw`mb-4`}>
-                            <Text style={tw`text-white text-lg font-bold px-4 mb-3`}>
+                            <Text style={tw`text-black text-lg font-bold px-4 mb-3`}>
                                 Trending
                             </Text>
                             <FlatList
