@@ -196,14 +196,16 @@ export const useAuthStore = create(
             },
 
             logOut: (onComplete?: () => void) => {
+                // Clear OAuth credentials
+                OAuthService.logout();
+
+                // Cear store state
                 set((state) => ({
                     ...state,
                     isLoggedIn: false,
                     user: null,
                     server: null,
                 }));
-                
-                OAuthService.logout();
 
                 onComplete?.();
             },
