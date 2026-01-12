@@ -26,31 +26,29 @@ export default function RootLayout() {
     }
 
     return (
-        <SafeAreaProvider>
-            <QueryClientProvider client={queryClient}>
-                <React.Fragment>
-                    <StatusBar style="auto" />
-                    <Stack>
-                        <Stack.Protected guard={isLoggedIn}>
-                            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                            <Stack.Screen name="private" />
-                            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-                        </Stack.Protected>
-                        <Stack.Protected guard={!isLoggedIn && hasCompletedOnboarding}>
-                            <Stack.Screen
-                                name="sign-in"
-                                options={{ headerShown: false, gestureEnabled: false }}
-                            />
-                            <Stack.Protected guard={shouldCreateAccount}>
-                                <Stack.Screen name="create-account" />
-                            </Stack.Protected>
-                        </Stack.Protected>
-                        <Stack.Protected guard={!hasCompletedOnboarding}>
-                            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-                        </Stack.Protected>
-                    </Stack>
-                </React.Fragment>
-            </QueryClientProvider>
-        </SafeAreaProvider>
+        <Stack>
+            {/* First priority: Show onboarding if not completed, regardless of login status */}
+            <Stack.Protected guard={!hasCompletedOnboarding}> 
+                <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+            </Stack.Protected>
+        
+            {/* Second priority: Show main app only if logged in AND completed onboarding */}
+            <Stack.Protected guard={hasCompletedOnboarding && isLoggedIn}>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="private" />
+                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            </Stack.Protected>
+        
+            {/* Third priority: Show auth screens only if completed onboarding but not logged in */}
+            <Stack.Protected guard={hasCompletedOnboarding && !isLoggedIn}>
+                <Stack.Screen
+                    name="sign-in"
+                    options={{ headerShown: false, gestureEnabled: false }}
+                />
+                <Stack.Protected guard={shouldCreateAccount}>
+                    <Stack.Screen name="create-account" />
+                </Stack.Protected>
+            </Stack.Protected>
+        </Stack>
     );
 }
