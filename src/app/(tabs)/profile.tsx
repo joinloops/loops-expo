@@ -149,11 +149,11 @@ export default function ProfileScreen() {
     }, [activeTab, favoritesHasNextPage, likesHasNextPage, videosHasNextPage]);
 
     const handleVideoPress = (video) => {
-        if (!video?.id || !video?.account?.id) {
+        if (!video?.id || !user?.id) {
             console.warn('Invalid video data:', video);
             return;
         }
-        router.push(`/private/profile/feed/${video.id}?profileId=${video.account.id}`);
+        router.push(`/private/profile/feed/${video.id}?profileId=${user.id}`);
     };
 
     const handleSettingsPress = () => {
