@@ -722,8 +722,8 @@ export async function fetchLocalFeed({
     pageParam?: string | false;
 } = {}): Promise<any> {
     const url = pageParam
-        ? `api/v1/feed/local?cursor=${pageParam}`
-        : `api/v1/feed/local`;
+        ? `api/v1/feed/for-you?cursor=${pageParam}`
+        : `api/v1/feed/for-you`;
     return await _selfGet(url);
 }
 
