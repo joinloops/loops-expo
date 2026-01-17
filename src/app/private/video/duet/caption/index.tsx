@@ -1,6 +1,6 @@
 import Avatar from '@/components/Avatar';
 import { XStack, YStack } from '@/components/ui/Stack';
-import { composeAutocompleteMentions, composeAutocompleteTags, uploadVideo } from '@/utils/requests';
+import { composeAutocompleteMentions, composeAutocompleteTags, uploadDuet } from '@/utils/requests';
 import { prettyCount } from '@/utils/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -269,7 +269,7 @@ export default function DuetCaptionScreen() {
             contains_ai: isAi ? '1' : '0'
         }
 
-        const res = await uploadVideo(params)
+        const res = await uploadDuet(params)
 
         if (!res.ok) {
             const text = await res.text();
