@@ -111,6 +111,12 @@ export function ReportModal({ visible, onClose, onCommunityGuidelines, item, rep
         onCommunityGuidelines();
     }
 
+    const handleHideContentChange = (value: boolean) => {
+        setHideContent(value);
+        const type = value ? 'block' : 'unblock';
+        blockMutation.mutate({type, id: item.account?.id});
+    };
+
     const handleDone = () => {
         handleClose();
     };
@@ -258,10 +264,10 @@ export function ReportModal({ visible, onClose, onCommunityGuidelines, item, rep
                                         </Text>
                                         <Switch
                                             value={hideContent}
-                                            onValueChange={setHideContent}
+                                            onValueChange={handleHideContentChange}
                                             trackColor={{ false: '#E5E5EA', true: '#34C759' }}
                                             thumbColor="#fff"
-                                            />
+                                        />
                                     </View>
                                 </>
                             )}
