@@ -1,4 +1,5 @@
 import { SectionHeader } from '@/components/settings/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Storage } from '@/utils/cache';
 import { fetchSelfAccount, getMimeType, updateAccountAvatar } from '@/utils/requests';
 import { truncate } from '@/utils/ui';
@@ -8,7 +9,16 @@ import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+    Alert,
+    Image,
+    Platform,
+    Pressable,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import tw from 'twrnc';
 
 const ProfileItem = ({
@@ -22,12 +32,18 @@ const ProfileItem = ({
     <Pressable
         onPress={onPress}
         style={({ pressed }) => [
-            tw`flex-row items-center justify-between py-4 px-5 bg-white border-b border-gray-100`,
-            pressed && tw`bg-gray-50`,
+            tw`flex-row items-center justify-between py-4 px-5 bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800`,
+            pressed && tw`bg-gray-50 dark:bg-gray-900`,
         ]}>
-        <Text style={tw`text-base text-gray-900`}>{label}</Text>
+        <Text style={tw`text-base text-gray-900 dark:text-white`}>{label}</Text>
         <View style={tw`flex-row items-center gap-2`}>
-            <Text style={[tw`text-base mr-2`, value ? tw`text-gray-900` : tw`text-gray-400`]}>
+            <Text
+                style={[
+                    tw`text-base mr-2`,
+                    value
+                        ? tw`text-gray-900 dark:text-gray-500`
+                        : tw`text-gray-400 dark:text-gray-600`,
+                ]}>
                 {truncate(value || placeholder, 20)}
             </Text>
             {showCopy ? (
@@ -43,6 +59,7 @@ const ProfileItem = ({
 
 export default function EditProfileScreen() {
     const queryClient = useQueryClient();
+    const { colorScheme } = useTheme();
 
     const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['fetchSelfAccount', 'self'],
@@ -77,15 +94,15 @@ export default function EditProfileScreen() {
 
         if (!result.canceled) {
             setProfileImage(result.assets[0].uri);
-            const image = result.assets[0].uri
-            const name = image.split("/").slice(-1)[0];
+            const image = result.assets[0].uri;
+            const name = image.split('/').slice(-1)[0];
             const payload = {
                 uri: Platform.OS === 'ios' ? image.replace('file://', '') : image,
                 type: getMimeType(image),
-                name: name
-            }
+                name: name,
+            };
 
-            mutation.mutate({avatar: payload})
+            mutation.mutate({ avatar: payload });
         }
     };
 
@@ -105,38 +122,38 @@ export default function EditProfileScreen() {
 
         if (!result.canceled) {
             setProfileImage(result.assets[0].uri);
-            const image = result.assets[0].uri
-            const name = image.split("/").slice(-1)[0];
+            const image = result.assets[0].uri;
+            const name = image.split('/').slice(-1)[0];
             const payload = {
                 uri: Platform.OS === 'ios' ? image.replace('file://', '') : image,
                 type: getMimeType(image),
-                name: name
-            }
+                name: name,
+            };
 
-            mutation.mutate({avatar: payload})
+            mutation.mutate({ avatar: payload });
         }
     };
 
     const mutation = useMutation({
         mutationFn: async (data) => {
-            const res = await updateAccountAvatar(data)
-            if(!res) {
-            if(res?.message) {
-                throw res.message
-            } else {
-                throw 'An unexpected error occured!'
+            const res = await updateAccountAvatar(data);
+            if (!res) {
+                if (res?.message) {
+                    throw res.message;
+                } else {
+                    throw 'An unexpected error occured!';
+                }
             }
-            }
-            return res
+            return res;
         },
         onSuccess: (data, variables, context) => {
-           queryClient.setQueryData(['fetchSelfAccount', 'self'], data);
-           router.back();
+            queryClient.setQueryData(['fetchSelfAccount', 'self'], data);
+            router.back();
         },
         onError: (error) => {
-            Alert.alert('Error', error)
-        }
-      })
+            Alert.alert('Error', error);
+        },
+    });
 
     const handleChangePhoto = () => {
         Alert.alert('Change photo', 'Choose a photo from your library or take a new one', [
@@ -152,18 +169,36 @@ export default function EditProfileScreen() {
     };
 
     return (
-        <View style={tw`flex-1 bg-white`}>
+        <View style={tw`flex-1 bg-white dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Edit Profile',
-                    headerStyle: { backgroundColor: '#fff' },
-                    headerBackTitle: 'Account',
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+                    headerBackVisible: false,
                     headerShown: true,
+                    headerLeft: () => (
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (router.canGoBack()) {
+                                    router.back();
+                                } else {
+                                    router.push('/(tabs)');
+                                }
+                            }}
+                            style={tw`px-1`}>
+                            <Ionicons
+                                name="chevron-back"
+                                size={24}
+                                color={colorScheme === 'dark' ? '#fff' : '#000'}
+                            />
+                        </TouchableOpacity>
+                    ),
                 }}
             />
 
             <ScrollView style={tw`flex-1`}>
-                <View style={tw`items-center py-8 bg-white`}>
+                <View style={tw`items-center py-8 bg-white dark:bg-black`}>
                     <Pressable onPress={handleChangePhoto}>
                         <View style={tw`relative`}>
                             <View
@@ -184,7 +219,9 @@ export default function EditProfileScreen() {
                         </View>
                     </Pressable>
                     <Pressable onPress={handleChangePhoto}>
-                        <Text style={tw`mt-4 text-base text-gray-900`}>Change photo</Text>
+                        <Text style={tw`mt-4 text-base text-gray-900 dark:text-gray-300`}>
+                            Change photo
+                        </Text>
                     </Pressable>
                 </View>
 
@@ -213,13 +250,16 @@ export default function EditProfileScreen() {
                 <Pressable
                     onPress={copyProfileUrl}
                     style={({ pressed }) => [
-                        tw`flex-row items-center justify-end py-3 px-5 bg-white border-b border-gray-100`,
-                        pressed && tw`bg-gray-50`,
+                        tw`flex-row items-center justify-between py-4 px-5 bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800`,
+                        pressed && tw`bg-gray-50 dark:bg-gray-900`,
                     ]}>
-                    <Text style={tw`text-sm text-gray-600 mr-2`}>
-                        {server}/@{username}
-                    </Text>
-                    <Ionicons name="copy-outline" size={18} color="#999" />
+                    <Text style={tw`text-base text-gray-600 dark:text-white`}>Profile</Text>
+                    <View style={tw`flex flex-row`}>
+                        <Text style={tw`text-sm text-gray-600 dark:text-white mr-2`}>
+                            {server}/@{username}
+                        </Text>
+                        <Ionicons name="copy-outline" size={18} color="#999" />
+                    </View>
                 </Pressable>
 
                 <ProfileItem
@@ -228,6 +268,17 @@ export default function EditProfileScreen() {
                     onPress={() =>
                         router.push({
                             pathname: '/private/settings/account/edit-bio',
+                            params: { bio },
+                        })
+                    }
+                />
+
+                <ProfileItem
+                    label="Links"
+                    value={'Manage Links'}
+                    onPress={() =>
+                        router.push({
+                            pathname: '/private/settings/account/edit-links',
                             params: { bio },
                         })
                     }
