@@ -13,7 +13,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -34,7 +34,7 @@ export default function VideoPlayer({
     otherOpen,
     navigation,
     onNavigate,
-    tabBarHeight = 60
+    tabBarHeight = 60,
 }) {
     const [isLiked, setIsLiked] = useState(item.has_liked);
     const [isBookmarked, setIsBookmarked] = useState(item.has_bookmarked);
@@ -97,7 +97,16 @@ export default function VideoPlayer({
         } catch (error) {
             console.log('Player control error:', error);
         }
-    }, [isActive, commentsOpen, shareOpen, otherOpen, screenFocused, player, item.is_sensitive, playSensitive]);
+    }, [
+        isActive,
+        commentsOpen,
+        shareOpen,
+        otherOpen,
+        screenFocused,
+        player,
+        item.is_sensitive,
+        playSensitive,
+    ]);
 
     useEffect(() => {
         if (!isActive) {
@@ -112,9 +121,9 @@ export default function VideoPlayer({
     };
 
     const handleBookmark = () => {
-        setIsBookmarked(!isBookmarked)
-        onBookmark(item.id, !isBookmarked)
-    }
+        setIsBookmarked(!isBookmarked);
+        onBookmark(item.id, !isBookmarked);
+    };
 
     const togglePlayPause = () => {
         if (!player || !isMountedRef.current) return;
@@ -138,7 +147,7 @@ export default function VideoPlayer({
         if (!isMountedRef.current) {
             return;
         }
-        
+
         const newShowControls = !showControls;
         setShowControls(newShowControls);
 
@@ -172,58 +181,58 @@ export default function VideoPlayer({
         setPlaySensitive(true);
     };
 
-    
-    if(item.is_sensitive && !playSensitive) {
+    if (item.is_sensitive && !playSensitive) {
         return (
-        <View style={styles.videoContainer}>
-            <View 
-                style={styles.sensitiveOverlay}
-                accessible={true}
-                accessibilityLabel="Sensitive content warning. This video may contain sensitive content."
-                accessibilityRole="alert">
-                <View style={styles.sensitiveContent}>
-                    <View style={styles.sensitiveIconWrapper}>
-                        <Ionicons name="eye-off-outline" size={48} color="white" />
-                    </View>
-                    <Text style={styles.sensitiveTitle}>Sensitive Content</Text>
-                    <Text style={styles.sensitiveDescription}>
-                        This video may contain sensitive content
-                    </Text>
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            style={styles.viewButton}
-                            onPress={handleViewSensitiveContent}
-                            activeOpacity={0.8}
-                            accessible={true}
-                            accessibilityLabel="Watch video anyway"
-                            accessibilityRole="button"
-                            accessibilityHint="Dismisses the sensitive content warning and plays the video"
-                            >
-                            <Text style={styles.viewButtonText}>Watch anyways</Text>
-                        </TouchableOpacity>
+            <View style={styles.videoContainer}>
+                <View
+                    style={styles.sensitiveOverlay}
+                    accessible={true}
+                    accessibilityLabel="Sensitive content warning. This video may contain sensitive content."
+                    accessibilityRole="alert">
+                    <View style={styles.sensitiveContent}>
+                        <View style={styles.sensitiveIconWrapper}>
+                            <Ionicons name="eye-off-outline" size={48} color="white" />
+                        </View>
+                        <Text style={styles.sensitiveTitle}>Sensitive Content</Text>
+                        <Text style={styles.sensitiveDescription}>
+                            This video may contain sensitive content
+                        </Text>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity
+                                style={styles.viewButton}
+                                onPress={handleViewSensitiveContent}
+                                activeOpacity={0.8}
+                                accessible={true}
+                                accessibilityLabel="Watch video anyway"
+                                accessibilityRole="button"
+                                accessibilityHint="Dismisses the sensitive content warning and plays the video">
+                                <Text style={styles.viewButtonText}>Watch anyways</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </View>
-        </View>
-        )
+        );
     }
 
     return (
         <View style={styles.videoContainer}>
-            <Pressable
-                style={styles.videoWrapper}
-                onPress={() => handleScreenPress()}
-                disabled={showControls}
-            >
+            <View style={styles.videoWrapper}>
                 <VideoView
                     style={styles.video}
                     player={player}
                     allowsPictureInPicture={false}
                     nativeControls={false}
                     accessible={true}
-                    accessibilityLabel={item.media.alt_text || "Video content"}
+                    accessibilityLabel={item.media.alt_text || 'Video content'}
                     accessibilityHint="Double tap to play or pause"
                     contentFit="contain"
+                />
+
+                <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={() => handleScreenPress()}
+                    disabled={showControls}
                 />
 
                 {showControls && (
@@ -234,17 +243,12 @@ export default function VideoPlayer({
                                 togglePlayPause();
                             }}
                             style={styles.playButton}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons
-                                name={isPlaying ? 'pause' : 'play'}
-                                size={60}
-                                color="white"
-                            />
+                            activeOpacity={0.7}>
+                            <Ionicons name={isPlaying ? 'pause' : 'play'} size={60} color="white" />
                         </TouchableOpacity>
                     </View>
                 )}
-            </Pressable>
+            </View>
 
             <LinearGradient
                 colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
@@ -253,18 +257,16 @@ export default function VideoPlayer({
             />
 
             <View style={[styles.rightActions, { bottom: bottomInset + tabBarHeight + 20 }]}>
-                <PressableHaptics style={styles.actionButton} onPress={() => router.push(`/private/profile/${item.account.id}`)}>
+                <PressableHaptics
+                    style={styles.actionButton}
+                    onPress={() => router.push(`/private/profile/${item.account.id}`)}>
                     <View style={styles.avatarContainer}>
                         <Avatar url={item.account?.avatar} />
                     </View>
                 </PressableHaptics>
 
                 <PressableHaptics style={styles.actionButton} onPress={handleLike}>
-                    <Ionicons
-                        name={'heart'}
-                        size={35}
-                        color={isLiked ? '#FF2D55' : 'white'}
-                    />
+                    <Ionicons name={'heart'} size={35} color={isLiked ? '#FF2D55' : 'white'} />
                     <Text style={styles.actionText}>
                         {item.likes + (isLiked && !item.has_liked ? 1 : 0)}
                     </Text>
@@ -278,8 +280,14 @@ export default function VideoPlayer({
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.actionButton} onPress={handleBookmark}>
-                    <Ionicons name="bookmark" size={32} color={isBookmarked ? '#FF2D55' : 'white'} />
-                    <Text style={styles.actionText}>{item.bookmarks  + (isBookmarked && !item.has_bookmarked ? 1 : 0)}</Text>
+                    <Ionicons
+                        name="bookmark"
+                        size={32}
+                        color={isBookmarked ? '#FF2D55' : 'white'}
+                    />
+                    <Text style={styles.actionText}>
+                        {item.bookmarks + (isBookmarked && !item.has_bookmarked ? 1 : 0)}
+                    </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.actionButton} onPress={() => onShare(item)}>
@@ -296,27 +304,28 @@ export default function VideoPlayer({
                 <TouchableOpacity
                     onPress={() => {
                         onNavigate?.();
-                        router.push(`/private/profile/${item.account.id}`)
-                    }}
-                >
+                        router.push(`/private/profile/${item.account.id}`);
+                    }}>
                     <Text style={styles.username}>@{item.account.username}</Text>
                 </TouchableOpacity>
-                { item.caption && (<LinkifiedCaption
-                    caption={item.caption}
-                    tags={item.tags || []}
-                    mentions={item.mentions || []}
-                    style={styles.caption}
-                    numberOfLines={1}
-                    onHashtagPress={(tag) => {
-                        onNavigate?.();
-                        router.push(`/private/search?query=${tag}`)
-                    }}
-                    onMentionPress={(username, profileId) => {
-                        onNavigate?.();
-                        router.push(`/private/profile/${profileId}`)
-                    }}
-                    onMorePress={() => onComment(item)}
-                />) }
+                {item.caption && (
+                    <LinkifiedCaption
+                        caption={item.caption}
+                        tags={item.tags || []}
+                        mentions={item.mentions || []}
+                        style={styles.caption}
+                        numberOfLines={1}
+                        onHashtagPress={(tag) => {
+                            onNavigate?.();
+                            router.push(`/private/search?query=${tag}`);
+                        }}
+                        onMentionPress={(username, profileId) => {
+                            onNavigate?.();
+                            router.push(`/private/profile/${profileId}`);
+                        }}
+                        onMorePress={() => onComment(item)}
+                    />
+                )}
 
                 {item?.meta?.contains_ai && (
                     <View>
@@ -340,7 +349,7 @@ export default function VideoPlayer({
             </View>
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     videoContainer: {
@@ -391,7 +400,7 @@ const styles = StyleSheet.create({
     sensitiveIconWrapper: {
         padding: 20,
         borderRadius: 90,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)'
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
     sensitiveTitle: {
         color: 'white',
@@ -441,16 +450,17 @@ const styles = StyleSheet.create({
             },
             android: {
                 filter: [
-                {
-                dropShadow: {
-                    offsetX: 0,
-                    offsetY: 2,
-                    standardDeviation: '3px',
-                    color: '#0000004D', // 30% opacity
+                    {
+                        dropShadow: {
+                            offsetX: 0,
+                            offsetY: 2,
+                            standardDeviation: '3px',
+                            color: '#0000004D', // 30% opacity
+                        },
                     },
-                }],
-            }
-        })
+                ],
+            },
+        }),
     },
     avatarContainer: {
         borderWidth: 2,
@@ -527,5 +537,5 @@ const styles = StyleSheet.create({
     aiLabelText: {
         color: '#ffffff',
         fontWeight: 500,
-    }
+    },
 });
