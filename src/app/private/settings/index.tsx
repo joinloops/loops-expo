@@ -1,13 +1,14 @@
 import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAuthStore } from '@/utils/authStore';
 import { useNotificationStore } from '@/utils/notificationStore';
 import { openBrowser } from '@/utils/requests';
 import { shareContent } from '@/utils/sharer';
+import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function SettingsScreen() {
@@ -15,6 +16,7 @@ export default function SettingsScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const notificationStore = useNotificationStore();
+    const { colorScheme } = useTheme();
 
     const performLogOut = async () => {
         queryClient.clear();
@@ -40,31 +42,46 @@ export default function SettingsScreen() {
     };
 
     const handleReportBug = async () => {
-        await openBrowser('https://github.com/joinloops/loops-expo/issues/new')
-    }
+        await openBrowser('https://github.com/joinloops/loops-expo/issues/new');
+    };
 
     const handleShare = async () => {
         try {
             await shareContent({
                 message: `Check out my account on Loops!`,
-                url: user?.url
-            })
+                url: user?.url,
+            });
         } catch (error) {
             console.error('Share error:', error);
         }
-    }
-
-
+    };
 
     return (
-        <View style={tw`flex-1 bg-gray-100`}>
-            <StatusBar style="dark" />
+        <View style={tw`flex-1 bg-gray-100 dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Settings and privacy',
-                    headerStyle: { backgroundColor: '#fff' },
-                    headerBackTitle: 'Back',
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+                    headerBackVisible: false,
                     headerShown: true,
+                    headerLeft: () => (
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (router.canGoBack()) {
+                                    router.back();
+                                } else {
+                                    router.push('/(tabs)');
+                                }
+                            }}
+                            style={tw`px-1`}>
+                            <Ionicons
+                                name="chevron-back"
+                                size={24}
+                                color={colorScheme === 'dark' ? '#fff' : '#000'}
+                            />
+                        </TouchableOpacity>
+                    ),
                 }}
             />
             <ScrollView style={tw`flex-1`}>
@@ -88,10 +105,24 @@ export default function SettingsScreen() {
                 />
 
                 <Divider />
-                <SettingsItem icon="share-outline" label="Share profile" onPress={() => handleShare()} />
+                <SettingsItem
+                    icon="share-outline"
+                    label="Share profile"
+                    onPress={() => handleShare()}
+                />
                 <Divider />
                 <SectionHeader title="Content & Display" />
-                <SettingsItem icon="phone-portrait-outline" label="Feeds" onPress={() => router.push('/private/settings/content/feeds')} />
+                <SettingsItem
+                    icon={colorScheme == 'dark' ? 'sunny-outline' : 'moon-outline'}
+                    label="Appearance"
+                    onPress={() => router.push('/private/settings/content/appearance')}
+                />
+                <Divider />
+                <SettingsItem
+                    icon="phone-portrait-outline"
+                    label="Feeds"
+                    onPress={() => router.push('/private/settings/content/feeds')}
+                />
                 <Divider />
                 {/* <SettingsItem icon="play-circle-outline" label="Playback" onPress={() => router.push('/private/settings/content/playback')} />
                 <Divider /> */}
@@ -131,7 +162,7 @@ export default function SettingsScreen() {
                     onPress={() => handleSignOut()}
                 />
                 <View style={tw`flex justify-center items-center mt-5`}>
-                    <Text style={tw`text-gray-500`}>Loops v1.0.1.20</Text>
+                    <Text style={tw`text-gray-500`}>Loops v1.0.1.21</Text>
                 </View>
             </ScrollView>
         </View>

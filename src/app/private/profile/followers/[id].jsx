@@ -1,13 +1,30 @@
 import AccountListItem from '@/components/profile/AccountListItem';
 import { StackText, YStack } from '@/components/ui/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAuthStore } from '@/utils/authStore';
-import { fetchAccountFollowers, fetchAccountFollowing, fetchAccountFriends, fetchAccountSuggested, followAccount, unfollowAccount } from '@/utils/requests';
+import {
+    fetchAccountFollowers,
+    fetchAccountFollowing,
+    fetchAccountFriends,
+    fetchAccountSuggested,
+    followAccount,
+    unfollowAccount,
+} from '@/utils/requests';
 import { prettyCount } from '@/utils/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import tw from 'twrnc';
 
 const keyExtractor = (item, index) => `user-${item.id}-${index}`;
@@ -20,6 +37,7 @@ export default function Screen() {
     const [loadingUserId, setLoadingUserId] = useState(null);
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
+    const { colorScheme } = useTheme();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -63,14 +81,14 @@ export default function Screen() {
         refetchOnWindowFocus: false,
         getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
         enabled: activeTab === 'suggested',
-    })
+    });
 
     const activeQuery = useMemo(() => {
         const queries = {
             followers: followersQuery,
             following: followingQuery,
             friends: friendsQuery,
-            suggested: suggestedQuery
+            suggested: suggestedQuery,
         };
         return queries[activeTab] || followersQuery;
     }, [activeTab, followersQuery, followingQuery, friendsQuery, suggestedQuery]);
@@ -82,36 +100,34 @@ export default function Screen() {
         },
         onMutate: async (userId) => {
             setLoadingUserId(userId);
-            
+
             const queryKey = ['accountFollowers', id, debouncedSearch];
             const followingKey = ['accountFollowing', id, debouncedSearch];
             const suggestedKey = ['accountSuggested', id];
             const friendsKey = ['accountFriends', id];
-            
+
             await queryClient.cancelQueries({ queryKey });
-            
+
             const previousData = queryClient.getQueryData(queryKey);
-            
+
             queryClient.setQueriesData({ queryKey }, (old) => {
                 if (!old?.pages) return old;
                 return {
                     ...old,
-                    pages: old.pages.map(page => ({
+                    pages: old.pages.map((page) => ({
                         ...page,
-                        data: page.data?.map(item => 
-                            item.id === userId 
-                                ? { ...item, is_following: true }
-                                : item
-                        )
-                    }))
+                        data: page.data?.map((item) =>
+                            item.id === userId ? { ...item, is_following: true } : item,
+                        ),
+                    })),
                 };
             });
-            
+
             return { previousData };
         },
         onSuccess: () => {
             setLoadingUserId(null);
-            
+
             queryClient.invalidateQueries({ queryKey: ['accountFollowers', id] });
             queryClient.invalidateQueries({ queryKey: ['accountFollowing', id] });
             queryClient.invalidateQueries({ queryKey: ['accountSuggested', id] });
@@ -120,11 +136,11 @@ export default function Screen() {
         },
         onError: (error, variables, context) => {
             setLoadingUserId(null);
-            
+
             if (context?.previousData) {
                 queryClient.setQueryData(
-                    ['accountFollowers', id, debouncedSearch], 
-                    context.previousData
+                    ['accountFollowers', id, debouncedSearch],
+                    context.previousData,
                 );
             }
             console.error('Follow action failed:', error);
@@ -138,33 +154,31 @@ export default function Screen() {
         },
         onMutate: async (userId) => {
             setLoadingUserId(userId);
-            
+
             const queryKey = ['accountFollowing', id, debouncedSearch];
-            
+
             await queryClient.cancelQueries({ queryKey });
-            
+
             const previousData = queryClient.getQueryData(queryKey);
-            
+
             queryClient.setQueriesData({ queryKey }, (old) => {
                 if (!old?.pages) return old;
                 return {
                     ...old,
-                    pages: old.pages.map(page => ({
+                    pages: old.pages.map((page) => ({
                         ...page,
-                        data: page.data?.map(item => 
-                            item.id === userId 
-                                ? { ...item, is_following: false }
-                                : item
-                        )
-                    }))
+                        data: page.data?.map((item) =>
+                            item.id === userId ? { ...item, is_following: false } : item,
+                        ),
+                    })),
                 };
             });
-            
+
             return { previousData };
         },
         onSuccess: () => {
             setLoadingUserId(null);
-            
+
             queryClient.invalidateQueries({ queryKey: ['accountFollowers', id] });
             queryClient.invalidateQueries({ queryKey: ['accountFollowing', id] });
             queryClient.invalidateQueries({ queryKey: ['accountSuggested', id] });
@@ -173,17 +187,17 @@ export default function Screen() {
         },
         onError: (error, variables, context) => {
             setLoadingUserId(null);
-            
+
             if (context?.previousData) {
                 queryClient.setQueryData(
-                    ['accountFollowing', id, debouncedSearch], 
-                    context.previousData
+                    ['accountFollowing', id, debouncedSearch],
+                    context.previousData,
                 );
             }
             console.error('Unfollow action failed:', error);
         },
     });
-    
+
     const {
         data: feed,
         fetchNextPage,
@@ -194,18 +208,24 @@ export default function Screen() {
         status,
     } = activeQuery;
 
-    const handleFollow = useCallback((userId) => {
-        followMutation.mutate(userId);
-    }, [followMutation]);
+    const handleFollow = useCallback(
+        (userId) => {
+            followMutation.mutate(userId);
+        },
+        [followMutation],
+    );
 
-    const handleUnfollow = useCallback((userId) => {
-        unfollowMutation.mutate(userId);
-    }, [unfollowMutation]);
+    const handleUnfollow = useCallback(
+        (userId) => {
+            unfollowMutation.mutate(userId);
+        },
+        [unfollowMutation],
+    );
 
     const RenderItem = ({ item }) => (
-        <AccountListItem 
-            key={item.id} 
-            item={item} 
+        <AccountListItem
+            key={item.id}
+            item={item}
             handleFollow={handleFollow}
             handleUnfollow={handleUnfollow}
             isLoading={loadingUserId === item.id}
@@ -228,15 +248,17 @@ export default function Screen() {
                     </YStack>
                 );
             }
-            
+
             return (
                 <YStack paddingY="$5" justifyContent="center" alignItems="center">
                     <StackText fontSize="$5" style={tw`text-gray-500`}>
-                        {activeTab === 'followers' 
-                            ? 'This account has no followers yet.' :
-                            activeTab === 'following' ? 'This account is not following anyone yet.' :
-                            activeTab === 'friends' ? 'No mutual friends yet.' : 'No suggestions found :('
-                        }
+                        {activeTab === 'followers'
+                            ? 'This account has no followers yet.'
+                            : activeTab === 'following'
+                              ? 'This account is not following anyone yet.'
+                              : activeTab === 'friends'
+                                ? 'No mutual friends yet.'
+                                : 'No suggestions found :('}
                     </StackText>
                 </YStack>
             );
@@ -262,13 +284,13 @@ export default function Screen() {
         const isActive = activeTab === tab;
         return (
             <TouchableOpacity
-                style={tw`flex-1 pb-3 px-5 ${isActive ? 'border-b-2 border-black' : ''}`}
+                style={tw`flex-1 pb-3 px-5 ${isActive ? 'border-b-2 border-black dark:border-white' : ''}`}
                 onPress={() => {
                     setActiveTab(tab);
                     setSearchQuery('');
-                }}
-            >
-                <Text style={tw`text-center font-semibold ${isActive ? 'text-black' : 'text-gray-400'}`}>
+                }}>
+                <Text
+                    style={tw`text-center font-semibold ${isActive ? 'text-black dark:text-white' : 'text-gray-400'}`}>
                     {label} {count > 0 ? prettyCount(count) : ''}
                 </Text>
             </TouchableOpacity>
@@ -276,16 +298,16 @@ export default function Screen() {
     };
 
     return (
-        <View style={tw`flex-1 bg-white`}>
+        <View style={tw`flex-1 bg-white dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'User',
-                    headerStyle: { backgroundColor: '#fff' },
-                    headerTintColor: '#000',
                     headerTitleStyle: {
                         fontWeight: 'bold',
-                        color: '#000',
+                        color: colorScheme === 'dark' ? '#fff' : '#000',
                     },
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerBackTitle: 'Back',
                     headerShadowVisible: false,
                     headerBackTitleVisible: true,
@@ -294,46 +316,49 @@ export default function Screen() {
                 }}
             />
 
-            <View style={tw`border-b border-gray-200`}>
-                <ScrollView 
-                    horizontal 
+            <View style={tw`border-b border-gray-200 dark:border-gray-800`}>
+                <ScrollView
+                    horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={tw`${user?.id == id ? 'flex-1' : 'flex'} px-6 pt-2 gap-3`}
-                >
+                    contentContainerStyle={tw`${user?.id == id ? 'flex-1' : 'flex'} px-6 pt-2 gap-3`}>
                     <TabButton tab="following" label="Following" count={followingCount} />
                     <TabButton tab="followers" label="Followers" count={followersCount} />
-                    { followingCount > 2 && user?.id != id && (<TabButton tab="friends" label="Friends" count={0} />) }
-                    { user?.id != id && (<TabButton tab="suggested" label="Suggested" count={0} />) }
+                    {followingCount > 2 && user?.id != id && (
+                        <TabButton tab="friends" label="Friends" count={0} />
+                    )}
+                    {user?.id != id && <TabButton tab="suggested" label="Suggested" count={0} />}
                 </ScrollView>
             </View>
-   
-            { ['followers', 'following'].includes(activeTab) && <View style={tw`px-4 py-3 bg-white`}>
-                <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-3 py-3`}>
-                    <Ionicons name="search" size={20} color="#999" />
-                    <TextInput
-                        style={[
-                            tw`flex-1 ml-2 text-base`,
-                            {
-                                height: 40,
-                                paddingVertical: 0,
-                                lineHeight: 20,
-                            },
-                        ]}
-                        placeholder="Search users"
-                        placeholderTextColor="#999"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <Ionicons name="close-circle" size={20} color="#999" />
-                        </TouchableOpacity>
-                    )}
+
+            {['followers', 'following'].includes(activeTab) && (
+                <View style={tw`px-4 py-3 bg-white dark:bg-black`}>
+                    <View
+                        style={tw`flex-row items-center bg-gray-100 dark:bg-black rounded-xl px-3 py-3`}>
+                        <Ionicons name="search" size={20} color="#999" />
+                        <TextInput
+                            style={[
+                                tw`flex-1 ml-2 text-base dark:text-white`,
+                                {
+                                    height: 40,
+                                    paddingVertical: 0,
+                                    lineHeight: 20,
+                                },
+                            ]}
+                            placeholder="Search users"
+                            placeholderTextColor="#999"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                        />
+                        {searchQuery.length > 0 && (
+                            <TouchableOpacity onPress={() => setSearchQuery('')}>
+                                <Ionicons name="close-circle" size={20} color="#999" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
-            </View>
-            }
+            )}
 
             <FlatList
                 data={feedData}
@@ -358,8 +383,8 @@ export default function Screen() {
                 onEndReachedThreshold={0.4}
                 onEndReached={handleEndReached}
                 refreshControl={
-                    <RefreshControl 
-                        refreshing={isFetching && !isFetchingNextPage && feedData.length > 0} 
+                    <RefreshControl
+                        refreshing={isFetching && !isFetchingNextPage && feedData.length > 0}
                         onRefresh={refetch}
                         colors={['#F02C56']}
                         tintColor="#F02C56"

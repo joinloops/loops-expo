@@ -1,6 +1,6 @@
 import { Divider, SettingsItem } from '@/components/settings/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 
 import { ScrollView, View } from 'react-native';
@@ -8,15 +8,15 @@ import tw from 'twrnc';
 
 export default function LegalScreen() {
     const router = useRouter();
+    const { colorScheme } = useTheme();
 
     return (
-        <View style={tw`flex-1 bg-gray-100`}>
-            <StatusBar style="light" />
-            
+        <View style={tw`flex-1 bg-gray-100 dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Terms and Policies',
-                    headerStyle: { backgroundColor: '#fff' },
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerBackTitle: 'Settings',
                     headerShown: true,
                 }}
@@ -41,9 +41,9 @@ export default function LegalScreen() {
                     onPress={() => router.push('/private/settings/legal/privacy')}
                 />
                 <Divider />
-                <SettingsItem 
-                    icon="code-slash-outline" 
-                    label="Open Source Software Notices" 
+                <SettingsItem
+                    icon="code-slash-outline"
+                    label="Open Source Software Notices"
                     onPress={() => router.push('/private/settings/legal/openSource')}
                 />
             </ScrollView>

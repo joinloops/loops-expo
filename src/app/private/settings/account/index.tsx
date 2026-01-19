@@ -1,9 +1,10 @@
 import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAuthStore } from '@/utils/authStore';
 import { useNotificationStore } from '@/utils/notificationStore';
+import { openLocalLink } from '@/utils/requests';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import tw from 'twrnc';
@@ -13,6 +14,7 @@ export default function AccountScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const notificationStore = useNotificationStore();
+    const { colorScheme } = useTheme();
 
     const performLogOut = () => {
         queryClient.clear();
@@ -23,8 +25,11 @@ export default function AccountScreen() {
     };
 
     const handleDeleteAccount = async () => {
-        await WebBrowser.openBrowserAsync(`https://${server}/dashboard/account/delete`);
-    }
+        await openLocalLink('dashboard/account/delete', {
+            presentationStyle: 'popover',
+            showTitle: false,
+        });
+    };
 
     const handleSignOut = () => {
         Alert.alert('Confirm Sign out', 'Are you sure you want to sign out?', [
@@ -41,11 +46,12 @@ export default function AccountScreen() {
         ]);
     };
     return (
-        <View style={tw`flex-1 bg-gray-100`}>
+        <View style={tw`flex-1 bg-gray-100 dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Account',
-                    headerStyle: { backgroundColor: '#fff' },
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerBackTitle: 'Settings',
                     headerShown: true,
                 }}
@@ -65,14 +71,18 @@ export default function AccountScreen() {
                     onPress={() => router.push('/private/settings/account/email')}
                 />
                 <Divider />
-                <SettingsItem 
-                    icon="calendar-outline" 
-                    label="Date of birth" 
+                <SettingsItem
+                    icon="calendar-outline"
+                    label="Date of birth"
                     onPress={() => router.push('/private/settings/account/birthdate')}
                 />
 
                 <SectionHeader title="Account Control" />
-                <SettingsItem icon="trash-outline" label="Delete account" onPress={() => handleDeleteAccount()} />
+                <SettingsItem
+                    icon="trash-outline"
+                    label="Delete account"
+                    onPress={() => handleDeleteAccount()}
+                />
                 <Divider />
                 <SettingsItem
                     icon="log-out-outline"

@@ -1,4 +1,5 @@
 import { StackText, XStack, YStack } from '@/components/ui/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAuthStore } from '@/utils/authStore';
 import { useNotificationStore } from '@/utils/notificationStore';
 import { fetchSystemNotifications, notificationMarkAsRead, openLocalLink } from '@/utils/requests';
@@ -6,9 +7,8 @@ import { timeAgo } from '@/utils/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useMemo } from 'react';
-import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, TouchableOpacity, View } from 'react-native';
 import tw from 'twrnc';
 
 interface SystemNotification {
@@ -43,24 +43,34 @@ const getCategoryInfo = (systemType: string) => {
     }
 };
 
-const SystemNotificationItem = ({ 
-    item, 
+const SystemNotificationItem = ({
+    item,
     onPress,
-}: { 
-    item: SystemNotification; 
+}: {
+    item: SystemNotification;
     onPress: (item: SystemNotification) => void;
 }) => {
     const isUnread = !item.read_at;
     const categoryInfo = getCategoryInfo(item.systemType);
+    const { colorScheme } = useTheme();
 
     return (
-        <View style={tw`bg-white my-2 mx-4 px-4 py-4`}>
+        <View
+            style={tw`bg-white my-2 mx-4 px-4 py-4 rounded-xl dark:bg-black border border-gray-300 dark:border-gray-800`}>
             <View style={tw`flex flex-row justify-between items-center`}>
                 <XStack flex={1} alignItems="center" marginBottom="$3">
-                    <View style={tw`w-9 h-9 rounded-full bg-gray-200 items-center justify-center mr-2.5`}>
-                        <Ionicons name={categoryInfo.icon} size={18} color="#3C3C43" />
+                    <View
+                        style={tw`w-9 h-9 rounded-full bg-gray-200 items-center justify-center mr-2.5 dark:bg-gray-800`}>
+                        <Ionicons
+                            name={categoryInfo.icon}
+                            size={18}
+                            color={colorScheme === 'dark' ? '#ccc' : '#3C3C43'}
+                        />
                     </View>
-                    <StackText fontSize="$4" fontWeight="bold" textColor="text-gray-500">
+                    <StackText
+                        fontSize="$4"
+                        fontWeight="bold"
+                        textColor="text-gray-500 dark:text-white">
                         {categoryInfo.name}
                     </StackText>
                 </XStack>
@@ -69,24 +79,36 @@ const SystemNotificationItem = ({
                 </StackText>
             </View>
 
-            <View style={tw`flex-1 w-full mt-3 border-bottom border-[0.5px] border-gray-200`} />
+            <View
+                style={tw`flex-1 w-full mt-3 border-b border-[0.5px] border-gray-200 dark:border-gray-900`}
+            />
 
             <Pressable onPress={() => onPress(item)}>
                 <XStack alignItems="center" style={tw`mt-3 pb-2`}>
-                    <StackText fontSize="$4" fontWeight="bold" flex={1} marginRight="$2">
+                    <StackText
+                        fontSize="$4"
+                        fontWeight="bold"
+                        flex={1}
+                        marginRight="$2"
+                        textColor="dark:text-white">
                         {item.systemMessage.title}
                     </StackText>
-                    {isUnread && (
-                        <View style={tw`w-2 h-2 rounded-full bg-red-500 ml-1`} />
-                    )}
+                    {isUnread && <View style={tw`w-2 h-2 rounded-full bg-red-500 ml-1`} />}
                 </XStack>
 
-                <StackText fontSize="$3" textColor="text-gray-500" style={tw`mb-2`} numberOfLines={2}>
+                <StackText
+                    fontSize="$3"
+                    textColor="text-gray-500 dark:text-gray-400"
+                    style={tw`mb-2`}
+                    numberOfLines={2}>
                     {item.systemMessage.summary}
                 </StackText>
 
                 <View style={tw`flex justify-center items-center mt-2`}>
-                    <StackText fontSize="$3" textColor="text-black" fontWeight="bold">
+                    <StackText
+                        fontSize="$3"
+                        textColor="text-black dark:text-gray-400"
+                        fontWeight="bold">
                         View more
                     </StackText>
                 </View>
@@ -100,27 +122,21 @@ export default function SystemNotificationsScreen() {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const { refetchBadgeCount } = useNotificationStore();
+    const { colorScheme } = useTheme();
 
-    const {
-        data,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-        refetch,
-        isLoading,
-        isFetching,
-    } = useInfiniteQuery({
-        queryKey: ['system-notifications'],
-        queryFn: fetchSystemNotifications,
-        initialPageParam: undefined,
-        refetchOnWindowFocus: false,
-        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
-    });
+    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch, isLoading, isFetching } =
+        useInfiniteQuery({
+            queryKey: ['system-notifications'],
+            queryFn: fetchSystemNotifications,
+            initialPageParam: undefined,
+            refetchOnWindowFocus: false,
+            getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
+        });
 
     const readMutation = useMutation({
         mutationFn: notificationMarkAsRead,
         onMutate: async (notificationId) => {
-            await queryClient.cancelQueries({ queryKey: ['main-notifications']});
+            await queryClient.cancelQueries({ queryKey: ['main-notifications'] });
             await queryClient.cancelQueries({ queryKey: ['system-notifications'] });
 
             const previousData = queryClient.getQueryData(['system-notifications']);
@@ -135,7 +151,7 @@ export default function SystemNotificationsScreen() {
                         data: page.data?.map((notification: any) =>
                             notification.id === notificationId
                                 ? { ...notification, read_at: new Date().toISOString() }
-                                : notification
+                                : notification,
                         ),
                     })),
                 };
@@ -144,7 +160,7 @@ export default function SystemNotificationsScreen() {
             return { previousData };
         },
         onSettled: async () => {
-            refetchBadgeCount()
+            refetchBadgeCount();
             await queryClient.invalidateQueries({ queryKey: ['main-notifications'] });
         },
         onError: (err, notificationId, context) => {
@@ -164,7 +180,10 @@ export default function SystemNotificationsScreen() {
         if (!item.read_at) {
             readMutation.mutate(item.id);
         }
-        openLocalLink(`notifications/system/${item.systemMessage.id}/permalink?appreq=1`, { presentationStyle: 'popover', showTitle: false})
+        openLocalLink(`notifications/system/${item.systemMessage.id}/permalink?appreq=1`, {
+            presentationStyle: 'popover',
+            showTitle: false,
+        });
     };
 
     const renderEmpty = () => (
@@ -176,22 +195,37 @@ export default function SystemNotificationsScreen() {
     );
 
     return (
-        <View style={tw`flex-1 bg-[#F2F2F7]`}>
-            <StatusBar style="dark" />
+        <View style={tw`flex-1 bg-[#F2F2F7] dark:bg-black`}>
             <Stack.Screen
                 options={{
                     headerTitle: 'System Notifications',
                     headerBackTitle: 'Back',
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+                    headerLeft: () => (
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (router.canGoBack()) {
+                                    router.back();
+                                } else {
+                                    router.push('/(tabs)');
+                                }
+                            }}
+                            style={tw`px-1`}>
+                            <Ionicons
+                                name="chevron-back"
+                                size={24}
+                                color={colorScheme === 'dark' ? '#fff' : '#000'}
+                            />
+                        </TouchableOpacity>
+                    ),
                 }}
             />
             <FlatList
                 data={notifications}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                    <SystemNotificationItem
-                        item={item}
-                        onPress={handleOnPress}
-                    />
+                    <SystemNotificationItem item={item} onPress={handleOnPress} />
                 )}
                 ListEmptyComponent={
                     isLoading || isFetching ? (
@@ -207,7 +241,9 @@ export default function SystemNotificationsScreen() {
                         <YStack paddingVertical="$6" alignItems="center">
                             <ActivityIndicator />
                         </YStack>
-                    ) : <View style={tw`h-[200px]`} />
+                    ) : (
+                        <View style={tw`h-[200px]`} />
+                    )
                 }
                 onEndReachedThreshold={0.4}
                 onEndReached={() => {

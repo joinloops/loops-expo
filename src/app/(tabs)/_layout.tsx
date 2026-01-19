@@ -1,3 +1,4 @@
+import { useTheme } from '@/contexts/ThemeContext';
 import { useNotificationPolling } from '@/hooks/useNotificationPolling';
 import { useAuthStore } from '@/utils/authStore';
 import { useNotificationStore } from '@/utils/notificationStore';
@@ -9,6 +10,7 @@ import { Platform } from 'react-native';
 export default function TabsLayout() {
     const { user } = useAuthStore();
     const { badgeCount } = useNotificationStore();
+    const { colorScheme } = useTheme();
 
     const displayBadgeCount = useMemo(() => {
         if (badgeCount == 0) return undefined;
@@ -20,16 +22,15 @@ export default function TabsLayout() {
 
     return (
         <Tabs
+            initialRouteName="index"
             screenOptions={{
-                initialRouteName: 'index',
                 backBehavior: 'order',
-                tabBarActiveTintColor: '#fff',
-                tabBarInactiveTintColor: '#555',
-                animation: 'shift',
+                tabBarActiveTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+                tabBarInactiveTintColor: colorScheme === 'dark' ? '#555' : '#999',
                 tabBarStyle: {
-                    backgroundColor: '#000',
+                    backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
                     borderTopWidth: 1,
-                    borderTopColor: '#333',
+                    borderTopColor: colorScheme === 'dark' ? '#1e2939' : '#eee',
                     height: Platform.OS === 'ios' ? 94 : 94,
                     paddingTop: Platform.OS === 'ios' ? 11 : 5,
                     paddingBottom: Platform.OS === 'ios' ? 8 : 5,
@@ -46,7 +47,7 @@ export default function TabsLayout() {
                 name="index"
                 options={{
                     title: 'Home',
-                    tabBarAccessibilityLabel: "Home",
+                    tabBarAccessibilityLabel: 'Home',
                     tabBarShowLabel: false,
                     headerShown: false,
                     tabBarIcon: ({ color }) => <Feather size={28} name="home" color={color} />,
@@ -56,7 +57,7 @@ export default function TabsLayout() {
                 name="explore"
                 options={{
                     title: 'Explore',
-                    tabBarAccessibilityLabel: "Explore",
+                    tabBarAccessibilityLabel: 'Explore',
                     tabBarShowLabel: false,
                     headerShown: false,
                     tabBarIcon: ({ color }) => <Feather size={28} name="compass" color={color} />,
@@ -66,7 +67,7 @@ export default function TabsLayout() {
                 name="create"
                 options={{
                     title: 'Create',
-                    tabBarAccessibilityLabel: "Create",
+                    tabBarAccessibilityLabel: 'Create',
                     tabBarShowLabel: false,
                     headerShown: false,
                     tabBarIcon: ({ color }) => <Feather size={28} name="video" color={color} />,
@@ -76,7 +77,7 @@ export default function TabsLayout() {
                 name="notifications"
                 options={{
                     title: 'Notifications',
-                    tabBarAccessibilityLabel: "Notifications",
+                    tabBarAccessibilityLabel: 'Notifications',
                     tabBarShowLabel: false,
                     tabBarBadge: displayBadgeCount,
                     tabBarBadgeStyle: { fontSize: 12 },
@@ -87,8 +88,9 @@ export default function TabsLayout() {
                 name="profile"
                 options={{
                     title: 'Profile',
-                    tabBarAccessibilityLabel: "Profile",
+                    tabBarAccessibilityLabel: 'Profile',
                     tabBarShowLabel: false,
+                    headerShown: false,
                     tabBarIcon: ({ color }) => <Feather size={28} name="user" color={color} />,
                 }}
             />

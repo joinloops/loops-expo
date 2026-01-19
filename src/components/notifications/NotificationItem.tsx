@@ -1,7 +1,7 @@
 import { timeAgo } from '@/utils/ui';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import tw from 'twrnc';
 
 interface Actor {
@@ -27,10 +27,10 @@ interface NotificationItemProps {
     onProfilePress: (actor: Actor, item: any) => void;
 }
 
-export const NotificationItem: React.FC<NotificationItemProps> = ({ 
-    item, 
-    onPress, 
-    onProfilePress 
+export const NotificationItem: React.FC<NotificationItemProps> = ({
+    item,
+    onPress,
+    onProfilePress,
 }) => {
     const isUnread = item.read_at === null;
 
@@ -88,45 +88,33 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     return (
         <View
             style={[
-                tw`flex-row items-center py-3 px-4`,
-                styles.notificationItem
-            ]}
-        >
-            {isUnread && (
-                <View style={tw`w-2 h-2 rounded-full bg-red-500 mr-2 mt-1.5`} />
-            )}
+                tw`flex-row items-center py-3 px-4 border-b border-[#E5E5E5] dark:border-gray-900`,
+            ]}>
+            {isUnread && <View style={tw`w-2 h-2 rounded-full bg-red-500 mr-2 mt-1.5`} />}
 
-            <Pressable 
-                onPress={() => onProfilePress(item.actor, item)}
-                style={tw`relative mr-3`}
-            >
-                <Image
-                    source={{ uri: item.actor.avatar }}
-                    style={tw`w-12 h-12 rounded-full`}
-                />
+            <Pressable onPress={() => onProfilePress(item.actor, item)} style={tw`relative mr-3`}>
+                <Image source={{ uri: item.actor.avatar }} style={tw`w-12 h-12 rounded-full`} />
                 {getBadgeIcon() && (
-                    <View style={[
-                        tw`absolute -bottom-1 -right-1 rounded-full p-1`,
-                        { backgroundColor: 'white' }
-                    ]}>
+                    <View
+                        style={[
+                            tw`absolute -bottom-1 -right-1 rounded-full p-1 bg-white dark:bg-gray-900`,
+                        ]}>
                         {getBadgeIcon()}
                     </View>
                 )}
             </Pressable>
 
-            <Pressable 
-                onPress={() => onPress(item)}
-                style={tw`flex-1 flex-row items-center`}
-            >
+            <Pressable onPress={() => onPress(item)} style={tw`flex-1 flex-row items-center`}>
                 <View style={tw`flex-1 mr-2`}>
                     <Text style={tw`text-base`}>
-                        <Text style={tw`font-semibold`}>{item.actor.username}</Text>
-                        <Text style={tw`text-gray-700`}> {getNotificationText()}</Text>
+                        <Text style={tw`font-semibold dark:text-white`}>{item.actor.username}</Text>
+                        <Text style={tw`text-gray-700 dark:text-gray-300`}>
+                            {' '}
+                            {getNotificationText()}
+                        </Text>
                     </Text>
 
-                    <Text style={tw`text-gray-500 text-sm mt-0.5`}>
-                        {timeAgo(item.created_at)}
-                    </Text>
+                    <Text style={tw`text-gray-500 text-sm mt-0.5`}>{timeAgo(item.created_at)}</Text>
 
                     {showActionButtons && (
                         <View style={tw`flex-row mt-2 gap-4`}>
@@ -154,10 +142,3 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    notificationItem: {
-        borderBottomWidth: 0.5,
-        borderBottomColor: '#E5E5E5',
-    }
-});

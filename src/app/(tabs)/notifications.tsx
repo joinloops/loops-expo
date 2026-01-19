@@ -1,11 +1,16 @@
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { StackText, YStack } from '@/components/ui/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAuthStore } from '@/utils/authStore';
-import { fetchNotifications, followAccount, getExploreAccounts, postExploreAccountHideSuggestion } from '@/utils/requests';
+import {
+    fetchNotifications,
+    followAccount,
+    getExploreAccounts,
+    postExploreAccountHideSuggestion,
+} from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, View } from 'react-native';
 import tw from 'twrnc';
@@ -20,30 +25,51 @@ interface CategoryCardProps {
     onPress: () => void;
 }
 
-const CategoryCard = ({ icon, iconColor, iconBgColor, title, subtitle, count, onPress }: CategoryCardProps) => {
+const CategoryCard = ({
+    icon,
+    iconColor,
+    iconBgColor,
+    title,
+    subtitle,
+    count,
+    onPress,
+}: CategoryCardProps) => {
     return (
         <Pressable
             onPress={onPress}
             style={({ pressed }) => [
                 tw`flex-row items-center px-4 py-4`,
-                pressed && tw`bg-gray-50`
-            ]}
-        >
-            <View style={[tw`w-14 h-14 rounded-full items-center justify-center mr-3`, { backgroundColor: iconBgColor }]}>
+                pressed && tw`bg-gray-50 dark:bg-gray-900`,
+            ]}>
+            <View
+                style={[
+                    tw`w-14 h-14 rounded-full items-center justify-center mr-3`,
+                    { backgroundColor: iconBgColor },
+                ]}>
                 <Ionicons name={icon} size={28} color={iconColor} />
             </View>
-            
+
             <View style={tw`flex-1`}>
-                <StackText fontSize="$5" fontWeight={ count ? 'semibold' : 'normal'}>
+                <StackText
+                    fontSize="$5"
+                    textColor="text-black dark:text-white"
+                    fontWeight={count ? 'semibold' : 'normal'}>
                     {title}
                 </StackText>
-                <StackText fontSize="$3" textColor={ count ? 'text-black' : 'text-gray-600' } fontWeight={count ? 'semibold' : 'normal'} numberOfLines={1}>
+                <StackText
+                    fontSize="$3"
+                    textColor={
+                        count ? 'text-black dark:text-gray-400' : 'text-gray-600 dark:text-gray-500'
+                    }
+                    fontWeight={count ? 'semibold' : 'normal'}
+                    numberOfLines={1}>
                     {subtitle}
                 </StackText>
             </View>
 
             {count > 0 ? (
-                <View style={tw`bg-red-500 rounded-full ml-4 min-w-8 h-6 px-2 items-center justify-center`}>
+                <View
+                    style={tw`bg-red-500 rounded-full ml-4 min-w-8 h-6 px-2 items-center justify-center`}>
                     <StackText fontSize="$2" textColor="text-white" fontWeight="bold">
                         {count > 99 ? '99+' : count}
                     </StackText>
@@ -64,23 +90,34 @@ interface SuggestedAccountCardProps {
     onView: (id: string) => void;
 }
 
-const SuggestedAccountCard = ({ account, onFollow, onHide, isFollowing, isHiding, onView }: SuggestedAccountCardProps) => {
+const SuggestedAccountCard = ({
+    account,
+    onFollow,
+    onHide,
+    isFollowing,
+    isHiding,
+    onView,
+}: SuggestedAccountCardProps) => {
     return (
         <View style={tw`flex-row items-center px-4 py-3`}>
             <PressableHaptics onPress={() => onView(account.id)}>
-                <Image
-                    source={{ uri: account.avatar }}
-                    style={tw`w-12 h-12 rounded-full mr-3`}
-                />
+                <Image source={{ uri: account.avatar }} style={tw`w-12 h-12 rounded-full mr-3`} />
             </PressableHaptics>
-            
+
             <View style={tw`flex-1`}>
                 <PressableHaptics onPress={() => onView(account.id)}>
-                    <StackText fontSize="$4" fontWeight="semibold" numberOfLines={1}>
+                    <StackText
+                        fontSize="$4"
+                        fontWeight="semibold"
+                        textColor="text-black dark:text-gray-200"
+                        numberOfLines={1}>
                         {account.username}
                     </StackText>
                     {account.bio && (
-                        <StackText fontSize="$3" textColor="text-gray-600" numberOfLines={1}>
+                        <StackText
+                            fontSize="$3"
+                            textColor="text-gray-600 dark:text-gray-500"
+                            numberOfLines={1}>
                             {account.bio}
                         </StackText>
                     )}
@@ -93,9 +130,8 @@ const SuggestedAccountCard = ({ account, onFollow, onHide, isFollowing, isHiding
                     disabled={isFollowing || isHiding}
                     style={({ pressed }) => [
                         tw`bg-red-500 rounded-2xl px-6 py-2`,
-                        (pressed || isFollowing) && tw`opacity-70`
-                    ]}
-                >
+                        (pressed || isFollowing) && tw`opacity-70`,
+                    ]}>
                     {isFollowing ? (
                         <ActivityIndicator size="small" color="#fff" />
                     ) : (
@@ -108,11 +144,7 @@ const SuggestedAccountCard = ({ account, onFollow, onHide, isFollowing, isHiding
                 <PressableHaptics
                     onPress={() => onHide(account.id)}
                     disabled={isFollowing || isHiding}
-                    style={({ pressed }) => [
-                        tw`p-2`,
-                        pressed && tw`opacity-50`
-                    ]}
-                >
+                    style={({ pressed }) => [tw`p-2`, pressed && tw`opacity-50`]}>
                     {isHiding ? (
                         <ActivityIndicator size="small" color="#666" />
                     ) : (
@@ -126,7 +158,7 @@ const SuggestedAccountCard = ({ account, onFollow, onHide, isFollowing, isHiding
 
 const getNotificationMessage = (notification: any): string => {
     const username = notification.actor?.username || notification.actor?.name || 'Someone';
-    
+
     switch (notification.type) {
         case 'new_follower':
             return `${username} started following you.`;
@@ -157,15 +189,12 @@ const getNotificationMessage = (notification: any): string => {
 export default function NotificationScreen() {
     const router = useRouter();
     const { user } = useAuthStore();
-    const queryClient = useQueryClient()
+    const queryClient = useQueryClient();
     const [followingAccountId, setFollowingAccountId] = useState<string | null>(null);
     const [hidingAccountId, setHidingAccountId] = useState<string | null>(null);
+    const { colorScheme } = useTheme();
 
-    const {
-        data,
-        isLoading,
-        isFetching,
-    } = useQuery({
+    const { data, isLoading, isFetching } = useQuery({
         queryKey: ['main-notifications'],
         queryFn: fetchNotifications,
         refetchOnWindowFocus: true,
@@ -175,36 +204,36 @@ export default function NotificationScreen() {
 
     const { data: accountsData, isLoading: accountsLoading } = useQuery({
         queryKey: ['accounts', 'suggested'],
-        queryFn: getExploreAccounts
+        queryFn: getExploreAccounts,
     });
 
     const followMutation = useMutation({
         mutationFn: async (profileId: string) => {
             setFollowingAccountId(profileId);
-            return await followAccount(profileId)
+            return await followAccount(profileId);
         },
         onSuccess: async () => {
-            queryClient.invalidateQueries({ queryKey: ['accounts', 'suggested'] })
+            queryClient.invalidateQueries({ queryKey: ['accounts', 'suggested'] });
         },
         onSettled: () => {
             setFollowingAccountId(null);
-        }
-    })
+        },
+    });
 
     const hideSuggestionMutation = useMutation({
-        mutationFn: async(profileId: string) => {
+        mutationFn: async (profileId: string) => {
             setHidingAccountId(profileId);
-            return await postExploreAccountHideSuggestion(profileId)
+            return await postExploreAccountHideSuggestion(profileId);
         },
         onMutate: async (profileId) => {
             await queryClient.cancelQueries({ queryKey: ['accounts', 'suggested'] });
-            
+
             const previousAccounts = queryClient.getQueryData(['accounts', 'suggested']);
-            
+
             queryClient.setQueryData(['accounts', 'suggested'], (old: any[] | undefined) => {
-                return old?.filter(account => account.id !== profileId) || [];
+                return old?.filter((account) => account.id !== profileId) || [];
             });
-            
+
             return { previousAccounts };
         },
         onError: (err, profileId, context) => {
@@ -215,8 +244,8 @@ export default function NotificationScreen() {
         onSettled: () => {
             setHidingAccountId(null);
             queryClient.invalidateQueries({ queryKey: ['accounts', 'suggested'] });
-        }
-    })
+        },
+    });
 
     const notifications = useMemo(() => {
         if (!data?.data?.length) return [];
@@ -226,22 +255,28 @@ export default function NotificationScreen() {
     const unreadCounts = data?.meta?.unread_counts || {
         activity: 0,
         followers: 0,
-        system: 0
+        system: 0,
     };
 
     const latestNotifications = useMemo(() => {
         const followerTypes = ['new_follower'];
-        const activityTypes = ['video.like', 'comment.like', 'video.comment', 'video.mention', 'video.share'];
+        const activityTypes = [
+            'video.like',
+            'comment.like',
+            'video.comment',
+            'video.mention',
+            'video.share',
+        ];
         const systemTypes = ['system', 'admin.notification', 'system.update', 'system.message'];
 
-        const latestFollower = notifications.find(n => followerTypes.includes(n.type));
-        const latestActivity = notifications.find(n => activityTypes.includes(n.type));
-        const latestSystem = notifications.find(n => systemTypes.includes(n.type));
+        const latestFollower = notifications.find((n) => followerTypes.includes(n.type));
+        const latestActivity = notifications.find((n) => activityTypes.includes(n.type));
+        const latestSystem = notifications.find((n) => systemTypes.includes(n.type));
 
         return {
             followers: latestFollower,
             activity: latestActivity,
-            system: latestSystem
+            system: latestSystem,
         };
     }, [notifications]);
 
@@ -252,11 +287,11 @@ export default function NotificationScreen() {
             iconColor: '#FFFFFF',
             iconBgColor: '#00B8FF',
             title: 'New followers',
-            subtitle: latestNotifications.followers 
+            subtitle: latestNotifications.followers
                 ? getNotificationMessage(latestNotifications.followers)
                 : 'See your new followers here.',
             count: unreadCounts.followers,
-            route: '/private/notifications/followers'
+            route: '/private/notifications/followers',
         },
         {
             id: 'activity',
@@ -268,7 +303,7 @@ export default function NotificationScreen() {
                 ? getNotificationMessage(latestNotifications.activity)
                 : 'See notifications here.',
             count: unreadCounts.activity,
-            route: '/private/notifications/activity'
+            route: '/private/notifications/activity',
         },
         {
             id: 'system',
@@ -278,8 +313,8 @@ export default function NotificationScreen() {
             title: 'System notifications',
             subtitle: 'Tap to view your system notifications.',
             count: unreadCounts.system,
-            route: '/private/notifications/system'
-        }
+            route: '/private/notifications/system',
+        },
     ];
 
     const suggestedAccounts = useMemo(() => {
@@ -287,23 +322,21 @@ export default function NotificationScreen() {
     }, [accountsData]);
 
     const handleOnView = (id) => {
-        router.push(`/private/profile/${id}`)
-    }
+        router.push(`/private/profile/${id}`);
+    };
 
     return (
-        <View style={tw`flex-1 bg-white`}>
-            <StatusBar style="dark" animated={true} />
-
+        <View style={tw`flex-1 bg-white dark:bg-black`}>
             <Stack.Screen
                 options={{
                     headerTitle: 'Inbox',
                     title: 'Inbox',
-                    headerStyle: { backgroundColor: '#fff' },
-                    headerTintColor: '#000',
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerTitleStyle: {
                         fontSize: 24,
                         fontWeight: 'bold',
-                        color: '#000',
+                        color: colorScheme === 'dark' ? '#fff' : '#000',
                     },
                     headerBackTitle: 'Back',
                     headerShadowVisible: false,
@@ -311,7 +344,7 @@ export default function NotificationScreen() {
                     headerShown: true,
                 }}
             />
-            
+
             {isLoading || isFetching ? (
                 <YStack flex={1} alignItems="center" justifyContent="center">
                     <ActivityIndicator size="large" />
@@ -334,11 +367,14 @@ export default function NotificationScreen() {
                     {suggestedAccounts.length > 0 && (
                         <View style={tw`my-6`}>
                             <View style={tw`px-4 py-2`}>
-                                <StackText fontSize="$5" fontWeight="semibold">
+                                <StackText
+                                    fontSize="$5"
+                                    fontWeight="semibold"
+                                    textColor="text-black dark:text-gray-400">
                                     Suggested accounts
                                 </StackText>
                             </View>
-                            
+
                             {suggestedAccounts.map((account: any) => (
                                 <SuggestedAccountCard
                                     key={account.id}

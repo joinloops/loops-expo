@@ -1,14 +1,20 @@
 import AccountHeader from '@/components/profile/AccountHeader';
 import AccountTabs from '@/components/profile/AccountTabs';
 import VideoGrid from '@/components/profile/VideoGrid';
+import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { StackText, YStack } from '@/components/ui/Stack';
-import { fetchAccountFavorites, fetchAccountLikes, fetchSelfAccount, fetchSelfAccountVideos } from '@/utils/requests';
+import { useTheme } from '@/contexts/ThemeContext';
+import {
+    fetchAccountFavorites,
+    fetchAccountLikes,
+    fetchSelfAccount,
+    fetchSelfAccountVideos,
+} from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function ProfileScreen() {
@@ -16,6 +22,7 @@ export default function ProfileScreen() {
     const [activeTab, setActiveTab] = useState('videos');
     const [sortBy, setSortBy] = useState('Latest');
     const flatListRef = useRef(null);
+    const { colorScheme } = useTheme();
 
     const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['fetchSelfAccount', 'self'],
@@ -23,6 +30,8 @@ export default function ProfileScreen() {
             const res = await fetchSelfAccount();
             return res.data;
         },
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
     });
 
     useEffect(() => {
@@ -96,10 +105,7 @@ export default function ProfileScreen() {
     }, [likesData]);
 
     const activeData = useMemo(() => {
-        const list =
-            activeTab === 'favorites' ? favorites :
-            activeTab === 'likes' ? likes :
-            videos;
+        const list = activeTab === 'favorites' ? favorites : activeTab === 'likes' ? likes : videos;
 
         return (list ?? []).filter((x) => x && x.id != null);
     }, [activeTab, videos, favorites, likes]);
@@ -159,7 +165,7 @@ export default function ProfileScreen() {
     const handleSettingsPress = () => {
         router.push(`/private/settings`);
     };
-    
+
     const handleEditBio = () => {
         router.push(`/private/settings/account/edit-bio`);
     };
@@ -198,13 +204,14 @@ export default function ProfileScreen() {
         }
     };
 
-    const renderItem = useCallback(({ item }) => (
-        <VideoGrid video={item} onPress={handleVideoPress} />
-    ), [handleVideoPress]);
+    const renderItem = useCallback(
+        ({ item }) => <VideoGrid video={item} onPress={handleVideoPress} />,
+        [handleVideoPress],
+    );
 
     const renderEmpty = () => (
-        <YStack paddingY="$8" alignItems="center" justifyContent="center">
-            <StackText fontSize="$4" color="#86878B">
+        <YStack paddingY="$8" flex={1} alignItems="center" justifyContent="center">
+            <StackText fontSize="$4" textColor="text-gray-700 dark:text-gray-300">
                 {activeTab === 'videos' && 'No videos yet'}
                 {activeTab === 'favorites' && 'No favorites yet'}
                 {activeTab === 'likes' && 'No likes yet'}
@@ -213,37 +220,46 @@ export default function ProfileScreen() {
         </YStack>
     );
 
-    return (
-        <View style={tw`flex-1 bg-white`}>
-            <StatusBar style="dark" />
+    const headerOptions = useMemo(
+        () => ({
+            title: 'Profile',
+            headerStyle: tw`bg-white dark:bg-black`,
+            headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+            headerTitleStyle: {
+                fontWeight: 'bold',
+                color: colorScheme === 'dark' ? '#fff' : '#000',
+            },
+            headerShadowVisible: false,
+            headerShown: true,
+            headerTitle: 'My Profile',
+            headerRight: () => (
+                <PressableHaptics
+                    accessibilityLabel="Settings"
+                    accessibilityRole="button"
+                    onPress={handleSettingsPress}
+                    style={tw`mr-3`}>
+                    <Ionicons
+                        name="menu"
+                        size={30}
+                        color={colorScheme === 'dark' ? '#fff' : '#000'}
+                    />
+                </PressableHaptics>
+            ),
+        }),
+        [colorScheme],
+    );
 
-            <Stack.Screen
-                options={{
-                    title: 'Profile',
-                    headerStyle: { backgroundColor: '#fff' },
-                    headerTintColor: '#000',
-                    headerTitleStyle: {
-                        fontWeight: 'bold',
-                        color: '#000',
-                    },
-                    headerBackTitle: 'Back',
-                    headerShadowVisible: false,
-                    headerBackTitleVisible: false,
-                    headerShown: true,
-                    headerTitle: 'My Profile',
-                   
-                    headerRight: () => (
-                        <Pressable 
-                            accessibilityLabel="Settings" 
-                            accessibilityRole="button" 
-                            onPress={handleSettingsPress} 
-                            style={tw`mr-3`}
-                        >
-                            <Ionicons name="menu" size={30} />
-                        </Pressable>
-                    ),
-                }}
-            />
+    if (userLoading || !user) {
+        return (
+            <View style={tw`flex-1 bg-white dark:bg-black justify-center items-center`}>
+                <ActivityIndicator size="large" color={colorScheme === 'dark' ? '#fff' : '#000'} />
+            </View>
+        );
+    }
+
+    return (
+        <View style={tw`flex-1 bg-white dark:bg-black`}>
+            <Stack.Screen options={headerOptions} />
 
             <FlatList
                 ref={flatListRef}
@@ -255,19 +271,19 @@ export default function ProfileScreen() {
                 }}
                 ListHeaderComponent={
                     <>
-                        <AccountHeader 
-                            user={user} 
-                            isOwner={true} 
-                            showActions={true} 
-                            loading={userLoading} 
-                            onEditBio={handleEditBio} 
+                        <AccountHeader
+                            user={user}
+                            isOwner={true}
+                            showActions={true}
+                            loading={userLoading}
+                            onEditBio={handleEditBio}
                         />
-                        <AccountTabs 
-                            activeTab={activeTab} 
-                            isOwner={true} 
-                            onTabChange={setActiveTab} 
-                            sortBy={sortBy} 
-                            onSortChange={setSortBy} 
+                        <AccountTabs
+                            activeTab={activeTab}
+                            isOwner={true}
+                            onTabChange={setActiveTab}
+                            sortBy={sortBy}
+                            onSortChange={setSortBy}
                         />
                     </>
                 }

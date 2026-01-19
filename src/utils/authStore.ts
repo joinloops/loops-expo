@@ -123,11 +123,12 @@ export const useAuthStore = create(
             syncPreferencesFromServer: async () => {
                 try {
                     const prefs = await getPreferences();
-                    
+
                     if (prefs && prefs.settings) {
                         set((state) => ({
                             ...state,
-                            hideForYouFeed: prefs.settings.hide_for_you_feed ?? state.hideForYouFeed,
+                            hideForYouFeed:
+                                prefs.settings.hide_for_you_feed ?? state.hideForYouFeed,
                             defaultFeed: prefs.settings.default_feed ?? state.defaultFeed,
                             autoplayVideos: prefs.settings.autoplay_videos ?? state.autoplayVideos,
                             loopVideos: prefs.settings.loop_videos ?? state.loopVideos,
@@ -161,7 +162,7 @@ export const useAuthStore = create(
                 };
 
                 const apiKey = keyMap[key] || key;
-                
+
                 try {
                     await updatePreferences({ [apiKey]: value });
                 } catch (error) {
@@ -239,7 +240,7 @@ export const useAuthStore = create(
             },
         }),
         {
-            name: 'auth-store.v0.4',
+            name: 'auth-store.v0.5',
             storage: createJSONStorage(() => ({
                 setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
                 getItem: (key: string) => SecureStore.getItemAsync(key),

@@ -1,47 +1,46 @@
 import { ReportModal } from '@/components/ReportModal';
+import { useTheme } from '@/contexts/ThemeContext';
 import { videoDelete } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import {
-    Alert,
-    Dimensions,
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { Alert, Dimensions, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import tw from 'twrnc';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 60;
 
-
-export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChange, currentPlaybackRate = 1.0 }) {
+export default function OtherModal({
+    visible,
+    item,
+    onClose,
+    onPlaybackSpeedChange,
+    currentPlaybackRate = 1.0,
+}) {
     const insets = useSafeAreaInsets();
-    const router = useRouter()
+    const router = useRouter();
+    const { colorScheme } = useTheme();
     const [showPlaybackSpeed, setShowPlaybackSpeed] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const queryClient = useQueryClient();
 
     const deleteMutation = useMutation({
         mutationFn: videoDelete,
-        onSuccess: async() => {
+        onSuccess: async () => {
             queryClient.invalidateQueries(['videos', 'forYou']);
             queryClient.invalidateQueries(['videos', 'following']);
-            queryClient.invalidateQueries(['profileVideoFeed', item?.account.id, item?.id])
-        }
-    })
+            queryClient.invalidateQueries(['profileVideoFeed', item?.account.id, item?.id]);
+        },
+    });
 
     if (!item) {
         return null;
-    } 
+    }
 
     const handleReport = () => {
-        setShowReport(true)
+        setShowReport(true);
     };
 
     const handleDelete = () => {
@@ -80,25 +79,24 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
     };
 
     const handleCloseReportModal = () => {
-        setShowReport(false)
-        onClose()
-    }
+        setShowReport(false);
+        onClose();
+    };
 
     const handleReportCommunityGuidelines = () => {
-        onClose()
-        router.push('/private/settings/legal/community')
-    }
+        onClose();
+        router.push('/private/settings/legal/community');
+    };
 
     const handleEdit = () => {
-        onClose()
-        router.push(`/private/video/edit/${item.id}`)
-    }
-
+        onClose();
+        router.push(`/private/video/edit/${item.id}`);
+    };
 
     const handleDuet = () => {
-        onClose()
-        router.push(`/private/video/duet/${item.id}?duetVideoUri=${item.media.src_url}`)
-    }
+        onClose();
+        router.push(`/private/video/duet/${item.id}?duetVideoUri=${item.media.src_url}`);
+    };
 
     if (showReport) {
         return (
@@ -109,7 +107,7 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
                 onClose={() => handleCloseReportModal()}
                 onCommunityGuidelines={() => handleReportCommunityGuidelines()}
             />
-        )
+        );
     }
 
     if (showPlaybackSpeed) {
@@ -118,24 +116,36 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
                 visible={visible}
                 animationType="slide"
                 transparent={true}
-                onRequestClose={() => setShowPlaybackSpeed(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <Pressable style={styles.modalBackdrop} onPress={() => setShowPlaybackSpeed(false)} />
-                    <View style={[styles.actionModalContent, { paddingBottom: insets.bottom + 20 }]}>
-                        <View style={styles.actionModalHandle} />
-                        <Text style={styles.actionModalTitle}>Playback Speed</Text>
+                onRequestClose={() => setShowPlaybackSpeed(false)}>
+                <View style={tw`flex-1 justify-end`}>
+                    <Pressable
+                        style={tw`absolute inset-0`}
+                        onPress={() => setShowPlaybackSpeed(false)}
+                    />
+                    <View
+                        style={[
+                            tw`bg-white dark:bg-black rounded-t-[20px] pt-3`,
+                            { paddingBottom: insets.bottom + 20 },
+                        ]}>
+                        <View
+                            style={tw`w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-sm self-center mb-5`}
+                        />
+                        <Text
+                            style={tw`text-lg font-bold text-center mb-6 px-4 text-black dark:text-white`}>
+                            Playback Speed
+                        </Text>
 
                         {playbackSpeeds.map((speed, index) => (
                             <TouchableOpacity
                                 key={index}
-                                style={styles.actionModalOption}
-                                onPress={() => handleSpeedSelect(speed.value)}
-                            >
-                                <Text style={[
-                                    styles.actionModalOptionText,
-                                    currentPlaybackRate === speed.value && styles.actionModalOptionTextActive
-                                ]}>
+                                style={tw`flex-row items-center py-4 px-5 gap-4 border-b border-gray-100 dark:border-gray-800`}
+                                onPress={() => handleSpeedSelect(speed.value)}>
+                                <Text
+                                    style={tw`text-base flex-1 ${
+                                        currentPlaybackRate === speed.value
+                                            ? 'text-[#007AFF] font-semibold'
+                                            : 'text-black dark:text-white'
+                                    }`}>
                                     {speed.label}
                                 </Text>
                                 {currentPlaybackRate === speed.value && (
@@ -145,10 +155,9 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
                         ))}
 
                         <TouchableOpacity
-                            style={styles.cancelButton}
-                            onPress={() => setShowPlaybackSpeed(false)}
-                        >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                            style={tw`mt-3 py-4 items-center border-t border-gray-100 dark:border-gray-800`}
+                            onPress={() => setShowPlaybackSpeed(false)}>
+                            <Text style={tw`text-base font-semibold text-[#007AFF]`}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -177,7 +186,7 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
             show: item.is_owner,
             danger: true,
         },
-    ].filter(option => option.show);
+    ].filter((option) => option.show);
 
     if (item.permissions.can_download) {
         // options.unshift({
@@ -203,136 +212,57 @@ export default function OtherModal({ visible, item, onClose, onPlaybackSpeedChan
             label: 'Edit',
             onPress: handleEdit,
             show: true,
-        })
+        });
     }
 
     return (
-        <Modal
-            visible={visible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalContainer}>
-                <Pressable style={styles.modalBackdrop} onPress={onClose} />
+        <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
+            <View style={tw`flex-1 justify-end`}>
+                <Pressable style={tw`absolute inset-0`} onPress={onClose} />
 
-                <View style={[styles.actionModalContent, { paddingBottom: insets.bottom + 20 }]}>
-                    <View style={styles.actionModalHandle} />
+                <View
+                    style={[
+                        tw`bg-white dark:bg-black rounded-t-[20px] pt-3`,
+                        { paddingBottom: insets.bottom + 20 },
+                    ]}>
+                    <View
+                        style={tw`w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-sm self-center mb-5`}
+                    />
 
-                    <View style={styles.shareOptionsContainer}>
+                    <View style={tw`flex-row justify-around px-4 mb-5`}>
                         {options.map((option, index) => (
                             <TouchableOpacity
                                 key={index}
-                                style={styles.shareOption}
-                                onPress={option.onPress}
-                            >
-                                <View style={styles.shareIconContainer}>
-
+                                style={tw`items-center w-20`}
+                                onPress={option.onPress}>
+                                <View
+                                    style={tw`w-15 h-15 rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center mb-2`}>
                                     <Ionicons
                                         name={option.icon}
                                         size={24}
-                                        color={option.danger ? '#FF3B30' : '#000'}
+                                        color={
+                                            option.danger
+                                                ? '#FF3B30'
+                                                : colorScheme === 'dark'
+                                                  ? '#fff'
+                                                  : '#000'
+                                        }
                                     />
                                 </View>
-                                <Text style={[
-                                    styles.shareOptionLabel,
-                                ]}>
+                                <Text style={tw`text-xs text-black dark:text-white text-center`}>
                                     {option.label}
                                 </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
 
-                    <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <TouchableOpacity
+                        style={tw`mt-3 py-4 items-center border-t border-gray-100 dark:border-gray-800`}
+                        onPress={onClose}>
+                        <Text style={tw`text-base font-semibold text-[#007AFF]`}>Cancel</Text>
                     </TouchableOpacity>
                 </View>
             </View>
         </Modal>
     );
-};
-
-const styles = StyleSheet.create({
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    modalBackdrop: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    actionModalContent: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingTop: 12,
-    },
-    actionModalHandle: {
-        width: 40,
-        height: 4,
-        backgroundColor: '#DDD',
-        borderRadius: 2,
-        alignSelf: 'center',
-        marginBottom: 20,
-    },
-    actionModalTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        textAlign: 'center',
-        marginBottom: 24,
-        paddingHorizontal: 16,
-    },
-    shareOptionsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        paddingHorizontal: 16,
-        marginBottom: 20,
-    },
-    shareOption: {
-        alignItems: 'center',
-        width: 80,
-    },
-    shareIconContainer: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#F5F5F5',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    shareOptionLabel: {
-        fontSize: 12,
-        color: '#000',
-        textAlign: 'center',
-    },
-    actionModalOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        gap: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
-    },
-    actionModalOptionText: {
-        fontSize: 16,
-        color: '#000',
-        flex: 1,
-    },
-    actionModalOptionTextActive: {
-        color: '#007AFF',
-        fontWeight: '600',
-    },
-    cancelButton: {
-        marginTop: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
-    },
-    cancelButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#007AFF',
-    }
-});
+}

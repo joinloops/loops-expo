@@ -22,7 +22,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 import { Video as VideoCompressor } from 'react-native-compressor';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,114 +47,114 @@ const LANGUAGES = [
     { code: 'nl', name: 'Dutch' },
     { code: 'pl', name: 'Polish' },
     { code: 'tr', name: 'Turkish' },
-    { code: "af", name: "Afrikaans" },
-    { code: "am", name: "Amharic" },
-    { code: "az", name: "Azerbaijani" },
-    { code: "be", name: "Belarusian" },
-    { code: "bn", name: "Bengali" },
-    { code: "bs", name: "Bosnian" },
-    { code: "bg", name: "Bulgarian" },
-    { code: "my", name: "Burmese" },
-    { code: "ca", name: "Catalan" },
-    { code: "ceb", name: "Cebuano" },
-    { code: "cs", name: "Czech" },
-    { code: "cy", name: "Welsh" },
-    { code: "da", name: "Danish" },
-    { code: "el", name: "Greek" },
-    { code: "et", name: "Estonian" },
-    { code: "eu", name: "Basque" },
-    { code: "fa", name: "Persian" },
-    { code: "fi", name: "Finnish" },
-    { code: "fil", name: "Filipino (Tagalog)" },
-    { code: "ga", name: "Irish" },
-    { code: "gd", name: "Scottish Gaelic" },
-    { code: "gl", name: "Galician" },
-    { code: "gu", name: "Gujarati" },
-    { code: "ha", name: "Hausa" },
-    { code: "he", name: "Hebrew" },
-    { code: "hr", name: "Croatian" },
-    { code: "hu", name: "Hungarian" },
-    { code: "hy", name: "Armenian" },
-    { code: "id", name: "Indonesian" },
-    { code: "is", name: "Icelandic" },
-    { code: "ka", name: "Georgian" },
-    { code: "kk", name: "Kazakh" },
-    { code: "km", name: "Khmer" },
-    { code: "kn", name: "Kannada" },
-    { code: "lo", name: "Lao" },
-    { code: "lt", name: "Lithuanian" },
-    { code: "lv", name: "Latvian" },
-    { code: "mk", name: "Macedonian" },
-    { code: "ml", name: "Malayalam" },
-    { code: "mn", name: "Mongolian" },
-    { code: "mr", name: "Marathi" },
-    { code: "ms", name: "Malay" },
-    { code: "ne", name: "Nepali" },
-    { code: "no", name: "Norwegian" },
-    { code: "pa", name: "Punjabi" },
-    { code: "ro", name: "Romanian" },
-    { code: "si", name: "Sinhala" },
-    { code: "sk", name: "Slovak" },
-    { code: "sl", name: "Slovenian" },
-    { code: "so", name: "Somali" },
-    { code: "sq", name: "Albanian" },
-    { code: "sr", name: "Serbian" },
-    { code: "sv", name: "Swedish" },
-    { code: "sw", name: "Swahili" },
-    { code: "ta", name: "Tamil" },
-    { code: "te", name: "Telugu" },
-    { code: "th", name: "Thai" },
-    { code: "uk", name: "Ukrainian" },
-    { code: "ur", name: "Urdu" },
-    { code: "uz", name: "Uzbek" },
-    { code: "vi", name: "Vietnamese" },
-    { code: "xh", name: "Xhosa" },
-    { code: "yo", name: "Yoruba" },
-    { code: "zu", name: "Zulu" }
+    { code: 'af', name: 'Afrikaans' },
+    { code: 'am', name: 'Amharic' },
+    { code: 'az', name: 'Azerbaijani' },
+    { code: 'be', name: 'Belarusian' },
+    { code: 'bn', name: 'Bengali' },
+    { code: 'bs', name: 'Bosnian' },
+    { code: 'bg', name: 'Bulgarian' },
+    { code: 'my', name: 'Burmese' },
+    { code: 'ca', name: 'Catalan' },
+    { code: 'ceb', name: 'Cebuano' },
+    { code: 'cs', name: 'Czech' },
+    { code: 'cy', name: 'Welsh' },
+    { code: 'da', name: 'Danish' },
+    { code: 'el', name: 'Greek' },
+    { code: 'et', name: 'Estonian' },
+    { code: 'eu', name: 'Basque' },
+    { code: 'fa', name: 'Persian' },
+    { code: 'fi', name: 'Finnish' },
+    { code: 'fil', name: 'Filipino (Tagalog)' },
+    { code: 'ga', name: 'Irish' },
+    { code: 'gd', name: 'Scottish Gaelic' },
+    { code: 'gl', name: 'Galician' },
+    { code: 'gu', name: 'Gujarati' },
+    { code: 'ha', name: 'Hausa' },
+    { code: 'he', name: 'Hebrew' },
+    { code: 'hr', name: 'Croatian' },
+    { code: 'hu', name: 'Hungarian' },
+    { code: 'hy', name: 'Armenian' },
+    { code: 'id', name: 'Indonesian' },
+    { code: 'is', name: 'Icelandic' },
+    { code: 'ka', name: 'Georgian' },
+    { code: 'kk', name: 'Kazakh' },
+    { code: 'km', name: 'Khmer' },
+    { code: 'kn', name: 'Kannada' },
+    { code: 'lo', name: 'Lao' },
+    { code: 'lt', name: 'Lithuanian' },
+    { code: 'lv', name: 'Latvian' },
+    { code: 'mk', name: 'Macedonian' },
+    { code: 'ml', name: 'Malayalam' },
+    { code: 'mn', name: 'Mongolian' },
+    { code: 'mr', name: 'Marathi' },
+    { code: 'ms', name: 'Malay' },
+    { code: 'ne', name: 'Nepali' },
+    { code: 'no', name: 'Norwegian' },
+    { code: 'pa', name: 'Punjabi' },
+    { code: 'ro', name: 'Romanian' },
+    { code: 'si', name: 'Sinhala' },
+    { code: 'sk', name: 'Slovak' },
+    { code: 'sl', name: 'Slovenian' },
+    { code: 'so', name: 'Somali' },
+    { code: 'sq', name: 'Albanian' },
+    { code: 'sr', name: 'Serbian' },
+    { code: 'sv', name: 'Swedish' },
+    { code: 'sw', name: 'Swahili' },
+    { code: 'ta', name: 'Tamil' },
+    { code: 'te', name: 'Telugu' },
+    { code: 'th', name: 'Thai' },
+    { code: 'uk', name: 'Ukrainian' },
+    { code: 'ur', name: 'Urdu' },
+    { code: 'uz', name: 'Uzbek' },
+    { code: 'vi', name: 'Vietnamese' },
+    { code: 'xh', name: 'Xhosa' },
+    { code: 'yo', name: 'Yoruba' },
+    { code: 'zu', name: 'Zulu' },
 ];
 
 const VISIBILITY = [
     {
-        name: "Everyone",
-        title: "Everyone can view this post",
-        icon: "earth-outline",
+        name: 'Everyone',
+        title: 'Everyone can view this post',
+        icon: 'earth-outline',
         id: 1,
         disabled: false,
-        description: "Anyone can see this post"
+        description: 'Anyone can see this post',
     },
     {
-        name: "Local",
-        title: "Only people on loops.video can view",
-        icon: "map-outline",
+        name: 'Local',
+        title: 'Only people on loops.video can view',
+        icon: 'map-outline',
         id: 2,
         disabled: true,
-        description: "Visible only to people on loops.video"
+        description: 'Visible only to people on loops.video',
     },
     {
-        name: "Followers",
-        title: "Only followers can view this post",
-        icon: "people-outline",
+        name: 'Followers',
+        title: 'Only followers can view this post',
+        icon: 'people-outline',
         id: 3,
         disabled: true,
-        description: "Visible only to your followers"
+        description: 'Visible only to your followers',
     },
     {
-        name: "Friends",
-        title: "Only friends can view this post",
-        icon: "people-circle-outline",
+        name: 'Friends',
+        title: 'Only friends can view this post',
+        icon: 'people-circle-outline',
         id: 4,
         disabled: true,
-        description: "Followers you follow back"
+        description: 'Followers you follow back',
     },
     {
-        name: "Only you",
-        title: "Only you can view this post",
-        icon: "lock-closed-outline",
+        name: 'Only you',
+        title: 'Only you can view this post',
+        icon: 'lock-closed-outline',
         id: 5,
         disabled: true,
-        description: "Visible only to you"
+        description: 'Visible only to you',
     },
-]
+];
 
 export default function DuetCaptionScreen() {
     const insets = useSafeAreaInsets();
@@ -191,13 +191,13 @@ export default function DuetCaptionScreen() {
     const inputRef = useRef<TextInput>(null);
     const altTextInputRef = useRef<TextInput>(null);
 
-    const player = useVideoPlayer(videoPath as string, (player) => { });
+    const player = useVideoPlayer(videoPath as string, (player) => {});
 
     const { data: hashtagSuggestions = [] } = useQuery({
         queryKey: ['autoComplete_hashtags', autocompleteQuery],
         queryFn: async () => {
-            const res = await composeAutocompleteTags(autocompleteQuery)
-            return res.data
+            const res = await composeAutocompleteTags(autocompleteQuery);
+            return res.data;
         },
         enabled: autocompleteType === 'hashtag' && autocompleteQuery.length > 0,
     });
@@ -205,9 +205,8 @@ export default function DuetCaptionScreen() {
     const { data: mentionSuggestions = [] } = useQuery({
         queryKey: ['autoComplete_mentions', autocompleteQuery],
         queryFn: async () => {
-            const res = await composeAutocompleteMentions(autocompleteQuery)
-            console.log(res)
-            return res.data
+            const res = await composeAutocompleteMentions(autocompleteQuery);
+            return res.data;
         },
         enabled: autocompleteType === 'mention' && autocompleteQuery.length > 0,
     });
@@ -241,10 +240,12 @@ export default function DuetCaptionScreen() {
                 const pct = Math.round(progress * 100);
                 setProgressPct(pct);
                 setOverlayMessage(`Compressing… ${pct}%`);
-            }
+            },
         );
 
-        const uploadUri = compressedUri.startsWith('file://') ? compressedUri : `file://${compressedUri}`;
+        const uploadUri = compressedUri.startsWith('file://')
+            ? compressedUri
+            : `file://${compressedUri}`;
         const filename = `upload_${Date.now()}.mp4`;
 
         setOverlayMessage('Uploading…');
@@ -266,10 +267,10 @@ export default function DuetCaptionScreen() {
             can_stitch: allowStitches ? '1' : '0',
             is_sensitive: isSensitive ? '1' : '0',
             contains_ad: isAd ? '1' : '0',
-            contains_ai: isAi ? '1' : '0'
-        }
+            contains_ai: isAi ? '1' : '0',
+        };
 
-        const res = await uploadDuet(params)
+        const res = await uploadDuet(params);
 
         if (!res.ok) {
             const text = await res.text();
@@ -364,18 +365,23 @@ export default function DuetCaptionScreen() {
         setAutocompleteType(null);
         setAutocompleteQuery('');
 
-        const newCursorPosition = beforeTrigger.length +
-            (autocompleteType === 'hashtag' ? suggestion.name.length : suggestion.username.length) + 2;
+        const newCursorPosition =
+            beforeTrigger.length +
+            (autocompleteType === 'hashtag' ? suggestion.name.length : suggestion.username.length) +
+            2;
 
         setTimeout(() => {
             inputRef.current?.setNativeProps({
-                selection: { start: newCursorPosition, end: newCursorPosition }
+                selection: { start: newCursorPosition, end: newCursorPosition },
             });
         }, 0);
     };
 
-    const showAutocomplete = autocompleteType &&
-        (autocompleteType === 'hashtag' ? hashtagSuggestions.length > 0 : mentionSuggestions.length > 0);
+    const showAutocomplete =
+        autocompleteType &&
+        (autocompleteType === 'hashtag'
+            ? hashtagSuggestions.length > 0
+            : mentionSuggestions.length > 0);
 
     const handleBack = () => {
         router.back();
@@ -390,8 +396,7 @@ export default function DuetCaptionScreen() {
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <StatusBar barStyle="dark-content" />
             <Stack.Screen options={{ headerShown: false }} />
 
@@ -420,10 +425,11 @@ export default function DuetCaptionScreen() {
                             maxLength={MAX_CAPTION_LENGTH}
                         />
                         <View style={styles.characterCounter}>
-                            <Text style={[
-                                styles.characterCounterText,
-                                isNearLimit && styles.characterCounterWarning
-                            ]}>
+                            <Text
+                                style={[
+                                    styles.characterCounterText,
+                                    isNearLimit && styles.characterCounterWarning,
+                                ]}>
                                 {charsRemaining}
                             </Text>
                         </View>
@@ -442,22 +448,27 @@ export default function DuetCaptionScreen() {
                 {showAutocomplete && (
                     <View style={styles.autocompleteContainer}>
                         <FlatList
-                            data={autocompleteType === 'hashtag' ? hashtagSuggestions : mentionSuggestions}
+                            data={
+                                autocompleteType === 'hashtag'
+                                    ? hashtagSuggestions
+                                    : mentionSuggestions
+                            }
                             keyExtractor={(item) => item.id}
                             scrollEnabled={true}
                             keyboardShouldPersistTaps="handled"
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     style={styles.suggestionItem}
-                                    onPress={() => handleSelectSuggestion(item)}
-                                >
+                                    onPress={() => handleSelectSuggestion(item)}>
                                     {autocompleteType === 'hashtag' ? (
                                         <>
                                             <View style={styles.hashtagIcon}>
                                                 <Text style={styles.hashtagIconText}>#</Text>
                                             </View>
                                             <View style={styles.suggestionContent}>
-                                                <Text style={styles.suggestionName}>{item.name}</Text>
+                                                <Text style={styles.suggestionName}>
+                                                    {item.name}
+                                                </Text>
                                                 <Text style={styles.suggestionMeta}>
                                                     {item.count.toLocaleString()} posts
                                                 </Text>
@@ -466,15 +477,27 @@ export default function DuetCaptionScreen() {
                                     ) : (
                                         <>
                                             <Avatar url={item?.avatar} />
-                                            <YStack style={styles.suggestionContent} justifyContent='center'>
-                                                <XStack flex={1} gap="$1" alignItems='center'>
-                                                    <Text style={styles.suggestionName}>@{item.username}</Text>
+                                            <YStack
+                                                style={styles.suggestionContent}
+                                                justifyContent="center">
+                                                <XStack flex={1} gap="$1" alignItems="center">
+                                                    <Text style={styles.suggestionName}>
+                                                        @{item.username}
+                                                    </Text>
                                                     <Text>·</Text>
-                                                    <Text style={styles.suggestionMetaSmall}>{prettyCount(item.follower_count)} Followers</Text>
+                                                    <Text style={styles.suggestionMetaSmall}>
+                                                        {prettyCount(item.follower_count)} Followers
+                                                    </Text>
                                                 </XStack>
-                                                {item.bio && item.bio.length && (<XStack gap="$1">
-                                                    <Text style={styles.suggestionMetaSmall} numberOfLines={1}>{item.bio}</Text>
-                                                </XStack>)}
+                                                {item.bio && item.bio.length && (
+                                                    <XStack gap="$1">
+                                                        <Text
+                                                            style={styles.suggestionMetaSmall}
+                                                            numberOfLines={1}>
+                                                            {item.bio}
+                                                        </Text>
+                                                    </XStack>
+                                                )}
                                             </YStack>
                                         </>
                                     )}
@@ -503,8 +526,7 @@ export default function DuetCaptionScreen() {
 
                     <TouchableOpacity
                         style={styles.listItem}
-                        onPress={() => setShowVisibilityModal(true)}
-                    >
+                        onPress={() => setShowVisibilityModal(true)}>
                         <View style={styles.listItemLeftLonger}>
                             <View style={styles.listItemIcon}>
                                 <Ionicons name={selectedVisibility.icon} size={20} color="#999" />
@@ -518,8 +540,7 @@ export default function DuetCaptionScreen() {
 
                     <TouchableOpacity
                         style={styles.listItem}
-                        onPress={() => setShowAltTextModal(true)}
-                    >
+                        onPress={() => setShowAltTextModal(true)}>
                         <View style={styles.listItemLeftLonger}>
                             <View style={styles.listItemIcon}>
                                 <Ionicons name="accessibility-outline" size={20} color="#999" />
@@ -544,15 +565,16 @@ export default function DuetCaptionScreen() {
 
                     <TouchableOpacity
                         style={styles.listItem}
-                        onPress={() => setShowLanguageModal(true)}
-                    >
+                        onPress={() => setShowLanguageModal(true)}>
                         <View style={styles.listItemLeft}>
                             <View style={styles.listItemIcon}>
                                 <Ionicons name="language-outline" size={20} color="#999" />
                             </View>
                             <YStack>
                                 <Text style={styles.listItemText}>Video Language</Text>
-                                <Text style={styles.listItemTextPreview}>{selectedLanguage.name}</Text>
+                                <Text style={styles.listItemTextPreview}>
+                                    {selectedLanguage.name}
+                                </Text>
                             </YStack>
                         </View>
                         <Ionicons name="chevron-forward-outline" size={20} color="#999" />
@@ -560,15 +582,16 @@ export default function DuetCaptionScreen() {
 
                     <TouchableOpacity
                         style={styles.listItem}
-                        onPress={() => setShowMoreOptionsModal(true)}
-                    >
+                        onPress={() => setShowMoreOptionsModal(true)}>
                         <View style={styles.listItemLeft}>
                             <View style={styles.listItemIcon}>
                                 <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
                             </View>
                             <YStack>
                                 <Text style={styles.listItemText}>More options</Text>
-                                <Text style={styles.listItemTextHelp}>Permission and content settings</Text>
+                                <Text style={styles.listItemTextHelp}>
+                                    Permission and content settings
+                                </Text>
                             </YStack>
                         </View>
                         <Ionicons name="chevron-forward-outline" size={20} color="#999" />
@@ -587,8 +610,7 @@ export default function DuetCaptionScreen() {
                 visible={showMoreOptionsModal}
                 animationType="slide"
                 presentationStyle="pageSheet"
-                onRequestClose={() => setShowMoreOptionsModal(false)}
-            >
+                onRequestClose={() => setShowMoreOptionsModal(false)}>
                 <SafeAreaView style={styles.modalContainer}>
                     <View style={styles.modalHeader}>
                         <TouchableOpacity onPress={() => setShowMoreOptionsModal(false)}>
@@ -599,7 +621,6 @@ export default function DuetCaptionScreen() {
                     </View>
 
                     <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
-
                         <XStack>
                             <Text style={styles.listSectionTitle}>Privacy Settings</Text>
                         </XStack>
@@ -658,8 +679,6 @@ export default function DuetCaptionScreen() {
                             <Text style={styles.listSectionTitle}>Advanced Settings</Text>
                         </XStack>
 
-
-
                         <View style={styles.listItem}>
                             <View style={styles.listItemLeft}>
                                 <View style={styles.listItemIcon}>
@@ -667,7 +686,10 @@ export default function DuetCaptionScreen() {
                                 </View>
                                 <YStack>
                                     <Text style={styles.listItemText}>Sensitive content</Text>
-                                    <Text style={styles.listItemTextHelp}>Mark this post as sensitive to show a warning and limit to those aged 18 years and older</Text>
+                                    <Text style={styles.listItemTextHelp}>
+                                        Mark this post as sensitive to show a warning and limit to
+                                        those aged 18 years and older
+                                    </Text>
                                 </YStack>
                             </View>
                             <Switch value={isSensitive} onValueChange={setIsSensitive} />
@@ -679,8 +701,13 @@ export default function DuetCaptionScreen() {
                                     <Ionicons name="bag-outline" size={20} color="#999" />
                                 </View>
                                 <YStack>
-                                    <Text style={styles.listItemText}>Content disclosure and ads</Text>
-                                    <Text style={styles.listItemTextHelp}>Let others know this post promotes a brand, product or service</Text>
+                                    <Text style={styles.listItemText}>
+                                        Content disclosure and ads
+                                    </Text>
+                                    <Text style={styles.listItemTextHelp}>
+                                        Let others know this post promotes a brand, product or
+                                        service
+                                    </Text>
                                 </YStack>
                             </View>
                             <Switch value={isAd} onValueChange={setIsAd} />
@@ -689,12 +716,18 @@ export default function DuetCaptionScreen() {
                         <View style={styles.listItem}>
                             <View style={styles.listItemLeft}>
                                 <View style={styles.listItemIcon}>
-                                    <Ionicons name="information-circle-outline" size={20} color="#999" />
+                                    <Ionicons
+                                        name="information-circle-outline"
+                                        size={20}
+                                        color="#999"
+                                    />
                                 </View>
                                 <YStack>
                                     <Text style={styles.listItemText}>AI-Generated Content</Text>
-                                    <Text style={styles.listItemTextHelp}>Add this label to tell viewers your content was generated or edited with AI</Text>
-
+                                    <Text style={styles.listItemTextHelp}>
+                                        Add this label to tell viewers your content was generated or
+                                        edited with AI
+                                    </Text>
                                 </YStack>
                             </View>
                             <Switch value={isAi} onValueChange={setIsAi} />
@@ -706,7 +739,9 @@ export default function DuetCaptionScreen() {
                                 </View>
                                 <YStack>
                                     <Text style={styles.listItemText}>Save to device</Text>
-                                    <Text style={styles.listItemTextHelp}>Save a copy to your device</Text>
+                                    <Text style={styles.listItemTextHelp}>
+                                        Save a copy to your device
+                                    </Text>
                                 </YStack>
                             </View>
                             <Switch value={saveToDevice} onValueChange={setSaveToDevice} />
@@ -719,14 +754,12 @@ export default function DuetCaptionScreen() {
                 visible={showAltTextModal}
                 animationType="slide"
                 presentationStyle="fullScreen"
-                onRequestClose={() => setShowAltTextModal(false)}
-            >
+                onRequestClose={() => setShowAltTextModal(false)}>
                 <SafeAreaView style={styles.fullScreenModalContainer}>
                     <KeyboardAvoidingView
                         style={{ flex: 1 }}
                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        keyboardVerticalOffset={0}
-                    >
+                        keyboardVerticalOffset={0}>
                         <View style={styles.modalHeader}>
                             <TouchableOpacity onPress={() => setShowAltTextModal(false)}>
                                 <Ionicons name="close" size={28} color="#000" />
@@ -740,10 +773,11 @@ export default function DuetCaptionScreen() {
                         <ScrollView
                             style={styles.fullScreenModalContent}
                             keyboardShouldPersistTaps="handled"
-                            showsVerticalScrollIndicator={false}
-                        >
+                            showsVerticalScrollIndicator={false}>
                             <Text style={styles.altTextDescription}>
-                                Describe your video content to make it accessible for visually impaired viewers using screen readers. Include important visual details, actions, and context.
+                                Describe your video content to make it accessible for visually
+                                impaired viewers using screen readers. Include important visual
+                                details, actions, and context.
                             </Text>
 
                             <View style={styles.altTextInputContainer}>
@@ -766,10 +800,11 @@ export default function DuetCaptionScreen() {
                             </View>
 
                             <View style={styles.altTextCharCounter}>
-                                <Text style={[
-                                    styles.altTextCharCounterText,
-                                    isAltTextNearLimit && styles.characterCounterWarning
-                                ]}>
+                                <Text
+                                    style={[
+                                        styles.altTextCharCounterText,
+                                        isAltTextNearLimit && styles.characterCounterWarning,
+                                    ]}>
                                     {altTextCharsRemaining} characters remaining
                                 </Text>
                             </View>
@@ -782,8 +817,7 @@ export default function DuetCaptionScreen() {
                 visible={showLanguageModal}
                 animationType="slide"
                 presentationStyle="pageSheet"
-                onRequestClose={() => setShowLanguageModal(false)}
-            >
+                onRequestClose={() => setShowLanguageModal(false)}>
                 <SafeAreaView style={styles.fullScreenModalContainer}>
                     <View style={styles.modalHeader}>
                         <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
@@ -807,15 +841,16 @@ export default function DuetCaptionScreen() {
                                 onPress={() => {
                                     setSelectedLanguage(item);
                                     setShowLanguageModal(false);
-                                }}
-                            >
+                                }}>
                                 <Text style={styles.languageName}>{item.name}</Text>
                                 {selectedLanguage.code === item.code && (
                                     <Ionicons name="checkmark" size={24} color="#ff0050" />
                                 )}
                             </TouchableOpacity>
                         )}
-                        contentInsetAdjustmentBehavior={Platform.OS === 'ios' ? 'automatic' : 'never'}
+                        contentInsetAdjustmentBehavior={
+                            Platform.OS === 'ios' ? 'automatic' : 'never'
+                        }
                         contentContainerStyle={{ paddingBottom: insets.bottom + 8 }}
                     />
                 </SafeAreaView>
@@ -825,8 +860,7 @@ export default function DuetCaptionScreen() {
                 visible={showVisibilityModal}
                 animationType="slide"
                 presentationStyle="pageSheet"
-                onRequestClose={() => setShowVisibilityModal(false)}
-            >
+                onRequestClose={() => setShowVisibilityModal(false)}>
                 <SafeAreaView style={styles.fullScreenModalContainer}>
                     <View style={styles.modalHeader}>
                         <TouchableOpacity onPress={() => setShowVisibilityModal(false)}>
@@ -836,9 +870,7 @@ export default function DuetCaptionScreen() {
                         <View style={{ width: 28 }} />
                     </View>
 
-                    <Text style={styles.visibilityHeaderDescription}>
-                        Who can view this post
-                    </Text>
+                    <Text style={styles.visibilityHeaderDescription}>Who can view this post</Text>
 
                     <FlatList
                         data={VISIBILITY}
@@ -846,16 +878,20 @@ export default function DuetCaptionScreen() {
                         showsVerticalScrollIndicator={false}
                         renderItem={({ item }) => (
                             <TouchableOpacity
-                                style={[styles.visibilityItem, { opacity: item.disabled ? 0.5 : 1 }]}
+                                style={[
+                                    styles.visibilityItem,
+                                    { opacity: item.disabled ? 0.5 : 1 },
+                                ]}
                                 disabled={item.disabled}
                                 onPress={() => {
                                     setSelectedVisibility(item);
                                     setShowVisibilityModal(false);
-                                }}
-                            >
+                                }}>
                                 <YStack gap={1}>
                                     <Text style={styles.visibilityName}>{item.name}</Text>
-                                    <Text style={styles.visibilityDescription}>{item.description}</Text>
+                                    <Text style={styles.visibilityDescription}>
+                                        {item.description}
+                                    </Text>
                                 </YStack>
 
                                 {selectedVisibility.id === item.id ? (
@@ -864,7 +900,6 @@ export default function DuetCaptionScreen() {
                                     </View>
                                 ) : (
                                     <View style={styles.radioContainer} />
-
                                 )}
                             </TouchableOpacity>
                         )}
@@ -1035,11 +1070,11 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
         color: '#666',
         fontSize: 16,
-        fontWeight: 600
+        fontWeight: 600,
     },
     listSectionSeparator: {
         backgroundColor: '#f8f8f8',
-        height: 10
+        height: 10,
     },
     listItemIcon: {
         paddingRight: 10,

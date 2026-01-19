@@ -1,3 +1,4 @@
+import { useTheme } from '@/contexts/ThemeContext';
 import { updateAccountPassword } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation } from '@tanstack/react-query';
@@ -10,19 +11,21 @@ import {
     ScrollView,
     Text,
     TextInput,
-    View
+    View,
 } from 'react-native';
 import tw from 'twrnc';
 
 export default function PasswordChangeScreen() {
+    const { colorScheme } = useTheme();
+
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    
+
     const [showCurrent, setShowCurrent] = useState(false);
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
-    
+
     const [errors, setErrors] = useState({});
 
     const updatePasswordMutation = useMutation({
@@ -30,30 +33,26 @@ export default function PasswordChangeScreen() {
         onSuccess: (data) => {
             if (data?.error?.code != 'ok') {
                 const errors = data?.errors;
-                setErrors(errors)
+                setErrors(errors);
                 return;
             }
-            
-            Alert.alert(
-                'Success',
-                'Your password has been updated successfully.',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => router.back(),
-                    },
-                ]
-            );
+
+            Alert.alert('Success', 'Your password has been updated successfully.', [
+                {
+                    text: 'OK',
+                    onPress: () => router.back(),
+                },
+            ]);
         },
         onError: (error) => {
             console.log('Password update error:', error);
-            
+
             if (error.response?.data?.errors) {
                 setErrors(error.response.data.errors);
             } else {
                 Alert.alert(
                     'Error',
-                    error.response?.data?.message || 'Failed to update password. Please try again.'
+                    error.response?.data?.message || 'Failed to update password. Please try again.',
                 );
             }
         },
@@ -94,14 +93,21 @@ export default function PasswordChangeScreen() {
         });
     };
 
-    const isFormValid = currentPassword && newPassword && confirmPassword && newPassword === confirmPassword && newPassword.length >= 8 && newPassword.length <= 72;
+    const isFormValid =
+        currentPassword &&
+        newPassword &&
+        confirmPassword &&
+        newPassword === confirmPassword &&
+        newPassword.length >= 8 &&
+        newPassword.length <= 72;
 
     return (
-        <View style={tw`flex-1 bg-gray-100`}>
+        <View style={tw`flex-1 bg-gray-100 dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Change Password',
-                    headerStyle: { backgroundColor: '#fff' },
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerBackTitle: 'Settings',
                     headerShown: true,
                 }}
@@ -109,18 +115,20 @@ export default function PasswordChangeScreen() {
 
             <ScrollView style={tw`flex-1`} keyboardShouldPersistTaps="handled">
                 <View style={tw`mt-6 px-5`}>
-                    <Text style={tw`text-sm text-gray-600 mb-6`}>
+                    <Text style={tw`text-sm text-gray-600 dark:text-gray-300 mb-6`}>
                         Enter your current password and choose a new secure password.
                     </Text>
 
                     <View style={tw`mb-4`}>
-                        <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+                        <Text style={tw`text-sm font-medium text-gray-700 dark:text-gray-300 mb-2`}>
                             Current Password
                         </Text>
                         <View style={tw`relative`}>
                             <TextInput
-                                style={tw`bg-white border ${
-                                    errors.current_password ? 'border-red-500' : 'border-gray-300'
+                                style={tw`bg-white dark:bg-gray-900 dark:text-white border ${
+                                    errors.current_password
+                                        ? 'border-red-500'
+                                        : 'border-gray-300 dark:border-gray-800'
                                 } rounded-lg px-4 py-3 pr-12 text-base`}
                                 value={currentPassword}
                                 onChangeText={(text) => {
@@ -133,6 +141,7 @@ export default function PasswordChangeScreen() {
                                 autoCapitalize="none"
                                 autoCorrect={false}
                                 placeholder="Enter current password"
+                                placeholderTextColor={colorScheme === 'dark' ? '#666' : '#999'}
                             />
                             <Pressable
                                 onPress={() => setShowCurrent(!showCurrent)}
@@ -152,13 +161,15 @@ export default function PasswordChangeScreen() {
                     </View>
 
                     <View style={tw`mb-4`}>
-                        <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+                        <Text style={tw`text-sm font-medium text-gray-700 dark:text-gray-300 mb-2`}>
                             New Password
                         </Text>
                         <View style={tw`relative`}>
                             <TextInput
-                                style={tw`bg-white border ${
-                                    errors.password ? 'border-red-500' : 'border-gray-300'
+                                style={tw`bg-white dark:bg-gray-900 dark:text-white border ${
+                                    errors.password
+                                        ? 'border-red-500'
+                                        : 'border-gray-300 dark:border-gray-800'
                                 } rounded-lg px-4 py-3 pr-12 text-base`}
                                 value={newPassword}
                                 onChangeText={(text) => {
@@ -171,6 +182,7 @@ export default function PasswordChangeScreen() {
                                 autoCapitalize="none"
                                 autoCorrect={false}
                                 placeholder="Enter new password"
+                                placeholderTextColor={colorScheme === 'dark' ? '#666' : '#999'}
                             />
                             <Pressable
                                 onPress={() => setShowNew(!showNew)}
@@ -183,9 +195,7 @@ export default function PasswordChangeScreen() {
                             </Pressable>
                         </View>
                         {errors.password && (
-                            <Text style={tw`text-red-500 text-sm mt-1`}>
-                                {errors.password[0]}
-                            </Text>
+                            <Text style={tw`text-red-500 text-sm mt-1`}>{errors.password[0]}</Text>
                         )}
                         {!errors.password && newPassword && (
                             <Text style={tw`text-gray-500 text-xs mt-1`}>
@@ -195,13 +205,15 @@ export default function PasswordChangeScreen() {
                     </View>
 
                     <View style={tw`mb-6`}>
-                        <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+                        <Text style={tw`text-sm font-medium text-gray-700 dark:text-gray-300 mb-2`}>
                             Confirm New Password
                         </Text>
                         <View style={tw`relative`}>
                             <TextInput
-                                style={tw`bg-white border ${
-                                    errors.password_confirmation ? 'border-red-500' : 'border-gray-300'
+                                style={tw`bg-white dark:bg-gray-900 dark:text-white border ${
+                                    errors.password_confirmation
+                                        ? 'border-red-500'
+                                        : 'border-gray-300 dark:border-gray-800'
                                 } rounded-lg px-4 py-3 pr-12 text-base`}
                                 value={confirmPassword}
                                 onChangeText={(text) => {
@@ -214,6 +226,7 @@ export default function PasswordChangeScreen() {
                                 autoCapitalize="none"
                                 autoCorrect={false}
                                 placeholder="Confirm new password"
+                                placeholderTextColor={colorScheme === 'dark' ? '#666' : '#999'}
                             />
                             <Pressable
                                 onPress={() => setShowConfirm(!showConfirm)}
@@ -237,7 +250,8 @@ export default function PasswordChangeScreen() {
                         disabled={!isFormValid || updatePasswordMutation.isPending}
                         style={({ pressed }) => [
                             tw`bg-blue-600 rounded-lg py-4 items-center`,
-                            (!isFormValid || updatePasswordMutation.isPending) && tw`bg-gray-400`,
+                            (!isFormValid || updatePasswordMutation.isPending) &&
+                                tw`bg-gray-400 dark:bg-gray-900 opacity-50`,
                             pressed && isFormValid && tw`bg-blue-700`,
                         ]}>
                         {updatePasswordMutation.isPending ? (

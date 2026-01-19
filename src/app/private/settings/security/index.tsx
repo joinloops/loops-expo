@@ -2,8 +2,9 @@ import {
     Divider,
     SectionHeader,
     SettingsItem,
-    SettingsStatusItem
+    SettingsStatusItem,
 } from '@/components/settings/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { fetchAccountSecurityConfig, openLocalLink } from '@/utils/requests';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
@@ -17,7 +18,8 @@ import tw from 'twrnc';
 export default function SecurityScreen() {
     const router = useRouter();
     const [twoFactor, setTwoFactor] = useState(false);
-    
+    const { colorScheme } = useTheme();
+
     const [cameraPermission, setCameraPermission] = useState(null);
     const [microphonePermission, setMicrophonePermission] = useState(null);
     const [photosPermission, setPhotosPermission] = useState(null);
@@ -50,7 +52,7 @@ export default function SecurityScreen() {
     useFocusEffect(
         useCallback(() => {
             checkPermissions();
-        }, [])
+        }, []),
     );
 
     const openAppSettings = () => {
@@ -59,11 +61,11 @@ export default function SecurityScreen() {
             'This permission has been denied. Please enable it in your device settings.',
             [
                 { text: 'Cancel', style: 'cancel' },
-                { 
-                    text: 'Open Settings', 
-                    onPress: () => Linking.openSettings() 
+                {
+                    text: 'Open Settings',
+                    onPress: () => Linking.openSettings(),
                 },
-            ]
+            ],
         );
     };
 
@@ -80,7 +82,7 @@ export default function SecurityScreen() {
 
         const status = await Camera.requestCameraPermission();
         setCameraPermission(status);
-        
+
         if (status === 'denied') {
             openAppSettings();
         }
@@ -99,7 +101,7 @@ export default function SecurityScreen() {
 
         const status = await Camera.requestMicrophonePermission();
         setMicrophonePermission(status);
-        
+
         if (status === 'denied') {
             openAppSettings();
         }
@@ -118,7 +120,7 @@ export default function SecurityScreen() {
 
         const { status } = await MediaLibrary.requestPermissionsAsync();
         setPhotosPermission(status);
-        
+
         if (status === 'denied') {
             openAppSettings();
         }
@@ -126,7 +128,7 @@ export default function SecurityScreen() {
 
     const getPermissionLabel = (status) => {
         if (!status) return 'Checking...';
-        
+
         switch (status) {
             case 'granted':
                 return null;
@@ -141,11 +143,12 @@ export default function SecurityScreen() {
     };
 
     return (
-        <View style={tw`flex-1 bg-gray-100`}>
+        <View style={tw`flex-1 bg-gray-100 dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Security & permissions',
-                    headerStyle: { backgroundColor: '#fff' },
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerBackTitle: 'Settings',
                     headerShown: true,
                 }}
@@ -153,10 +156,10 @@ export default function SecurityScreen() {
 
             <ScrollView style={tw`flex-1`}>
                 <SectionHeader title="Security" />
-                <SettingsItem 
-                    icon="key-outline" 
-                    label="Change password" 
-                    onPress={() => router.push('/private/settings/security/password')} 
+                <SettingsItem
+                    icon="key-outline"
+                    label="Change password"
+                    onPress={() => router.push('/private/settings/security/password')}
                 />
                 <Divider />
                 <SettingsStatusItem

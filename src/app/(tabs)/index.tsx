@@ -3,12 +3,21 @@ import OtherModal from '@/components/feed/OtherModal';
 import ShareModal from '@/components/feed/ShareModal';
 import VideoPlayer from '@/components/feed/VideoPlayer';
 import { useAuthStore } from '@/utils/authStore';
-import { fetchFollowingFeed, fetchForYouFeed, fetchLocalFeed, getConfiguration, recordImpression, videoBookmark, videoLike, videoUnbookmark, videoUnlike } from '@/utils/requests';
+import {
+    fetchFollowingFeed,
+    fetchForYouFeed,
+    fetchLocalFeed,
+    getConfiguration,
+    recordImpression,
+    videoBookmark,
+    videoLike,
+    videoUnbookmark,
+    videoUnlike,
+} from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -18,7 +27,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -62,13 +71,13 @@ export default function LoopsFeed({ navigation }) {
             return () => {
                 setScreenFocused(false);
             };
-        }, [])
+        }, []),
     );
 
     const { data: appConfig, isLoading: isConfigLoading } = useQuery({
         queryKey: ['appConfig'],
-        queryFn: getConfiguration
-    })
+        queryFn: getConfiguration,
+    });
 
     const forYouEnabled = appConfig?.fyf === true && !hideForYouFeed;
 
@@ -80,40 +89,35 @@ export default function LoopsFeed({ navigation }) {
         }
     }, [isConfigLoading, appConfig, forYouEnabled, activeTab]);
 
-    const recordVideoImpression = useCallback(async (video, duration) => {
-        if (activeTab !== 'forYou' || !video) {
-            return;
-        }
-        
-        if (duration < 1) {
-            return;
-        }
+    const recordVideoImpression = useCallback(
+        async (video, duration) => {
+            if (activeTab !== 'forYou' || !video) {
+                return;
+            }
 
-        const videoDuration = video.media.duration || 0;
-        const completed = videoDuration > 0 && duration >= (videoDuration * 0.9);
+            if (duration < 1) {
+                return;
+            }
 
-        await recordImpression(video.id, duration, completed);
-    }, [activeTab]);
+            const videoDuration = video.media.duration || 0;
+            const completed = videoDuration > 0 && duration >= videoDuration * 0.9;
 
+            await recordImpression(video.id, duration, completed);
+        },
+        [activeTab],
+    );
 
-    const {
-        data,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-        isLoading,
-        refetch,
-        isFetching,
-    } = useInfiniteQuery({
-        queryKey: ['videos', activeTab],
-        queryFn: ({ pageParam }) => fetchVideos({ pageParam, tab: activeTab }),
-        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
-        initialPageParam: null,
-    });
+    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch, isFetching } =
+        useInfiniteQuery({
+            queryKey: ['videos', activeTab],
+            queryFn: ({ pageParam }) => fetchVideos({ pageParam, tab: activeTab }),
+            getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
+            initialPageParam: null,
+        });
 
     const videoLikeMutation = useMutation({
         mutationFn: async (data) => {
-            const dir = data.type
+            const dir = data.type;
 
             if (dir == 'like') {
                 return await videoLike(data.id);
@@ -122,15 +126,13 @@ export default function LoopsFeed({ navigation }) {
                 return await videoUnlike(data.id);
             }
         },
-        onSuccess: (res) => {
-        },
-        onError: (error) => {
-        },
+        onSuccess: (res) => {},
+        onError: (error) => {},
     });
 
     const videoBookmarkMutation = useMutation({
         mutationFn: async (data) => {
-            const dir = data.type
+            const dir = data.type;
 
             if (dir == 'bookmark') {
                 return await videoBookmark(data.id);
@@ -139,13 +141,11 @@ export default function LoopsFeed({ navigation }) {
                 return await videoUnbookmark(data.id);
             }
         },
-        onSuccess: (res) => {
-        },
-        onError: (error) => {
-        },
+        onSuccess: (res) => {},
+        onError: (error) => {},
     });
 
-    const videos = data?.pages?.flatMap(page => page.data) || [];
+    const videos = data?.pages?.flatMap((page) => page.data) || [];
 
     const videosWithEnd = React.useMemo(() => {
         if (activeTab === 'forYou' && !hasNextPage && videos.length == 0) {
@@ -154,21 +154,24 @@ export default function LoopsFeed({ navigation }) {
         return videos;
     }, [videos, activeTab, hasNextPage]);
 
-    const onViewableItemsChanged = useCallback(({ viewableItems }) => {
-        if (viewableItems.length > 0) {
-            const newIndex = viewableItems[0].index || 0;
-            const newVideo = videos[newIndex];
+    const onViewableItemsChanged = useCallback(
+        ({ viewableItems }) => {
+            if (viewableItems.length > 0) {
+                const newIndex = viewableItems[0].index || 0;
+                const newVideo = videos[newIndex];
 
-            if (currentVideoRef.current && watchStartTimeRef.current) {
-                const watchDuration = (Date.now() - watchStartTimeRef.current) / 1000;
-                recordVideoImpression(currentVideoRef.current, watchDuration);
+                if (currentVideoRef.current && watchStartTimeRef.current) {
+                    const watchDuration = (Date.now() - watchStartTimeRef.current) / 1000;
+                    recordVideoImpression(currentVideoRef.current, watchDuration);
+                }
+
+                setCurrentIndex(newIndex);
+                currentVideoRef.current = newVideo;
+                watchStartTimeRef.current = Date.now();
             }
-
-            setCurrentIndex(newIndex);
-            currentVideoRef.current = newVideo;
-            watchStartTimeRef.current = Date.now();
-        }
-    }, [videos, recordVideoImpression]);
+        },
+        [videos, recordVideoImpression],
+    );
 
     useEffect(() => {
         return () => {
@@ -182,7 +185,7 @@ export default function LoopsFeed({ navigation }) {
     useFocusEffect(
         useCallback(() => {
             setScreenFocused(true);
-            
+
             return () => {
                 setScreenFocused(false);
                 if (currentVideoRef.current && watchStartTimeRef.current) {
@@ -190,19 +193,18 @@ export default function LoopsFeed({ navigation }) {
                     recordVideoImpression(currentVideoRef.current, watchDuration);
                 }
             };
-        }, [recordVideoImpression])
+        }, [recordVideoImpression]),
     );
 
-
     const handleLike = (videoId, liked) => {
-        const dir = liked ? 'like' : 'unlike'
-        videoLikeMutation.mutate({ type: dir, id: videoId })
+        const dir = liked ? 'like' : 'unlike';
+        videoLikeMutation.mutate({ type: dir, id: videoId });
     };
 
     const handleBookmark = (videoId, bookmarked) => {
-        const dir = bookmarked ? 'bookmark' : 'unbookmark'
-        videoBookmarkMutation.mutate({ type: dir, id: videoId })
-    }
+        const dir = bookmarked ? 'bookmark' : 'unbookmark';
+        videoBookmarkMutation.mutate({ type: dir, id: videoId });
+    };
 
     const handleComment = (video) => {
         setSelectedVideo(video);
@@ -221,9 +223,9 @@ export default function LoopsFeed({ navigation }) {
 
     const handlePlaybackSpeedChange = (speed) => {
         if (selectedVideo) {
-            setVideoPlaybackRates(prev => ({
+            setVideoPlaybackRates((prev) => ({
                 ...prev,
-                [selectedVideo.id]: speed
+                [selectedVideo.id]: speed,
             }));
         }
     };
@@ -234,42 +236,55 @@ export default function LoopsFeed({ navigation }) {
         setShowOther(false);
     };
 
-    const renderItem = useCallback(({ item, index }) => {
-        if (item.isEndMarker) {
-            return (
-                <View style={styles.endOfFeedContainer}>
-                    <Text style={styles.endOfFeedEmoji}>🌟</Text>
-                    <Text style={styles.endOfFeedTitle}>You're all caught up!</Text>
-                    <Text style={styles.endOfFeedSubtitle}>
-                        We're curating more Loops for you. Check back soon.
-                    </Text>
-                </View>
-            );
-        }
+    const renderItem = useCallback(
+        ({ item, index }) => {
+            if (item.isEndMarker) {
+                return (
+                    <View style={styles.endOfFeedContainer}>
+                        <Text style={styles.endOfFeedEmoji}>🌟</Text>
+                        <Text style={styles.endOfFeedTitle}>You're all caught up!</Text>
+                        <Text style={styles.endOfFeedSubtitle}>
+                            We're curating more Loops for you. Check back soon.
+                        </Text>
+                    </View>
+                );
+            }
 
-        return (
-            <VideoPlayer
-                key={item.id}
-                item={item}
-                isActive={index === currentIndex}
-                onLike={handleLike}
-                onComment={handleComment}
-                onShare={handleShare}
-                onBookmark={handleBookmark}
-                onOther={handleOther}
-                bottomInset={insets.bottom}
-                commentsOpen={showComments && selectedVideo?.id === item.id}
-                shareOpen={showShare && selectedVideo?.id === item.id}
-                otherOpen={showOther && selectedVideo?.id === item.id}
-                onMorePress={handleComment}
-                screenFocused={screenFocused}
-                videoPlaybackRates={videoPlaybackRates}
-                navigation={navigation}
-                onNavigate={handleNavigate}
-                tabBarHeight={TAB_BAR_HEIGHT}
-            />
-        );
-    }, [currentIndex, insets.bottom, showComments, showShare, showOther, selectedVideo, screenFocused, videoPlaybackRates, navigation]);
+            return (
+                <VideoPlayer
+                    key={item.id}
+                    item={item}
+                    isActive={index === currentIndex}
+                    onLike={handleLike}
+                    onComment={handleComment}
+                    onShare={handleShare}
+                    onBookmark={handleBookmark}
+                    onOther={handleOther}
+                    bottomInset={insets.bottom}
+                    commentsOpen={showComments && selectedVideo?.id === item.id}
+                    shareOpen={showShare && selectedVideo?.id === item.id}
+                    otherOpen={showOther && selectedVideo?.id === item.id}
+                    onMorePress={handleComment}
+                    screenFocused={screenFocused}
+                    videoPlaybackRates={videoPlaybackRates}
+                    navigation={navigation}
+                    onNavigate={handleNavigate}
+                    tabBarHeight={TAB_BAR_HEIGHT}
+                />
+            );
+        },
+        [
+            currentIndex,
+            insets.bottom,
+            showComments,
+            showShare,
+            showOther,
+            selectedVideo,
+            screenFocused,
+            videoPlaybackRates,
+            navigation,
+        ],
+    );
 
     const refreshing = isFetching && !isFetchingNextPage;
 
@@ -284,11 +299,14 @@ export default function LoopsFeed({ navigation }) {
         }
     };
 
-    const getItemLayout = useCallback((data, index) => ({
-        length: SCREEN_HEIGHT,
-        offset: SCREEN_HEIGHT * index,
-        index,
-    }), []);
+    const getItemLayout = useCallback(
+        (data, index) => ({
+            length: SCREEN_HEIGHT,
+            offset: SCREEN_HEIGHT * index,
+            index,
+        }),
+        [],
+    );
 
     if (isLoading) {
         return (
@@ -300,29 +318,25 @@ export default function LoopsFeed({ navigation }) {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="auto" />
-
             <View style={[styles.header, { top: insets.top + 10 }]}>
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
                         accessibilityRole="tab"
                         accessibilityLabel="Following"
                         accessibilityState={{
-                            selected: (activeTab === 'following')
+                            selected: activeTab === 'following',
                         }}
                         style={[styles.tab, activeTab === 'following' && styles.activeTab]}
                         onPress={() => {
                             setActiveTab('following');
                             setCurrentIndex(0);
                             flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
-                        }}
-                    >
+                        }}>
                         <Text
                             style={[
                                 styles.tabText,
                                 activeTab === 'following' && styles.activeTabText,
-                            ]}
-                        >
+                            ]}>
                             Following
                         </Text>
                     </TouchableOpacity>
@@ -330,21 +344,16 @@ export default function LoopsFeed({ navigation }) {
                         accessibilityRole="tab"
                         accessibilityLabel="Local"
                         accessibilityState={{
-                            selected: (activeTab === 'local')
+                            selected: activeTab === 'local',
                         }}
                         style={[styles.tab, activeTab === 'local' && styles.activeTab]}
                         onPress={() => {
                             setActiveTab('local');
                             setCurrentIndex(0);
                             flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
-                        }}
-                    >
+                        }}>
                         <Text
-                            style={[
-                                styles.tabText,
-                                activeTab === 'local' && styles.activeTabText,
-                            ]}
-                        >
+                            style={[styles.tabText, activeTab === 'local' && styles.activeTabText]}>
                             Local
                         </Text>
                     </TouchableOpacity>
@@ -353,21 +362,19 @@ export default function LoopsFeed({ navigation }) {
                             accessibilityRole="tab"
                             accessibilityLabel="For You"
                             accessibilityState={{
-                                selected: (activeTab === 'forYou')
+                                selected: activeTab === 'forYou',
                             }}
                             style={[styles.tab, activeTab === 'forYou' && styles.activeTab]}
                             onPress={() => {
                                 setActiveTab('forYou');
                                 setCurrentIndex(0);
                                 flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
-                            }}
-                        >
+                            }}>
                             <Text
                                 style={[
                                     styles.tabText,
                                     activeTab === 'forYou' && styles.activeTabText,
-                                ]}
-                            >
+                                ]}>
                                 For You
                             </Text>
                         </TouchableOpacity>
@@ -377,8 +384,7 @@ export default function LoopsFeed({ navigation }) {
                     accessibilityLabel="Search"
                     accessibilityRole="button"
                     style={styles.searchButton}
-                    onPress={() => router.push('/private/search')}
-                >
+                    onPress={() => router.push('/private/search')}>
                     <Ionicons name="search" size={28} color="white" />
                 </TouchableOpacity>
             </View>
@@ -438,7 +444,9 @@ export default function LoopsFeed({ navigation }) {
                 item={selectedVideo}
                 onClose={() => setShowOther(false)}
                 onPlaybackSpeedChange={handlePlaybackSpeedChange}
-                currentPlaybackRate={selectedVideo ? (videoPlaybackRates[selectedVideo.id] || 1.0) : 1.0}
+                currentPlaybackRate={
+                    selectedVideo ? videoPlaybackRates[selectedVideo.id] || 1.0 : 1.0
+                }
             />
         </View>
     );
@@ -516,5 +524,5 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         lineHeight: 22,
-    }
+    },
 });

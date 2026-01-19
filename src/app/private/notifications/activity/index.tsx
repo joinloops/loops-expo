@@ -1,15 +1,19 @@
 import { NotificationItem } from '@/components/notifications/NotificationItem';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { StackText, YStack } from '@/components/ui/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAuthStore } from '@/utils/authStore';
 import { useNotificationStore } from '@/utils/notificationStore';
-import { fetchActivityNotifications, notificationMarkAsRead, notificationTypeMarkAllAsRead } from '@/utils/requests';
+import {
+    fetchActivityNotifications,
+    notificationMarkAsRead,
+    notificationTypeMarkAllAsRead,
+} from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useMemo } from 'react';
-import { ActivityIndicator, Alert, FlatList, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, TouchableOpacity, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function ActivityNotificationsScreen() {
@@ -17,6 +21,7 @@ export default function ActivityNotificationsScreen() {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const { refetchBadgeCount } = useNotificationStore();
+    const { colorScheme } = useTheme();
 
     const {
         data,
@@ -40,7 +45,7 @@ export default function ActivityNotificationsScreen() {
             await queryClient.cancelQueries({ queryKey: ['activity-notifications'] });
 
             const previousData = queryClient.getQueryData(['activity-notifications']);
-            
+
             queryClient.setQueryData(['activity-notifications'], (old: any) => {
                 if (!old?.pages) return old;
 
@@ -51,7 +56,7 @@ export default function ActivityNotificationsScreen() {
                         data: page.data?.map((notification: any) =>
                             notification.id === notificationId
                                 ? { ...notification, read_at: new Date().toISOString() }
-                                : notification
+                                : notification,
                         ),
                     })),
                 };
@@ -61,7 +66,7 @@ export default function ActivityNotificationsScreen() {
         },
         onSettled: async () => {
             await queryClient.invalidateQueries({ queryKey: ['activity-notifications'] });
-            refetchBadgeCount()
+            refetchBadgeCount();
             await queryClient.invalidateQueries({ queryKey: ['main-notifications'] });
         },
         onError: (err, notificationId, context) => {
@@ -123,11 +128,11 @@ export default function ActivityNotificationsScreen() {
         },
         onSettled: async () => {
             await queryClient.invalidateQueries({ queryKey: ['activity-notifications'] });
-            refetchBadgeCount()
+            refetchBadgeCount();
             await queryClient.invalidateQueries({ queryKey: ['main-notifications'] });
-            router.back()
+            router.back();
         },
-    })
+    });
 
     const notifications = useMemo(() => {
         if (!data?.pages?.length) return [];
@@ -148,7 +153,7 @@ export default function ActivityNotificationsScreen() {
                     style: 'destructive',
                     onPress: () => markAllReadMutation.mutate(),
                 },
-            ]
+            ],
         );
     };
 
@@ -168,7 +173,7 @@ export default function ActivityNotificationsScreen() {
         }
 
         router.push(`/private/profile/${account?.id}`);
-    }
+    };
 
     const renderEmpty = () => (
         <YStack paddingY="$8" alignItems="center" justifyContent="center">
@@ -179,22 +184,43 @@ export default function ActivityNotificationsScreen() {
     );
 
     return (
-        <View style={tw`flex-1 bg-white`}>
-            <StatusBar style="dark" />
+        <View style={tw`flex-1 bg-white dark:bg-black`}>
             <Stack.Screen
                 options={{
                     headerTitle: 'Activities',
                     headerBackTitle: 'Back',
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+                    headerLeft: () => (
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (router.canGoBack()) {
+                                    router.back();
+                                } else {
+                                    router.push('/(tabs)');
+                                }
+                            }}
+                            style={tw`px-1`}>
+                            <Ionicons
+                                name="chevron-back"
+                                size={24}
+                                color={colorScheme === 'dark' ? '#fff' : '#000'}
+                            />
+                        </TouchableOpacity>
+                    ),
                     headerRight: () => (
                         <PressableHaptics
                             onPress={handleMarkAllAsRead}
                             disabled={markAllReadMutation.isPending || notifications.length === 0}
-                            style={tw`flex justify-center items-center w-10`}
-                        >
+                            style={tw`flex justify-center items-center w-10`}>
                             <Ionicons
                                 name="checkmark-done-outline"
                                 size={24}
-                                color={markAllReadMutation.isPending || notifications.length === 0 ? '#ccc' : '#007AFF'}
+                                color={
+                                    markAllReadMutation.isPending || notifications.length === 0
+                                        ? '#ccc'
+                                        : '#007AFF'
+                                }
                             />
                         </PressableHaptics>
                     ),
@@ -203,7 +229,13 @@ export default function ActivityNotificationsScreen() {
             <FlatList
                 data={notifications}
                 keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => <NotificationItem item={item} onPress={handleOnPress} onProfilePress={handleOnProfilePress}/>}
+                renderItem={({ item }) => (
+                    <NotificationItem
+                        item={item}
+                        onPress={handleOnPress}
+                        onProfilePress={handleOnProfilePress}
+                    />
+                )}
                 ListEmptyComponent={
                     videosLoading || isFetching ? (
                         <YStack paddingVertical="$8" alignItems="center">

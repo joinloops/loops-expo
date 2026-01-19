@@ -1,3 +1,4 @@
+import { useTheme } from '@/contexts/ThemeContext';
 import { updateAccountBio } from '@/utils/requests';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -17,6 +18,7 @@ export default function EditNameScreen() {
     const params = useLocalSearchParams();
     const [name, setName] = useState(params.name || '');
     const queryClient = useQueryClient();
+    const { colorScheme } = useTheme();
 
     const mutation = useMutation({
         mutationFn: async (data) => {
@@ -42,11 +44,12 @@ export default function EditNameScreen() {
     }, [name, mutation]);
 
     return (
-        <View style={tw`flex-1 bg-white`}>
+        <View style={tw`flex-1 bg-white dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Edit Name',
-                    headerStyle: { backgroundColor: '#fff' },
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerBackTitle: 'Account',
                     headerShown: true,
                     headerRight: () => (
@@ -70,7 +73,7 @@ export default function EditNameScreen() {
                         Your name appears on your profile and helps people find you.
                     </Text>
                     <TextInput
-                        style={tw`text-base text-gray-900 py-3 px-4 bg-gray-50 rounded-lg border border-gray-200`}
+                        style={tw`text-gray-900 dark:text-white py-3 px-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800`}
                         value={name}
                         onChangeText={setName}
                         placeholder="Enter your name"

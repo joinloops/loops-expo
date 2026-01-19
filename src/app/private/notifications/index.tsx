@@ -4,7 +4,6 @@ import { useAuthStore } from '@/utils/authStore';
 import { fetchNotifications, notificationMarkAsRead } from '@/utils/requests';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React, { useMemo } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import tw from 'twrnc';
@@ -47,7 +46,7 @@ export default function NotificationScreen() {
                         data: page.data?.map((notification: any) =>
                             notification.id === notificationId
                                 ? { ...notification, read_at: new Date().toISOString() }
-                                : notification
+                                : notification,
                         ),
                     })),
                 };
@@ -69,7 +68,7 @@ export default function NotificationScreen() {
     }, [data]);
 
     const handleOnPress = (item: any) => {
-        if(item.type === 'new_follower') {
+        if (item.type === 'new_follower') {
             router.push(`/private/profile/${item?.actor?.id}`);
         }
         if (!item.read_at) {
@@ -83,7 +82,7 @@ export default function NotificationScreen() {
 
     const handleOnProfilePress = (item) => {
         router.push(`/private/profile/${item?.id}`);
-    }
+    };
 
     const renderEmpty = () => (
         <YStack paddingY="$8" alignItems="center" justifyContent="center">
@@ -95,7 +94,6 @@ export default function NotificationScreen() {
 
     return (
         <View style={tw`flex-1 bg-white`}>
-            <StatusBar style="dark" />
             <Stack.Screen
                 options={{
                     headerTitle: 'Notifications',
@@ -105,7 +103,13 @@ export default function NotificationScreen() {
             <FlatList
                 data={notifications}
                 keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => <NotificationItem item={item} onPress={handleOnPress} onProfilePress={handleOnProfilePress}/>}
+                renderItem={({ item }) => (
+                    <NotificationItem
+                        item={item}
+                        onPress={handleOnPress}
+                        onProfilePress={handleOnProfilePress}
+                    />
+                )}
                 ListEmptyComponent={
                     videosLoading || isFetching ? (
                         <YStack paddingVertical="$8" alignItems="center">

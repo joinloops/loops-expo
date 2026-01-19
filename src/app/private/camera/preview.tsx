@@ -6,14 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import React, { useEffect, useState } from 'react';
 
-import {
-    Alert,
-    Dimensions,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,7 +23,6 @@ export default function PreviewScreen() {
     });
 
     useEffect(() => {
-        console.log(params)
         return () => {
             player.release();
         };
@@ -58,7 +50,7 @@ export default function PreviewScreen() {
         player.pause();
         router.push({
             pathname: '/private/camera/caption',
-            params: { videoPath: videoPath, duration: duration }
+            params: { videoPath: videoPath, duration: duration },
         });
     };
 
@@ -75,9 +67,7 @@ export default function PreviewScreen() {
         <View style={styles.container}>
             <StatusBar style="light" />
 
-            <Stack.Screen
-                options={{ headerShown: false }}
-            />
+            <Stack.Screen options={{ headerShown: false }} />
 
             <VideoView
                 style={styles.video}
@@ -103,7 +93,9 @@ export default function PreviewScreen() {
                         <Text style={styles.soundText} numberOfLines={1}>
                             {selectedSound}
                         </Text>
-                        <TouchableOpacity onPress={handleRemoveSound} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <TouchableOpacity
+                            onPress={handleRemoveSound}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                             <Ionicons name="close" size={18} color="#fff" />
                         </TouchableOpacity>
                     </View>
@@ -114,16 +106,11 @@ export default function PreviewScreen() {
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.rightControls}>
-            </View>
+            <View style={styles.rightControls}></View>
 
             <View style={styles.bottomContainer}>
                 <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
-                    <Ionicons
-                        name={isPlaying ? 'pause' : 'play'}
-                        size={24}
-                        color="#fff"
-                    />
+                    <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
@@ -215,5 +202,5 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         height: '30%',
-    }
+    },
 });

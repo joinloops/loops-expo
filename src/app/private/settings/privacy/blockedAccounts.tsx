@@ -1,3 +1,4 @@
+import { useTheme } from '@/contexts/ThemeContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchAccountBlocks, searchAccountBlocks, unblockAccount } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +14,7 @@ import {
     RefreshControl,
     Text,
     TextInput,
-    View
+    View,
 } from 'react-native';
 import tw from 'twrnc';
 
@@ -21,6 +22,7 @@ export default function BlockedAccountsScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 300);
     const queryClient = useQueryClient();
+    const { colorScheme } = useTheme();
 
     const isSearching = debouncedSearch.trim().length > 0;
 
@@ -55,18 +57,14 @@ export default function BlockedAccountsScreen() {
     });
 
     const handleUnblock = (account) => {
-        Alert.alert(
-            'Unblock Account',
-            `Are you sure you want to unblock @${account.username}?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Unblock',
-                    style: 'destructive',
-                    onPress: () => unblockMutation.mutate(account.id),
-                },
-            ]
-        );
+        Alert.alert('Unblock Account', `Are you sure you want to unblock @${account.username}?`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Unblock',
+                style: 'destructive',
+                onPress: () => unblockMutation.mutate(account.id),
+            },
+        ]);
     };
 
     const formatBlockedDate = (dateString) => {
@@ -84,17 +82,17 @@ export default function BlockedAccountsScreen() {
     };
 
     const renderItem = ({ item }) => (
-        <View style={tw`flex-row items-center py-4 px-5 bg-white border-b border-gray-100`}>
-            <Image
-                source={{ uri: item.account.avatar }}
-                style={tw`w-12 h-12 rounded-full mr-3`}
-            />
+        <View
+            style={tw`flex-row items-center py-4 px-5 bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800`}>
+            <Image source={{ uri: item.account.avatar }} style={tw`w-12 h-12 rounded-full mr-3`} />
             <View style={tw`flex-1`}>
-                <Text style={tw`text-base font-semibold text-gray-900`}>
+                <Text style={tw`text-base font-semibold text-gray-900 dark:text-white`}>
                     {item.account.name}
                 </Text>
-                <Text style={tw`text-sm text-gray-600`}>@{item.account.username}</Text>
-                <Text style={tw`text-xs text-gray-500 mt-1`}>
+                <Text style={tw`text-sm text-gray-600 dark:text-gray-300`}>
+                    @{item.account.username}
+                </Text>
+                <Text style={tw`text-xs text-gray-500 dark:text-gray-400 mt-1`}>
                     {formatBlockedDate(item.blocked_at)}
                 </Text>
             </View>
@@ -141,21 +139,24 @@ export default function BlockedAccountsScreen() {
     const allBlockedAccounts = data?.pages.flatMap((page) => page.data) ?? [];
 
     return (
-        <View style={tw`flex-1 bg-gray-100`}>
+        <View style={tw`flex-1 bg-gray-100 dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Blocked accounts',
-                    headerStyle: { backgroundColor: '#fff' },
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerBackTitle: 'Settings',
                     headerShown: true,
                 }}
             />
 
-            <View style={tw`bg-white px-5 py-3 border-b border-gray-200`}>
-                <View style={tw`flex-row items-center bg-gray-100 rounded-lg px-3 py-2`}>
+            <View
+                style={tw`bg-white dark:bg-black px-5 py-3 border-b border-gray-200 dark:border-gray-800`}>
+                <View
+                    style={tw`flex flex-row justify-center items-center bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-3`}>
                     <Ionicons name="search-outline" size={20} color="#999" />
                     <TextInput
-                        style={tw`flex-1 ml-2 text-base text-gray-600`}
+                        style={tw`flex-1 ml-2 text-gray-600 dark:text-white`}
                         placeholder="Search blocked accounts..."
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -177,10 +178,10 @@ export default function BlockedAccountsScreen() {
             ) : isError ? (
                 <View style={tw`flex-1 items-center justify-center px-5`}>
                     <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
-                    <Text style={tw`text-lg font-semibold text-gray-900 mt-4`}>
+                    <Text style={tw`text-lg font-semibold text-gray-900 dark:text-white mt-4`}>
                         Something went wrong
                     </Text>
-                    <Text style={tw`text-sm text-gray-600 mt-2 text-center`}>
+                    <Text style={tw`text-sm text-gray-600 dark:text-gray-400 mt-2 text-center`}>
                         Unable to load blocked accounts
                     </Text>
                     <Pressable

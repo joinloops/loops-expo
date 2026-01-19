@@ -33,7 +33,7 @@ import {
     Camera,
     useCameraDevice,
     useCameraPermission,
-    useMicrophonePermission
+    useMicrophonePermission,
 } from 'react-native-vision-camera';
 
 const MAX_DURATION = 180;
@@ -50,10 +50,14 @@ export default function CameraScreen() {
     const [recordingDuration, setRecordingDuration] = useState(0);
     const [isRequestingPermission, setIsRequestingPermission] = useState(false);
 
-    const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
-    const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
+    const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } =
+        useCameraPermission();
+    const {
+        hasPermission: hasMicrophonePermission,
+        requestPermission: requestMicrophonePermission,
+    } = useMicrophonePermission();
     const device = useCameraDevice(cameraPosition, {
-        physicalDevices: ['ultra-wide-angle-camera', 'wide-angle-camera', 'telephoto-camera']
+        physicalDevices: ['ultra-wide-angle-camera', 'wide-angle-camera', 'telephoto-camera'],
     });
     const isFocused = useIsFocused();
 
@@ -78,19 +82,19 @@ export default function CameraScreen() {
         try {
             const cameraPermission = await requestCameraPermission();
             const microphonePermission = await requestMicrophonePermission();
-            
+
             if (!cameraPermission || !microphonePermission) {
                 const missingPermissions = [];
                 if (!cameraPermission) missingPermissions.push('Camera');
                 if (!microphonePermission) missingPermissions.push('Microphone');
-                
+
                 Alert.alert(
                     'Permissions Required',
                     `Please enable ${missingPermissions.join(' and ')} access in your device settings to record videos with audio.`,
                     [
                         { text: 'Cancel', style: 'cancel' },
-                        { text: 'Open Settings', onPress: () => Linking.openSettings() }
-                    ]
+                        { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                    ],
                 );
             }
         } catch (error) {
@@ -110,14 +114,20 @@ export default function CameraScreen() {
         return () => clearInterval(interval);
     }, []);
 
-    const clampZoom = useCallback((value: number) => {
-        'worklet';
-        return Math.max(minZoom, Math.min(value, maxZoom));
-    }, [minZoom, maxZoom]);
+    const clampZoom = useCallback(
+        (value: number) => {
+            'worklet';
+            return Math.max(minZoom, Math.min(value, maxZoom));
+        },
+        [minZoom, maxZoom],
+    );
 
-    const animatedProps = useAnimatedProps(() => ({
-        zoom: clampZoom(zoom.value),
-    }), [zoom]);
+    const animatedProps = useAnimatedProps(
+        () => ({
+            zoom: clampZoom(zoom.value),
+        }),
+        [zoom],
+    );
 
     const zoomBarFillStyle = useAnimatedStyle(() => ({
         width: `${Math.round(((zoom.value - minZoom) / (maxZoom - minZoom)) * 100)}%`,
@@ -156,7 +166,8 @@ export default function CameraScreen() {
         });
 
     const startRecording = useCallback(async () => {
-        if (!camera.current || isRecording || !hasCameraPermission || !hasMicrophonePermission) return;
+        if (!camera.current || isRecording || !hasCameraPermission || !hasMicrophonePermission)
+            return;
 
         try {
             setIsRecording(true);
@@ -188,7 +199,7 @@ export default function CameraScreen() {
                     console.log('Recording finished:', video);
                     router.push({
                         pathname: '/private/camera/preview',
-                        params: { videoPath: video.path, duration: recordingDuration }
+                        params: { videoPath: video.path, duration: recordingDuration },
                     });
                 },
                 onRecordingError: (error) => {
@@ -204,7 +215,14 @@ export default function CameraScreen() {
             setIsRecording(false);
             isHoldingRecord.value = false;
         }
-    }, [isRecording, flash, recordingDuration, router, hasCameraPermission, hasMicrophonePermission]);
+    }, [
+        isRecording,
+        flash,
+        recordingDuration,
+        router,
+        hasCameraPermission,
+        hasMicrophonePermission,
+    ]);
 
     const stopRecording = useCallback(async () => {
         if (!camera.current || !isRecording) return;
@@ -239,7 +257,7 @@ export default function CameraScreen() {
     };
 
     const handleClose = () => {
-        router.back();
+        router.reset();
     };
 
     const handleAddSound = () => {
@@ -254,14 +272,13 @@ export default function CameraScreen() {
             aspect: [9, 16],
             quality: 1,
             selectionLimit: 1,
-            videoMaxDuration: 180
+            videoMaxDuration: 180,
         });
-        console.log(result);
 
         if (result.assets && result.assets.length > 0) {
             router.push({
                 pathname: '/private/camera/preview',
-                params: { videoPath: result.assets[0].uri }
+                params: { videoPath: result.assets[0].uri },
             });
         }
     };
@@ -293,13 +310,15 @@ export default function CameraScreen() {
     const hasAllPermissions = hasCameraPermission && hasMicrophonePermission;
 
     if (!hasAllPermissions) {
-        const permissionText = missingPermissions.length === 2 
-            ? 'Camera and Microphone Access Required'
-            : `${missingPermissions[0]} Access Required`;
-        
-        const descriptionText = missingPermissions.length === 2
-            ? 'To record videos with audio, please grant camera and microphone permissions. You can change these in your device settings at any time.'
-            : `To record videos with audio, please grant ${missingPermissions[0].toLowerCase()} permission. You can change this in your device settings at any time.`;
+        const permissionText =
+            missingPermissions.length === 2
+                ? 'Camera and Microphone Access Required'
+                : `${missingPermissions[0]} Access Required`;
+
+        const descriptionText =
+            missingPermissions.length === 2
+                ? 'To record videos with audio, please grant camera and microphone permissions. You can change these in your device settings at any time.'
+                : `To record videos with audio, please grant ${missingPermissions[0].toLowerCase()} permission. You can change this in your device settings at any time.`;
 
         return (
             <View style={styles.container}>
@@ -312,21 +331,22 @@ export default function CameraScreen() {
                     </View>
 
                     <View style={styles.permissionContent}>
-                        <Ionicons 
-                            name={missingPermissions.includes('Camera') ? 'camera-outline' : 'mic-outline'} 
-                            size={80} 
-                            color="rgba(255, 255, 255, 0.6)" 
+                        <Ionicons
+                            name={
+                                missingPermissions.includes('Camera')
+                                    ? 'camera-outline'
+                                    : 'mic-outline'
+                            }
+                            size={80}
+                            color="rgba(255, 255, 255, 0.6)"
                         />
                         <Text style={styles.permissionTitle}>{permissionText}</Text>
-                        <Text style={styles.permissionDescription}>
-                            {descriptionText}
-                        </Text>
+                        <Text style={styles.permissionDescription}>{descriptionText}</Text>
 
                         <TouchableOpacity
                             style={styles.permissionButton}
                             onPress={handleRequestPermission}
-                            disabled={isRequestingPermission}
-                        >
+                            disabled={isRequestingPermission}>
                             <Text style={styles.permissionButtonText}>
                                 {isRequestingPermission ? 'Requesting...' : 'Enable Permissions'}
                             </Text>
@@ -334,8 +354,7 @@ export default function CameraScreen() {
 
                         <TouchableOpacity
                             style={styles.settingsButton}
-                            onPress={() => Linking.openSettings()}
-                        >
+                            onPress={() => Linking.openSettings()}>
                             <Text style={styles.settingsButtonText}>Open Settings</Text>
                         </TouchableOpacity>
                     </View>
@@ -356,7 +375,11 @@ export default function CameraScreen() {
                     </View>
 
                     <View style={styles.permissionContent}>
-                        <Ionicons name="camera-outline" size={80} color="rgba(255, 255, 255, 0.6)" />
+                        <Ionicons
+                            name="camera-outline"
+                            size={80}
+                            color="rgba(255, 255, 255, 0.6)"
+                        />
                         <Text style={styles.permissionTitle}>Camera Not Available</Text>
                         <Text style={styles.permissionDescription}>
                             Unable to access camera device. Please try again or restart the app.
@@ -397,7 +420,7 @@ export default function CameraScreen() {
                 zoom.value,
                 [minZoom, maxZoom],
                 [0, offsetYForFullZoom],
-                Extrapolate.CLAMP
+                Extrapolate.CLAMP,
             );
         })
         .onUpdate((event) => {
@@ -412,7 +435,7 @@ export default function CameraScreen() {
                 event.absoluteY - offset,
                 [yForFullZoom, startY],
                 [maxZoom, minZoom],
-                Extrapolate.CLAMP
+                Extrapolate.CLAMP,
             );
 
             zoom.value = newZoom;
@@ -474,13 +497,9 @@ export default function CameraScreen() {
 
             <Reanimated.View style={[styles.zoomIndicator, zoomIndicatorStyle]}>
                 <View style={styles.zoomIndicatorContent}>
-                    <Text style={styles.zoomText}>
-                        {zoomText}
-                    </Text>
+                    <Text style={styles.zoomText}>{zoomText}</Text>
                     <View style={styles.zoomBarContainer}>
-                        <Reanimated.View
-                            style={[styles.zoomBarFill, zoomBarFillStyle]}
-                        />
+                        <Reanimated.View style={[styles.zoomBarFill, zoomBarFillStyle]} />
                     </View>
                 </View>
             </Reanimated.View>
@@ -516,14 +535,33 @@ export default function CameraScreen() {
                 {isRecording && (
                     <View style={styles.recordingIndicator}>
                         <View style={styles.recordingDot} />
-                        <Text style={styles.recordingTime}>{formatDuration(recordingDuration)}</Text>
+                        <Text style={styles.recordingTime}>
+                            {formatDuration(recordingDuration)}
+                        </Text>
                     </View>
                 )}
 
                 <View style={styles.bottomControls}>
                     <TouchableOpacity onPress={handleUpload} style={styles.uploadButton}>
-                        <View style={{ justifyContent: 'center', alignItems: 'center', width: 46, height: 46, borderRadius: 10, borderWidth: 2, margin: 5, borderColor: "#fff" }}>
-                            <View style={{ backgroundColor: '#fff', width: 38, height: 38, borderRadius: 6 }} />
+                        <View
+                            style={{
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                width: 46,
+                                height: 46,
+                                borderRadius: 10,
+                                borderWidth: 2,
+                                margin: 5,
+                                borderColor: '#fff',
+                            }}>
+                            <View
+                                style={{
+                                    backgroundColor: '#fff',
+                                    width: 38,
+                                    height: 38,
+                                    borderRadius: 6,
+                                }}
+                            />
                         </View>
                         <Text style={styles.bottomButtonText}>Upload</Text>
                     </TouchableOpacity>
@@ -531,11 +569,22 @@ export default function CameraScreen() {
                     <GestureDetector gesture={recordButtonGesture}>
                         <Reanimated.View style={styles.recordButtonContainer}>
                             <View style={styles.recordButtonPressable}>
-                                <View style={[styles.recordButton, isRecording && styles.recordButtonActive]}>
-                                    <View style={[styles.recordButtonInner, isRecording && styles.recordButtonInnerActive]} />
+                                <View
+                                    style={[
+                                        styles.recordButton,
+                                        isRecording && styles.recordButtonActive,
+                                    ]}>
+                                    <View
+                                        style={[
+                                            styles.recordButtonInner,
+                                            isRecording && styles.recordButtonInnerActive,
+                                        ]}
+                                    />
                                 </View>
                                 {!isRecording && (
-                                    <Text style={styles.recordHint}>Press and hold to record a video</Text>
+                                    <Text style={styles.recordHint}>
+                                        Press and hold to record a video
+                                    </Text>
                                 )}
                                 {isRecording && (
                                     <Text style={styles.recordHint}>Slide up to zoom</Text>
@@ -544,8 +593,7 @@ export default function CameraScreen() {
                         </Reanimated.View>
                     </GestureDetector>
 
-                    <TouchableOpacity style={styles.effectsButton}>
-                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.effectsButton}></TouchableOpacity>
                 </View>
             </View>
         </GestureHandlerRootView>
@@ -768,7 +816,7 @@ const styles = StyleSheet.create({
     bottomButtonText: {
         color: '#fff',
         fontSize: 12,
-        fontWeight: '800'
+        fontWeight: '800',
     },
     gradientOverlay: {
         position: 'absolute',
@@ -776,5 +824,5 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         height: '100%',
-    }
+    },
 });

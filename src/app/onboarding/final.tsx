@@ -22,20 +22,18 @@ export default function OnboardingStepTwo() {
                 <View style={tw`flex-1 justify-center py-4`}>
                     <Animated.View entering={FadeIn.duration(600)} style={tw`max-w-sm`}>
                         <StackText
-                            fontSize="$9"
+                            fontSize="$8"
                             fontWeight={500}
                             textColor="text-white"
                             style={tw`mb-3`}
-                            lineHeight={Platform.OS === 'android' ? 40 : undefined}
-                        >
+                            lineHeight={Platform.OS === 'android' ? 40 : undefined}>
                             Everything you need
                         </StackText>
                         <StackText
                             fontSize="$4"
                             textColor="text-white/60"
                             style={tw`mb-10`}
-                            lineHeight={Platform.OS === 'android' ? 20 : 'relaxed'}
-                        >
+                            lineHeight={Platform.OS === 'android' ? 20 : 'relaxed'}>
                             Create and share your moments with ease.
                         </StackText>
 
@@ -69,8 +67,7 @@ export default function OnboardingStepTwo() {
 
                 <Animated.View
                     entering={FadeInDown.delay(400).duration(500)}
-                    style={[tw`pt-4`, { paddingBottom: Math.max(insets.bottom + 10, 18) }]}
-                >
+                    style={[tw`pt-4`, { paddingBottom: Math.max(insets.bottom + 10, 18) }]}>
                     <XStack justifyContent="space-between" alignItems="center">
                         <Pagination current={1} total={2} />
                         <PrimaryButton label="Get Started" onPress={() => completeOnboarding()} />
@@ -101,8 +98,7 @@ function FeatureItem({
                     textColor="text-white"
                     fontSize="$4"
                     style={tw`mb-1`}
-                    numberOfLines={1}
-                >
+                    numberOfLines={1}>
                     {title}
                 </StackText>
                 <StackText textColor="text-white/60" fontSize="$3" numberOfLines={2}>
@@ -123,8 +119,7 @@ function PrimaryButton({ label, onPress }: { label: string; onPress: () => void 
                 tw`rounded-full px-8 py-3 bg-[#FFE500]`,
                 Platform.OS === 'android' && tw`py-3`,
                 pressed && Platform.OS === 'ios' && tw`opacity-90`,
-            ]}
-        >
+            ]}>
             <StackText fontWeight="semibold" textColor="text-black" fontSize="$4">
                 {label}
             </StackText>
@@ -135,10 +130,7 @@ function PrimaryButton({ label, onPress }: { label: string; onPress: () => void 
 function Dot({ active }: { active: boolean }) {
     return (
         <View
-            style={tw.style(
-                'h-2 rounded-full mx-1',
-                active ? 'w-7 bg-white' : 'w-2 bg-white/30'
-            )}
+            style={tw.style('h-2 rounded-full mx-1', active ? 'w-7 bg-white' : 'w-2 bg-white/30')}
         />
     );
 }

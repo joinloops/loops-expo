@@ -6,17 +6,17 @@ import { Alert } from 'react-native';
 // UTILITY HELPERS
 // ============================================================================
 
-const DEFAULT_APP_PREFERENCES = { 
-    account: { username: 'user', profile_id: null},         
+const DEFAULT_APP_PREFERENCES = {
+    account: { username: 'user', profile_id: null },
     settings: {
         autoplay_videos: true,
         loop_videos: true,
-        default_feed: "local",
+        default_feed: 'local',
         hide_for_you_feed: false,
         mute_on_open: false,
         auto_expand_cw: false,
-        appearance: "light"
-    } 
+        appearance: 'light',
+    },
 };
 
 export async function openBrowser(url, options) {
@@ -25,16 +25,16 @@ export async function openBrowser(url, options) {
 
 export async function openLocalLink(path, options = {}) {
     const instance = Storage.getString('app.instance');
-    const url = `https://${instance}/${path}`
+    const url = `https://${instance}/${path}`;
     await WebBrowser.openBrowserAsync(url, options);
 }
 
 export function getMimeType(filename: string): string {
     const extension = filename.split('.').pop()?.toLowerCase() || '';
     const mimeTypes: Record<string, string> = {
-        'jpg': 'image/jpeg',
-        'jpeg': 'image/jpeg',
-        'png': 'image/png',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        png: 'image/png',
     };
     return mimeTypes[extension] || 'unknown';
 }
@@ -58,9 +58,7 @@ export function objectToForm(obj: { [key: string | number]: any }): FormData {
 export function arrayToForm(obj: any): FormData {
     const form = new FormData();
 
-    Object.keys(obj).forEach(key =>
-        form.append(key, obj[key])
-    );
+    Object.keys(obj).forEach((key) => form.append(key, obj[key]));
 
     return form;
 }
@@ -247,9 +245,7 @@ export function getJsonWithTimeout(
 // SELF API HELPERS (Uses stored instance and token)
 // ============================================================================
 
-export async function _selfAnonGet(
-    path: string,
-): Promise<any> {
+export async function _selfAnonGet(path: string): Promise<any> {
     const instance = Storage.getString('app.instance');
     const url = `https://${instance}/${path}`;
     return await getJSON(url);
@@ -277,10 +273,7 @@ export async function _selfPost(
     return postJson(url, params, token, customHeaders || undefined);
 }
 
-export async function _selfPostForm(
-    path: string,
-    params?: any,
-): Promise<Response> {
+export async function _selfPostForm(path: string, params?: any): Promise<Response> {
     const instance = Storage.getString('app.instance');
     const token = Storage.getString('app.token');
     const url = `https://${instance}/${path}`;
@@ -297,17 +290,13 @@ export async function loginPreflightCheck(server: string): Promise<boolean> {
     try {
         const res = await getJsonWithTimeout(url, undefined, undefined, undefined, 5000);
         const json = await res.json();
-        
+
         if (!json) {
             Alert.alert('Error', 'This server is not compatible or is unavailable.');
             return false;
         }
 
-        if (
-            !json.app ||
-            !json.app.software ||
-            json.app.software != 'loops'
-        ) {
+        if (!json.app || !json.app.software || json.app.software != 'loops') {
             Alert.alert('Error', 'Invalid server type, this app is only compatible with Loops');
             return false;
         }
@@ -325,24 +314,18 @@ export async function registerPreflightCheck(server: string): Promise<boolean> {
     try {
         const res = await getJsonWithTimeout(url, undefined, undefined, undefined, 5000);
         const json = await res.json();
-        
+
         if (!json) {
             Alert.alert('Error', 'This server is not compatible or is unavailable.');
             return false;
         }
 
-        if (
-            !json.app ||
-            !json.app.software ||
-            json.app.software != 'loops'
-        ) {
+        if (!json.app || !json.app.software || json.app.software != 'loops') {
             Alert.alert('Error', 'Invalid server type, this app is only compatible with Loops');
             return false;
         }
 
-        if (
-            !json.registration
-        ) {
+        if (!json.registration) {
             Alert.alert('Error', 'Registration is not enabled on this server');
             return false;
         }
@@ -435,7 +418,7 @@ export async function updatePreferences(preferences: {
         const resp = await fetch(url, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(preferences),
@@ -481,39 +464,39 @@ export async function fetchSelfAccount(): Promise<any> {
 }
 
 export async function fetchUserVideos({
-    queryKey, 
-    pageParam = false 
-}: { 
-    queryKey: any[]; 
+    queryKey,
+    pageParam = false,
+}: {
+    queryKey: any[];
     pageParam?: string | false;
 }): Promise<any> {
     const [, id, sort] = queryKey;
-    
+
     let url = `api/v1/feed/account/${id}`;
 
     const params = new URLSearchParams();
-    
+
     if (pageParam) {
         params.append('cursor', pageParam);
     }
-    
+
     if (sort) {
         params.append('sort', sort);
     }
-    
+
     const queryString = params.toString();
     if (queryString) {
         url += `?${queryString}`;
     }
-    
+
     return await _selfGet(url);
 }
 
-export async function fetchUserVideoCursor({ 
-    queryKey, 
-    pageParam = false 
-}: { 
-    queryKey: any[]; 
+export async function fetchUserVideoCursor({
+    queryKey,
+    pageParam = false,
+}: {
+    queryKey: any[];
     pageParam?: string | false;
 }): Promise<any> {
     const url = pageParam
@@ -539,85 +522,85 @@ export async function fetchAccountPrivacy(): Promise<any> {
 }
 
 export async function fetchAccountSecurityConfig(): Promise<any> {
-    return await _selfGet('api/v1/account/settings/security-config')
+    return await _selfGet('api/v1/account/settings/security-config');
 }
 
 export async function fetchAccountBlocks(): Promise<any> {
-    return await _selfGet('api/v1/account/settings/blocked-accounts')
+    return await _selfGet('api/v1/account/settings/blocked-accounts');
 }
 
 export async function searchAccountBlocks(query, cursor): Promise<any> {
-     const params = { q: query };
+    const params = { q: query };
     if (cursor) params.cursor = cursor;
-    const res = await _selfGet('api/v1/account/settings/blocked-accounts', params)
-    return res
+    const res = await _selfGet('api/v1/account/settings/blocked-accounts', params);
+    return res;
 }
 
 // ============================================================================
 // ACCOUNT RELATIONSHIPS
 // ============================================================================
 
-export async function fetchAccountFollowing({ 
-    queryKey, 
-    pageParam = false 
-}: { 
-    queryKey: any[]; 
+export async function fetchAccountFollowing({
+    queryKey,
+    pageParam = false,
+}: {
+    queryKey: any[];
     pageParam?: string | false;
 }): Promise<any> {
     const [, accountId, search] = queryKey;
-    
+
     let url = `api/v1/account/following/${accountId}`;
     const params = new URLSearchParams();
-    
+
     if (pageParam) {
         params.append('cursor', pageParam);
     }
-    
+
     if (search) {
         params.append('search', search);
     }
-    
+
     const queryString = params.toString();
     if (queryString) {
         url += `?${queryString}`;
     }
-    
+
     return await _selfGet(url);
 }
 
-export async function fetchAccountFollowers({ 
-    queryKey, 
-    pageParam = false 
-}: { 
-    queryKey: any[]; 
+export async function fetchAccountFollowers({
+    queryKey,
+    pageParam = false,
+}: {
+    queryKey: any[];
     pageParam?: string | false;
 }): Promise<any> {
     const [, accountId, search] = queryKey;
-    
+
     let url = `api/v1/account/followers/${accountId}`;
     const params = new URLSearchParams();
-    
+
     if (pageParam) {
         params.append('cursor', pageParam);
     }
-    
+
     if (search) {
         params.append('search', search);
     }
-    
+
     const queryString = params.toString();
     if (queryString) {
         url += `?${queryString}`;
     }
-    
+
     return await _selfGet(url);
 }
 
-export async function fetchAccountFriends({ 
-    queryKey, 
-    pageParam = false 
-}: { 
-    queryKey: any[]; 
+export async function fetchAccountFriends({
+    queryKey,
+    pageParam = false,
+}: {
+    queryKey: any[];
     pageParam?: string | false;
 }): Promise<any> {
     const url = pageParam
@@ -626,11 +609,11 @@ export async function fetchAccountFriends({
     return await _selfGet(url);
 }
 
-export async function fetchAccountSuggested({ 
-    queryKey, 
-    pageParam = false 
-}: { 
-    queryKey: any[]; 
+export async function fetchAccountSuggested({
+    queryKey,
+    pageParam = false,
+}: {
+    queryKey: any[];
     pageParam?: string | false;
 }): Promise<any> {
     const url = pageParam
@@ -640,7 +623,7 @@ export async function fetchAccountSuggested({
 }
 
 export async function blockAccount(id): Promise<any> {
-    return await _selfPost(`api/v1/account/block/${id}`)
+    return await _selfPost(`api/v1/account/block/${id}`);
 }
 
 export async function unblockAccount(id): Promise<any> {
@@ -656,7 +639,7 @@ export async function unfollowAccount(id): Promise<any> {
 }
 
 export async function cancelFollowRequest(id): Promise<any> {
-    return await _selfPost(`api/v1/account/undo-follow-request/${id}`)
+    return await _selfPost(`api/v1/account/undo-follow-request/${id}`);
 }
 
 // ============================================================================
@@ -668,10 +651,10 @@ export async function fetchReportRules(): Promise<any> {
 }
 
 export async function submitReport({
-    id, 
-    key, 
+    id,
+    key,
     type,
-    comment
+    comment,
 }: {
     id: string;
     key: string;
@@ -682,8 +665,8 @@ export async function submitReport({
         type,
         id,
         key,
-        comment
-    })
+        comment,
+    });
 }
 
 // ============================================================================
@@ -702,14 +685,14 @@ export async function uploadVideo(params) {
     const instance = Storage.getString('app.instance');
     const token = Storage.getString('app.token');
     const url = `https://${instance}/api/v1/studio/upload`;
-    return await postFormArray(url, params, token, 'multipart/form-data')
+    return await postFormArray(url, params, token, 'multipart/form-data');
 }
 
 export async function uploadDuet(params) {
     const instance = Storage.getString('app.instance');
     const token = Storage.getString('app.token');
     const url = `https://${instance}/api/v1/studio/duet/upload`;
-    return await postFormArray(url, params, token, 'multipart/form-data')
+    return await postFormArray(url, params, token, 'multipart/form-data');
 }
 
 // ============================================================================
@@ -717,19 +700,17 @@ export async function uploadDuet(params) {
 // ============================================================================
 
 export async function fetchLocalFeed({
-    pageParam = false
+    pageParam = false,
 }: {
     pageParam?: string | false;
 } = {}): Promise<any> {
-    const url = pageParam
-        ? `api/v1/feed/for-you?cursor=${pageParam}`
-        : `api/v1/feed/for-you`;
+    const url = pageParam ? `api/v1/feed/for-you?cursor=${pageParam}` : `api/v1/feed/for-you`;
     return await _selfGet(url);
 }
 
-export async function fetchForYouFeed({ 
-    pageParam = false 
-}: { 
+export async function fetchForYouFeed({
+    pageParam = false,
+}: {
     pageParam?: string | false;
 } = {}): Promise<any> {
     const url = pageParam
@@ -738,41 +719,39 @@ export async function fetchForYouFeed({
     return await _selfGet(url);
 }
 
-export async function fetchFollowingFeed({ 
-    pageParam = false 
-}: { 
+export async function fetchFollowingFeed({
+    pageParam = false,
+}: {
     pageParam?: string | false;
 } = {}): Promise<any> {
-    const url = pageParam
-        ? `api/v1/feed/following?cursor=${pageParam}`
-        : `api/v1/feed/following`;
+    const url = pageParam ? `api/v1/feed/following?cursor=${pageParam}` : `api/v1/feed/following`;
     return await _selfGet(url);
 }
 
-export async function fetchSelfAccountVideos({ 
+export async function fetchSelfAccountVideos({
     queryKey,
-    pageParam = false 
-}: { 
+    pageParam = false,
+}: {
     queryKey?: any[];
     pageParam?: string | false;
 } = {}): Promise<any> {
     const sort = queryKey?.[1];
-    
+
     const params = new URLSearchParams();
-    
+
     if (pageParam) {
         params.append('cursor', pageParam);
     }
-    
+
     if (sort) {
         params.append('sort', sort);
     }
-    
+
     const queryString = params.toString();
-    const url = queryString 
+    const url = queryString
         ? `api/v1/feed/account/self?${queryString}`
         : `api/v1/feed/account/self`;
-    
+
     return await _selfGet(url);
 }
 
@@ -814,75 +793,79 @@ export async function videoUnbookmark(id): Promise<any> {
     return await _selfPost(`api/v1/video/unbookmark/${id}`);
 }
 
-export async function commentPost({id, commentText, parentId}): Promise<any> {
-    const params = parentId ? {
-        comment: commentText,
-        parent_id: parentId
-    } : {
-        comment: commentText,
-    }
-    return await _selfPost(`api/v1/video/comments/${id}`, params)
+export async function commentPost({ id, commentText, parentId }): Promise<any> {
+    const params = parentId
+        ? {
+              comment: commentText,
+              parent_id: parentId,
+          }
+        : {
+              comment: commentText,
+          };
+    return await _selfPost(`api/v1/video/comments/${id}`, params);
 }
 
-export async function commentLike({videoId, commentId}): Promise<any> {
-    return await _selfPost(`api/v1/comments/like/${videoId}/${commentId}`)
+export async function commentLike({ videoId, commentId }): Promise<any> {
+    return await _selfPost(`api/v1/comments/like/${videoId}/${commentId}`);
 }
 
-export async function commentUnlike({videoId, commentId}): Promise<any> {
-    return await _selfPost(`api/v1/comments/unlike/${videoId}/${commentId}`)
+export async function commentUnlike({ videoId, commentId }): Promise<any> {
+    return await _selfPost(`api/v1/comments/unlike/${videoId}/${commentId}`);
 }
 
-export async function commentReplyLike({videoId, parentId, commentId}): Promise<any> {
-    return await _selfPost(`api/v1/comments/like/${videoId}/${parentId}/${commentId}`)
+export async function commentReplyLike({ videoId, parentId, commentId }): Promise<any> {
+    return await _selfPost(`api/v1/comments/like/${videoId}/${parentId}/${commentId}`);
 }
 
-export async function commentReplyUnlike({videoId, parentId, commentId}): Promise<any> {
-    return await _selfPost(`api/v1/comments/unlike/${videoId}/${parentId}/${commentId}`)
+export async function commentReplyUnlike({ videoId, parentId, commentId }): Promise<any> {
+    return await _selfPost(`api/v1/comments/unlike/${videoId}/${parentId}/${commentId}`);
 }
 
-export async function commentDelete({videoId, commentId}): Promise<any> {
-    return await _selfPost(`api/v1/comments/delete/${videoId}/${commentId}`)
+export async function commentDelete({ videoId, commentId }): Promise<any> {
+    return await _selfPost(`api/v1/comments/delete/${videoId}/${commentId}`);
 }
 
-export async function commentReplyDelete({videoId, parentId, commentId}): Promise<any> {
-    return await _selfPost(`api/v1/comments/delete/${videoId}/${parentId}/${commentId}`)
+export async function commentReplyDelete({ videoId, parentId, commentId }): Promise<any> {
+    return await _selfPost(`api/v1/comments/delete/${videoId}/${parentId}/${commentId}`);
 }
 
 export async function videoDelete(videoId): Promise<any> {
-    return await _selfPost(`api/v1/video/delete/${videoId}`)
+    return await _selfPost(`api/v1/video/delete/${videoId}`);
 }
 
-export async function recordImpression(videoId: string, watchDuration: number, completed: boolean): Promise<any> {
-    return await _selfPost(`api/v0/feed/recommended/impression`, 
-        {
-            video_id: videoId,
-            watch_duration: Math.floor(watchDuration),
-            completed,
-        }
-    )
+export async function recordImpression(
+    videoId: string,
+    watchDuration: number,
+    completed: boolean,
+): Promise<any> {
+    return await _selfPost(`api/v0/feed/recommended/impression`, {
+        video_id: videoId,
+        watch_duration: Math.floor(watchDuration),
+        completed,
+    });
 }
 
-export async function fetchAccountFavorites({pageParam}) {
+export async function fetchAccountFavorites({ pageParam }) {
     const url = pageParam
         ? `api/v1/account/favourites?cursor=${pageParam}`
-        : `api/v1/account/favourites`
-    return await _selfGet(url)
+        : `api/v1/account/favourites`;
+    return await _selfGet(url);
 }
 
-export async function fetchAccountLikes({pageParam}) {
+export async function fetchAccountLikes({ pageParam }) {
     const url = pageParam
         ? `api/v1/account/videos/likes?cursor=${pageParam}`
-        : `api/v1/account/videos/likes`
-    return await _selfGet(url)
+        : `api/v1/account/videos/likes`;
+    return await _selfGet(url);
 }
 
 // ============================================================================
 // NOTIFICATIONS
 // ============================================================================
 
-export async function fetchNotifications({ 
-    pageParam 
-}: { 
+export async function fetchNotifications({
+    pageParam,
+}: {
     pageParam?: string | undefined;
 } = {}): Promise<any> {
     const url = pageParam
@@ -891,9 +874,9 @@ export async function fetchNotifications({
     return await _selfGet(url);
 }
 
-export async function fetchActivityNotifications({ 
-    pageParam 
-}: { 
+export async function fetchActivityNotifications({
+    pageParam,
+}: {
     pageParam?: string | undefined;
 } = {}): Promise<any> {
     const url = pageParam
@@ -902,9 +885,9 @@ export async function fetchActivityNotifications({
     return await _selfGet(url);
 }
 
-export async function fetchFollowerNotifications({ 
-    pageParam 
-}: { 
+export async function fetchFollowerNotifications({
+    pageParam,
+}: {
     pageParam?: string | undefined;
 } = {}): Promise<any> {
     const url = pageParam
@@ -913,9 +896,9 @@ export async function fetchFollowerNotifications({
     return await _selfGet(url);
 }
 
-export async function fetchSystemNotifications({ 
-    pageParam 
-}: { 
+export async function fetchSystemNotifications({
+    pageParam,
+}: {
     pageParam?: string | undefined;
 } = {}): Promise<any> {
     const url = pageParam
@@ -939,11 +922,10 @@ export async function notificationBadgeCount() {
 
 export async function notificationTypeMarkAllAsRead(type): Promise<any> {
     const params = {
-        type: type
-    }
+        type: type,
+    };
     return await _selfPost('api/v1/account/notifications/mark-all-read', params);
 }
-
 
 // ============================================================================
 // ACCOUNT UPDATES
@@ -973,6 +955,18 @@ export async function updateAccountPassword(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/update-password', params);
 }
 
+export async function getAccountLinks(): Promise<any> {
+    return await _selfGet('api/v1/account/settings/links');
+}
+
+export async function updateAddAccountLink(params: any): Promise<any> {
+    return await _selfPost('api/v1/account/settings/links/add', params);
+}
+
+export async function updateDeleteAccountLink(id: any): Promise<any> {
+    return await _selfPost(`api/v1/account/settings/links/delete/${id}`);
+}
+
 // ============================================================================
 // EXPLORE
 // ============================================================================
@@ -984,7 +978,7 @@ interface Tag {
 }
 
 export async function getExploreTags(): Promise<any> {
-    const res =  await _selfGet('api/v1/explore/tags');
+    const res = await _selfGet('api/v1/explore/tags');
     return res.data as Tag[];
 }
 
@@ -998,14 +992,14 @@ interface Account {
 }
 
 export async function getExploreAccounts(): Promise<any> {
-    const res =  await _selfGet('api/v1/accounts/suggested');
+    const res = await _selfGet('api/v1/accounts/suggested');
     return res.data as Account[];
 }
 
-export async function getExploreTagsFeed({ 
+export async function getExploreTagsFeed({
     queryKey,
-    pageParam = false 
-}: { 
+    pageParam = false,
+}: {
     queryKey?: any[];
     pageParam?: string | false;
 } = {}): Promise<any> {
@@ -1013,17 +1007,17 @@ export async function getExploreTagsFeed({
     if (!tag) {
         return { data: [], meta: { next_cursor: null } };
     }
-    
-    const url = pageParam 
+
+    const url = pageParam
         ? `api/v1/explore/tag-feed/${tag}?cursor=${pageParam}`
         : `api/v1/explore/tag-feed/${tag}`;
-    
+
     return await _selfGet(url);
 }
 
 export async function postExploreAccountHideSuggestion(id) {
-    const params = { profile_id: id}
-    return await _selfPost('api/v1/accounts/suggested/hide', params)
+    const params = { profile_id: id };
+    return await _selfPost('api/v1/accounts/suggested/hide', params);
 }
 
 // ============================================================================
@@ -1047,23 +1041,23 @@ export async function getInstanceCommunityGuidelines(): Promise<any> {
 // ============================================================================
 
 export const searchContent = async (params): Promise<any> => {
-  try {
-    const typeMap = {
-        'Top': 'all',
-        'Users': 'users',
-        'Videos': 'videos',
-        'Hashtags': 'hashtags'
+    try {
+        const typeMap = {
+            Top: 'all',
+            Users: 'users',
+            Videos: 'videos',
+            Hashtags: 'hashtags',
+        };
+        const url = `api/v1/search`;
+        const query = {
+            query: params.query,
+            type: typeMap[params.type],
+            limit: 20,
+        };
+        const res = await _selfGet(url, query);
+        return res.data;
+    } catch (error) {
+        console.error('Search error:', error);
+        throw error;
     }
-    const url = `api/v1/search`;
-    const query = {
-        query: params.query,
-        type: typeMap[params.type],
-        limit: 20
-    }
-    const res = await _selfGet(url, query);
-    return res.data
-  } catch (error) {
-    console.error('Search error:', error);
-    throw error;
-  }
 };

@@ -1,4 +1,5 @@
 import { StackText, YStack } from '@/components/ui/Stack';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getInstanceCommunityGuidelines, openLocalLink } from '@/utils/requests';
 import { formatDate } from '@/utils/ui';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +11,7 @@ import tw from 'twrnc';
 
 export default function CommunityScreen() {
     const { width } = useWindowDimensions();
+    const { colorScheme } = useTheme();
 
     const { data, isLoading } = useQuery({
         queryKey: ['getInstanceCommunityGuidelines', 'self'],
@@ -21,25 +23,37 @@ export default function CommunityScreen() {
         refetchOnMount: true,
     });
 
-    if(isLoading) {
+    if (isLoading) {
         return (
-            <View style={tw`flex-1 justify-center items-center`}>
+            <View style={tw`flex-1 dark:bg-black justify-center items-center`}>
+                <Stack.Screen
+                    options={{
+                        title: 'Community Guidelines',
+                        headerStyle: tw`bg-white dark:bg-black`,
+                        headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+                        headerBackTitle: 'Back',
+                        headerShown: true,
+                    }}
+                />
                 <ActivityIndicator />
             </View>
-        )
+        );
     }
 
     const openInBrowser = async () => {
-        await openLocalLink('community-guidelines')
-    }
+        await openLocalLink('community-guidelines', {
+            presentationStyle: 'popover',
+            showTitle: false,
+        });
+    };
 
     const source = {
-        html: data?.content || '<p>No content available</p>'
+        html: data?.content || '<p>No content available</p>',
     };
 
     const tagsStyles = {
         body: {
-            color: '#1f2937',
+            color: colorScheme === 'dark' ? '#fff' : '#1f2937',
             fontSize: 16,
             lineHeight: 24,
         },
@@ -74,29 +88,33 @@ export default function CommunityScreen() {
             marginBottom: 6,
         },
         a: {
-            color: '#2563eb',
+            color: colorScheme === 'dark' ? '#6994ef' : '#2563eb',
             textDecorationLine: 'underline',
         },
     };
 
     return (
-        <View style={tw`flex-1 bg-gray-100`}>
+        <View style={tw`flex-1 bg-gray-100 dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Community Guidelines',
-                    headerStyle: { backgroundColor: '#fff' },
+                    headerStyle: tw`bg-white dark:bg-black`,
+                    headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerBackTitle: 'Back',
                     headerShown: true,
                 }}
             />
 
-            <ScrollView 
-                style={tw`flex-1`}
-                contentContainerStyle={tw`p-4`}
-            >
-                <View style={tw`bg-white rounded-lg p-4 shadow-sm`}>
+            <ScrollView style={tw`flex-1`} contentContainerStyle={tw`p-4`}>
+                <View style={tw`bg-white dark:bg-black rounded-lg p-4 shadow-sm`}>
                     <YStack>
-                        <StackText fontSize='$6' fontWeight="bold" textAlign="center" style={tw`mb-3 pb-2 border-b-2 border-gray-300`}>{ data?.title }</StackText>
+                        <StackText
+                            fontSize="$6"
+                            fontWeight="bold"
+                            textAlign="center"
+                            style={tw`mb-3 pb-2 border-b-2 dark:text-white border-gray-300 dark:border-gray-800`}>
+                            {data?.title}
+                        </StackText>
                     </YStack>
                     <RenderHtml
                         contentWidth={width - 48}
@@ -105,9 +123,13 @@ export default function CommunityScreen() {
                         enableExperimentalMarginCollapsing={true}
                     />
                 </View>
-                <StackText textAlign="center" style={tw`mt-3 text-gray-500`}>Last updated { formatDate(data.updated_at) }</StackText>
+                <StackText textAlign="center" style={tw`mt-3 text-gray-500`}>
+                    Last updated {formatDate(data.updated_at)}
+                </StackText>
                 <Pressable onPress={() => openInBrowser()}>
-                    <StackText textAlign="center" style={tw`mt-3 text-gray-500`}>View in browser</StackText>
+                    <StackText textAlign="center" style={tw`mt-3 text-gray-500`}>
+                        View in browser
+                    </StackText>
                 </Pressable>
                 <View style={tw`h-20`}></View>
             </ScrollView>
