@@ -86,9 +86,9 @@ const themeConfig: Record<
         disabledBg: 'bg-[#7fc7fa]',
     },
     light: {
-        bg: `bg-[${COLORS.light}]`,
-        border: `border-[${COLORS.light}]`,
-        text: 'text-black',
+        bg: `bg-[${COLORS.light}] dark:bg-gray-900`,
+        border: `border-[${COLORS.light}] dark:border-gray-800`,
+        text: 'text-black dark:text-white',
         pressedBg: 'bg-[#e0e0e0]',
         disabledBg: 'bg-[#f8f8f8]',
     },
