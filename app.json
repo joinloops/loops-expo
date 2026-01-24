@@ -1,75 +1,93 @@
 {
-  "expo": {
-    "name": "Loops",
-    "slug": "loops",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "loops",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.pixelfed.loops"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#000000",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.pixelfed.loops"
-    },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#000000",
-          "dark": {
-            "image": "./assets/images/splash-icon-dark.png",
-            "backgroundColor": "#000000"
-          }
+    "expo": {
+        "name": "Loops",
+        "slug": "loops",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/images/icon.png",
+        "scheme": "loops",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.pixelfed.loops",
+            "infoPlist": {
+                "NSCameraUsageDescription": "Loops needs access to your Camera.",
+                "NSMicrophoneUsageDescription": "Loops needs access to your Microphone."
+            }
+        },
+        "android": {
+            "adaptiveIcon": {
+                "backgroundColor": "#000000",
+                "foregroundImage": "./assets/images/android-icon-foreground.png",
+                "backgroundImage": "./assets/images/android-icon-background.png",
+                "monochromeImage": "./assets/images/android-icon-monochrome.png"
+            },
+            "edgeToEdgeEnabled": true,
+            "predictiveBackGestureEnabled": false,
+            "package": "com.pixelfed.loops",
+            "permissions": [
+                "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE",
+                "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+                "android.permission.ACCESS_MEDIA_LOCATION",
+                "android.permission.READ_MEDIA_AUDIO",
+                "android.permission.READ_MEDIA_IMAGES",
+                "android.permission.CAMERA",
+                "android.permission.RECORD_AUDIO"
+            ]
+        },
+        "web": {
+            "output": "static",
+            "favicon": "./assets/images/favicon.png"
+        },
+        "plugins": [
+            "expo-router",
+            [
+                "expo-splash-screen",
+                {
+                    "image": "./assets/images/splash-icon.png",
+                    "imageWidth": 200,
+                    "resizeMode": "contain",
+                    "backgroundColor": "#000000",
+                    "dark": {
+                        "image": "./assets/images/splash-icon-dark.png",
+                        "backgroundColor": "#000000"
+                    }
+                }
+            ],
+            "expo-secure-store",
+            "expo-web-browser",
+            "expo-video",
+            [
+                "expo-media-library",
+                {
+                    "photosPermission": "Allow Loops to access your photos and videos.",
+                    "savePhotosPermission": "Allow Loops to save photos and videos.",
+                    "isAccessMediaLocationEnabled": true,
+                    "granularPermissions": ["audio", "photo"]
+                }
+            ],
+            [
+                "react-native-vision-camera",
+                {
+                    "cameraPermissionText": "Loops needs access to your Camera.",
+                    "enableMicrophonePermission": true,
+                    "microphonePermissionText": "Loops needs access to your Microphone."
+                }
+            ],
+            "react-native-compressor",
+            "expo-notifications"
+        ],
+        "experiments": {
+            "typedRoutes": true,
+            "reactCompiler": true
+        },
+        "extra": {
+            "router": {},
+            "eas": {
+                "projectId": ""
+            }
         }
-      ],
-      "expo-secure-store",
-      "expo-web-browser",
-      "expo-video",
-      [
-        "expo-media-library",
-        {
-          "photosPermission": "Allow Loops to access your photos and videos.",
-          "savePhotosPermission": "Allow Loops to save photos and videos.",
-          "isAccessMediaLocationEnabled": true,
-          "granularPermissions": [
-            "audio",
-            "photo"
-          ]
-        }
-      ],
-      [
-        "react-native-vision-camera",
-        {
-          "cameraPermissionText": "Loops needs access to your Camera.",
-          "enableMicrophonePermission": true,
-          "microphonePermissionText": "Loops needs access to your Microphone."
-        }
-      ],
-      "react-native-compressor"
-    ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
     }
-  }
 }
