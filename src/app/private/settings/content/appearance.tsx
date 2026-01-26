@@ -1,9 +1,8 @@
-import { XStack, YStack } from '@/components/ui/Stack';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function AppearanceScreen() {
@@ -76,7 +75,7 @@ export default function AppearanceScreen() {
     );
 
     return (
-        <View style={tw`flex-1 bg-gray-100 dark:bg-black`}>
+        <View style={tw`flex-1 bg-white dark:bg-black`}>
             <Stack.Screen
                 options={{
                     title: 'Appearance',
@@ -121,7 +120,7 @@ export default function AppearanceScreen() {
                     </View>
                 </View>
 
-                <View style={tw`h-px bg-gray-200 dark:bg-gray-800`} />
+                {/* <View style={tw`h-px bg-gray-200 dark:bg-gray-800`} />
 
                 <View style={tw`flex-row items-center py-4 px-5 bg-white dark:bg-black`}>
                     <XStack flex={1}>
@@ -145,7 +144,7 @@ export default function AppearanceScreen() {
                             ios_backgroundColor="#ccc"
                         />
                     </XStack>
-                </View>
+                </View> */}
             </ScrollView>
         </View>
     );
