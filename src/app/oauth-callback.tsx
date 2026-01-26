@@ -14,6 +14,14 @@ export default function OAuthCallbackScreen() {
     const handleCallback = async () => {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
+        // Check for OAuth errors in the callback parameters
+        if (params?.error) {
+            const errorMessage = params.error_description || params.error || 'Authentication failed';
+            Alert.alert('Sign In Error', errorMessage as string);
+            router.replace('/sign-in');
+            return;
+        }
+
         syncAuthState();
 
         const isLoggedIn = useAuthStore.getState().isLoggedIn;
