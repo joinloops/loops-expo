@@ -13,7 +13,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -46,6 +46,7 @@ interface Account {
     username: string;
     bio: string;
     follower_count: number;
+    post_count?: number;
 }
 
 interface Video {
@@ -56,7 +57,7 @@ interface Video {
         name: string;
         username: string;
         avatar: string;
-    };
+    } | null;
     caption: string;
     url: string;
     likes: number;
@@ -66,8 +67,35 @@ interface Video {
         width: number;
         height: number;
         thumbnail: string;
-    };
+    } | null;
 }
+
+// Validation helpers
+const isValidAccount = (account: Account | null | undefined): account is Account => {
+    return !!(
+        account?.id &&
+        account?.username &&
+        account?.avatar &&
+        account?.name
+    );
+};
+
+const isValidVideo = (video: Video | null | undefined): video is Video => {
+    return !!(
+        video?.id &&
+        video?.account &&
+        isValidAccount(video.account) &&
+        video?.media?.thumbnail
+    );
+};
+
+const isValidTag = (tag: Tag | null | undefined): tag is Tag => {
+    return !!(
+        tag?.id &&
+        tag?.name &&
+        typeof tag?.count === 'number'
+    );
+};
 
 export default function ExploreScreen() {
     const router = useRouter();
@@ -79,32 +107,46 @@ export default function ExploreScreen() {
     const queryClient = useQueryClient();
     const { colorScheme } = useTheme();
 
-    const { data: tagsData, isLoading: tagsLoading } = useQuery({
+    const { data: tagsData, isLoading: tagsLoading, isError: tagsError } = useQuery({
         queryKey: ['explore', 'tags'],
         queryFn: getExploreTags,
+        retry: 2,
     });
 
-    const { data: accountsData, isLoading: accountsLoading } = useQuery({
+    const { data: accountsData, isLoading: accountsLoading, isError: accountsError } = useQuery({
         queryKey: ['accounts', 'suggested'],
         queryFn: getExploreAccounts,
+        retry: 2,
     });
+
+    const validTags = useMemo(() => {
+        if (!Array.isArray(tagsData)) return [];
+        return tagsData.filter(isValidTag);
+    }, [tagsData]);
+
+    const validAccounts = useMemo(() => {
+        if (!Array.isArray(accountsData)) return [];
+        return accountsData.filter(isValidAccount);
+    }, [accountsData]);
 
     const {
         data: videosData,
         isLoading: videosLoading,
+        isError: videosError,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
     } = useInfiniteQuery({
-        queryKey: ['explore', 'tag-feed', selectedTag || tagsData?.[0]?.name],
+        queryKey: ['explore', 'tag-feed', selectedTag || validTags?.[0]?.name],
         queryFn: getExploreTagsFeed,
-        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
-        enabled: !!tagsData && tagsData.length > 0,
+        getNextPageParam: (lastPage) => lastPage?.meta?.next_cursor,
+        enabled: validTags.length > 0,
         initialPageParam: null,
+        retry: 2,
     });
 
     const followMutation = useMutation({
-        mutationFn: async (profileId) => {
+        mutationFn: async (profileId: string) => {
             setFollowingAccountId(profileId);
             return await followAccount(profileId);
         },
@@ -117,7 +159,7 @@ export default function ExploreScreen() {
     });
 
     const hideSuggestionMutation = useMutation({
-        mutationFn: async (profileId) => {
+        mutationFn: async (profileId: string) => {
             setHidingAccountId(profileId);
             return await postExploreAccountHideSuggestion(profileId);
         },
@@ -143,13 +185,18 @@ export default function ExploreScreen() {
         },
     });
 
-    const allVideos = videosData?.pages.flatMap((page) => page.data) || [];
+    const allVideos = useMemo(() => {
+        if (!videosData?.pages) return [];
+        return videosData.pages
+            .flatMap((page) => page?.data || [])
+            .filter(isValidVideo);
+    }, [videosData]);
 
     React.useEffect(() => {
-        if (tagsData && tagsData.length > 0 && !selectedTag) {
-            setSelectedTag(tagsData[0].name);
+        if (validTags.length > 0 && !selectedTag) {
+            setSelectedTag(validTags[0].name);
         }
-    }, [tagsData]);
+    }, [validTags, selectedTag]);
 
     const renderAccountCard = ({
         item,
@@ -162,6 +209,7 @@ export default function ExploreScreen() {
     }) => {
         const isFollowing = followingAccountId === item.id;
         const isHiding = hidingAccountId === item.id;
+        
         return (
             <View style={tw`mr-3 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden`}>
                 <View style={tw`w-[${ACCOUNT_CARD_WIDTH}px] p-3 items-center`}>
@@ -183,23 +231,29 @@ export default function ExploreScreen() {
                         <Text
                             style={tw`text-black font-semibold text-sm mb-1 dark:text-white`}
                             numberOfLines={1}>
-                            {item.name}
+                            {item.name || item.username}
                         </Text>
                     </Pressable>
 
-                    <Text
-                        style={tw`text-gray-800 text-xs text-center mb-1 dark:text-gray-300`}
-                        numberOfLines={1}>
-                        {item.bio}
-                    </Text>
+                    {item.bio && (
+                        <Text
+                            style={tw`text-gray-800 text-xs text-center mb-1 dark:text-gray-300`}
+                            numberOfLines={1}>
+                            {item.bio}
+                        </Text>
+                    )}
 
                     <XStack justifyContent="space-between" gap="$3" style={tw`w-full mb-3`}>
-                        <Text style={tw`text-gray-500 text-[11px] dark:text-gray-400`}>
-                            {item.post_count.toLocaleString()} videos
-                        </Text>
-                        <Text style={tw`text-gray-500 text-[11px] dark:text-gray-400`}>
-                            {item.follower_count.toLocaleString()} followers
-                        </Text>
+                        {typeof item.post_count === 'number' && (
+                            <Text style={tw`text-gray-500 text-[11px] dark:text-gray-400`}>
+                                {item.post_count.toLocaleString()} videos
+                            </Text>
+                        )}
+                        {typeof item.follower_count === 'number' && (
+                            <Text style={tw`text-gray-500 text-[11px] dark:text-gray-400`}>
+                                {item.follower_count.toLocaleString()} followers
+                            </Text>
+                        )}
                     </XStack>
 
                     <PressableHaptics onPress={onHandleFollow} disabled={isFollowing}>
@@ -242,42 +296,61 @@ export default function ExploreScreen() {
         );
     };
 
-    const renderVideoThumbnail = ({ item, index }: { item: Video; index: number }) => (
-        <TouchableOpacity
-            style={tw`mb-1 ${index % 3 !== 2 ? 'mr-1' : ''}`}
-            onPress={() =>
-                router.push(`/private/profile/feed/${item.id}?profileId=${item.account.id}`)
-            }>
-            <View style={tw`relative`}>
-                <Image
-                    source={{ uri: item.media.thumbnail }}
-                    style={[
-                        tw`rounded-lg bg-gray-900`,
-                        { width: VIDEO_THUMBNAIL_WIDTH, height: (VIDEO_THUMBNAIL_WIDTH * 16) / 9 },
-                    ]}
-                    resizeMode="cover"
-                />
-                <View style={tw`absolute bottom-2 left-2 right-2`}>
-                    <Text style={tw`text-white text-xs font-medium`} numberOfLines={2}>
-                        {item.caption}
-                    </Text>
+    const renderVideoThumbnail = ({ item, index }: { item: Video; index: number }) => {
+        if (!item.account || !item.media) return null;
+
+        const duration = item.media.duration || 0;
+        const minutes = Math.floor(duration / 60);
+        const seconds = Math.floor(duration % 60);
+
+        return (
+            <TouchableOpacity
+                style={tw`mb-1 ${index % 3 !== 2 ? 'mr-1' : ''}`}
+                onPress={() =>
+                    router.push(`/private/profile/feed/${item.id}?profileId=${item.account.id}`)
+                }>
+                <View style={tw`relative`}>
+                    <Image
+                        source={{ uri: item.media.thumbnail }}
+                        style={[
+                            tw`rounded-lg bg-gray-900`,
+                            { width: VIDEO_THUMBNAIL_WIDTH, height: (VIDEO_THUMBNAIL_WIDTH * 16) / 9 },
+                        ]}
+                        resizeMode="cover"
+                    />
+                    {item.caption && (
+                        <View style={tw`absolute bottom-2 left-2 right-2`}>
+                            <Text style={tw`text-white text-xs font-medium`} numberOfLines={2}>
+                                {item.caption}
+                            </Text>
+                        </View>
+                    )}
+                    <View
+                        style={tw`absolute top-2 right-2 bg-black bg-opacity-70 rounded px-1.5 py-0.5`}>
+                        <Text style={tw`text-white text-xs`}>
+                            {minutes}:{seconds.toString().padStart(2, '0')}
+                        </Text>
+                    </View>
                 </View>
-                <View
-                    style={tw`absolute top-2 right-2 bg-black bg-opacity-70 rounded px-1.5 py-0.5`}>
-                    <Text style={tw`text-white text-xs`}>
-                        {Math.floor(item.media.duration / 60)}:
-                        {(item.media.duration % 60).toString().padStart(2, '0')}
-                    </Text>
-                </View>
-            </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+        );
+    };
+
+    const renderEmptyState = (message: string) => (
+        <View style={tw`py-10 items-center px-4`}>
+            <Text style={tw`text-gray-500 dark:text-gray-400 text-center`}>
+                {message}
+            </Text>
+        </View>
     );
 
     if (tagsLoading || accountsLoading) {
         return (
-            <View style={tw`flex-1 bg-black items-center justify-center`}>
-                <ActivityIndicator size="large" color="white" />
-            </View>
+            <SafeAreaView edges={['top']} style={tw`flex-1 bg-white dark:bg-black`}>
+                <View style={tw`flex-1 items-center justify-center`}>
+                    <ActivityIndicator size="large" color={colorScheme === 'dark' ? '#fff' : '#000'} />
+                </View>
+            </SafeAreaView>
         );
     }
 
@@ -312,7 +385,7 @@ export default function ExploreScreen() {
                         </Pressable>
                     </View>
 
-                    {accountsData && accountsData.length > 0 && (
+                    {validAccounts.length > 0 && (
                         <View style={tw`my-5`}>
                             <Text
                                 style={tw`text-black text-lg font-bold px-4 mb-3 dark:text-gray-500`}>
@@ -320,11 +393,10 @@ export default function ExploreScreen() {
                             </Text>
                             <FlatList
                                 horizontal
-                                data={accountsData}
+                                data={validAccounts}
                                 renderItem={({ item }) =>
                                     renderAccountCard({
                                         item,
-                                        followMutation,
                                         onHandleFollow: () => followMutation.mutate(item.id),
                                         onHideSuggestion: () =>
                                             hideSuggestionMutation.mutate(item.id),
@@ -337,7 +409,11 @@ export default function ExploreScreen() {
                         </View>
                     )}
 
-                    {tagsData && tagsData.length > 0 && (
+                    {accountsError && (
+                        renderEmptyState('Unable to load suggested accounts. Please try again later.')
+                    )}
+
+                    {validTags.length > 0 && (
                         <View style={tw`mb-4`}>
                             <Text
                                 style={tw`text-black text-lg font-bold px-4 mb-3 dark:text-gray-500`}>
@@ -345,13 +421,17 @@ export default function ExploreScreen() {
                             </Text>
                             <FlatList
                                 horizontal
-                                data={tagsData}
+                                data={validTags}
                                 renderItem={renderTagCard}
                                 keyExtractor={(item) => item.id.toString()}
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={tw`px-4`}
                             />
                         </View>
+                    )}
+
+                    {tagsError && (
+                        renderEmptyState('Unable to load trending tags. Please try again later.')
                     )}
 
                     {videosLoading ? (
@@ -361,7 +441,9 @@ export default function ExploreScreen() {
                                 color={colorScheme === 'dark' ? '#fff' : '#000'}
                             />
                         </View>
-                    ) : (
+                    ) : videosError ? (
+                        renderEmptyState('Unable to load videos. Please try again later.')
+                    ) : allVideos.length > 0 ? (
                         <>
                             <View style={tw`px-2 flex-row flex-wrap`}>
                                 {allVideos.map((video, index) => (
@@ -372,10 +454,15 @@ export default function ExploreScreen() {
                             </View>
                             {isFetchingNextPage && (
                                 <View style={tw`py-4 items-center`}>
-                                    <ActivityIndicator size="small" color="white" />
+                                    <ActivityIndicator 
+                                        size="small" 
+                                        color={colorScheme === 'dark' ? '#fff' : '#000'} 
+                                    />
                                 </View>
                             )}
                         </>
+                    ) : (
+                        renderEmptyState('No videos found for this tag.')
                     )}
                 </ScrollView>
             </View>
