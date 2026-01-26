@@ -870,7 +870,7 @@ export default function CaptionScreen() {
             <Modal
                 visible={showAltTextModal}
                 animationType="slide"
-                presentationStyle="fullScreen"
+                presentationStyle="pageSheet"
                 onRequestClose={() => setShowAltTextModal(false)}>
                 <SafeAreaView style={tw`flex-1 bg-white dark:bg-black`}>
                     <KeyboardAvoidingView
