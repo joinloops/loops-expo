@@ -26,7 +26,10 @@ export function useNotificationPolling(intervalMs: number = 900000) {
         };
 
         const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-            if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+            const currentState = appState.current;
+
+            // Handle null case - treat null as if app was in background
+            if (currentState && currentState.match(/inactive|background/) && nextAppState === 'active') {
                 fetchBadgeCount();
                 startPolling();
             } else if (nextAppState.match(/inactive|background/)) {
