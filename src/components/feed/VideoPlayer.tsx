@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        height: '50%',
+        height: '20%',
     },
     aiLabelWrapper: {
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
