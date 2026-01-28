@@ -170,7 +170,7 @@ export function ReportModal({ visible, onClose, onCommunityGuidelines, item, rep
         if (step === 'details') {
             return (
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={tw`bg-white dark:bg-gray-900 rounded-t-3xl`}>
                     <View
                         style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200 dark:border-gray-800`}>

@@ -731,9 +731,9 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
     return (
         <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding': 'height'}
                 style={tw`flex-1 justify-end`}
-                keyboardVerticalOffset={0}>
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
                 <Pressable style={tw`absolute inset-0`} onPress={onClose} />
                 <View style={tw`bg-white dark:bg-black rounded-t-2xl min-h-[50%] max-h-[85%]`}>
                     <View
