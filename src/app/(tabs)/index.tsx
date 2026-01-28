@@ -282,7 +282,6 @@ export default function LoopsFeed({ navigation }) {
             selectedVideo,
             screenFocused,
             videoPlaybackRates,
-            navigation,
         ],
     );
 
