@@ -38,25 +38,25 @@ const sizeConfig = {
         paddingX: 'px-3',
         paddingY: 'py-2',
         textSize: 'text-sm',
-        rounded: 'rounded-md',
+        rounded: 'rounded-full',
     },
     medium: {
         paddingX: 'px-4',
-        paddingY: 'py-3',
+        paddingY: 'py-2',
         textSize: 'text-base',
-        rounded: 'rounded-lg',
+        rounded: 'rounded-full',
     },
     large: {
         paddingX: 'px-6',
-        paddingY: 'py-4',
+        paddingY: 'py-3',
         textSize: 'text-lg',
-        rounded: 'rounded-lg',
+        rounded: 'rounded-full',
     },
     xlarge: {
         paddingX: 'px-8',
         paddingY: 'py-5',
         textSize: 'text-xl',
-        rounded: 'rounded-xl',
+        rounded: 'rounded-full',
     },
 };
 
