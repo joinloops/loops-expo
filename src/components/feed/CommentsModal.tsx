@@ -20,21 +20,21 @@ import { timeAgo } from '@/utils/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     Dimensions,
     FlatList,
-    KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tw from 'twrnc';
 
@@ -101,6 +101,49 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         initialPageParam: null,
         enabled: visible && !!item,
     });
+
+    const ListHeader = useCallback(() => {
+        return (
+            <View style={tw`p-4 border-b border-gray-200 dark:border-gray-700`}>
+                <TouchableOpacity
+                    style={tw`flex-row items-center mb-3`}
+                    onPress={() => {
+                        onNavigate?.();
+                        onClose();
+                        navigation?.navigate('Profile', {
+                            username: item?.account?.username,
+                            profileId: item?.account?.id,
+                        });
+                    }}>
+                    <Avatar url={item?.account.avatar} size={36} />
+                    <View style={tw`ml-3 flex-1`}>
+                        <Text style={tw`text-[15px] font-bold text-black dark:text-white`}>
+                            {item?.account?.username}
+                        </Text>
+                        <Text style={tw`text-[13px] text-gray-600 dark:text-gray-400 mt-0.5`}>
+                            {timeAgo(item?.created_at)}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+                <LinkifiedCaption
+                    caption={item?.caption}
+                    tags={item?.tags || []}
+                    mentions={item?.mentions || []}
+                    style={tw`text-[15px] text-black dark:text-white leading-5`}
+                    onHashtagPress={(tag) => {
+                        onNavigate?.();
+                        onClose();
+                        router.push(`/private/search?query=${tag}`);
+                    }}
+                    onMentionPress={(username, profileId) => {
+                        onNavigate?.();
+                        onClose();
+                        router.push(`/private/search?query=${username}`);
+                    }}
+                />
+            </View>
+        )
+    }, [item, isDark, router, onNavigate, onClose, navigation]);
 
     const commentMutation = useMutation({
         mutationFn: async (data: CommentPayload) => {
@@ -615,8 +658,8 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     <Avatar url={comment.account.avatar} size={36} />
                 </PressableHaptics>
                 <View style={tw`flex-1`}>
-                    <View style={tw`flex-row items-center gap-2 mb-1`}>
-                        <PressableHaptics onPress={() => handleProfilePress(comment.account?.id)}>
+                    <View style={tw`flex flex-row items-center gap-2 mb-1`}>
+                        <PressableHaptics style={tw`flex-1`} onPress={() => handleProfilePress(comment.account?.id)}>
                             <Text style={tw`text-sm font-bold text-black dark:text-white`}>
                                 {comment.account.username}
                             </Text>
@@ -703,47 +746,6 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         </View>
     );
 
-    const ListHeader = () => (
-        <View style={tw`p-4 border-b border-gray-200 dark:border-gray-700`}>
-            <TouchableOpacity
-                style={tw`flex-row items-center mb-3`}
-                onPress={() => {
-                    onNavigate?.();
-                    onClose();
-                    navigation?.navigate('Profile', {
-                        username: item.account.username,
-                        profileId: item.account.id,
-                    });
-                }}>
-                <Avatar url={item.account.avatar} size={36} />
-                <View style={tw`ml-3 flex-1`}>
-                    <Text style={tw`text-[15px] font-bold text-black dark:text-white`}>
-                        {item.account.username}
-                    </Text>
-                    <Text style={tw`text-[13px] text-gray-600 dark:text-gray-400 mt-0.5`}>
-                        {timeAgo(item.created_at)}
-                    </Text>
-                </View>
-            </TouchableOpacity>
-            <LinkifiedCaption
-                caption={item.caption}
-                tags={item.tags || []}
-                mentions={item.mentions || []}
-                style={tw`text-[15px] text-black dark:text-white leading-5`}
-                onHashtagPress={(tag) => {
-                    onNavigate?.();
-                    onClose();
-                    router.push(`/private/search?query=${tag}`);
-                }}
-                onMentionPress={(username, profileId) => {
-                    onNavigate?.();
-                    onClose();
-                    router.push(`/private/search?query=${username}`);
-                }}
-            />
-        </View>
-    );
-
     if (showReport) {
         return (
             <ReportModal
@@ -809,9 +811,9 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
     return (
         <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding': 'height'}
+                behavior={'padding'}
                 style={tw`flex-1 justify-end`}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
+                keyboardVerticalOffset={Platform.OS === 'android' ? -20 : 0}>
                 <Pressable style={tw`absolute inset-0`} onPress={onClose} />
                 <View style={tw`bg-white dark:bg-black rounded-t-2xl min-h-[50%] max-h-[85%]`}>
                     <View
@@ -829,29 +831,31 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                             <ActivityIndicator size="large" color={isDark ? '#666' : '#999'} />
                         </View>
                     ) : (
-                        <FlatList
-                            ref={flatListRef}
-                            data={allComments}
-                            renderItem={renderComment}
-                            keyExtractor={(comment) => comment.id}
-                            ListHeaderComponent={ListHeader}
-                            onEndReached={() => {
-                                if (hasNextPage && !isFetchingNextPage) {
-                                    fetchNextPage();
+                        <>
+                            <ListHeader />
+                            <FlatList
+                                ref={flatListRef}
+                                data={allComments}
+                                renderItem={renderComment}
+                                keyExtractor={(comment) => comment.id}
+                                onEndReached={() => {
+                                    if (hasNextPage && !isFetchingNextPage) {
+                                        fetchNextPage();
+                                    }
+                                }}
+                                onEndReachedThreshold={0.5}
+                                ListEmptyComponent={EmptyList}
+                                ListFooterComponent={
+                                    isFetchingNextPage ? (
+                                        <ActivityIndicator
+                                            size="small"
+                                            color={isDark ? '#666' : '#999'}
+                                            style={tw`my-5`}
+                                        />
+                                    ) : null
                                 }
-                            }}
-                            onEndReachedThreshold={0.5}
-                            ListEmptyComponent={EmptyList}
-                            ListFooterComponent={
-                                isFetchingNextPage ? (
-                                    <ActivityIndicator
-                                        size="small"
-                                        color={isDark ? '#666' : '#999'}
-                                        style={tw`my-5`}
-                                    />
-                                ) : null
-                            }
-                        />
+                            />
+                        </>
                     )}
 
                     {replyingTo && (
@@ -871,7 +875,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     )}
                     <View
                         style={tw.style(
-                            `flex-row items-center p-3 border-t border-gray-200 dark:border-gray-700 gap-3 bg-white dark:bg-black`,
+                            `flex flex-row items-center p-3 border-t border-gray-200 dark:border-gray-700 gap-3 bg-white dark:bg-black`,
                             { paddingBottom: Math.max(insets.bottom, 8) },
                         )}>
                         <Avatar url={user?.avatar} size={32} />
