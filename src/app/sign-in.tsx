@@ -3,6 +3,7 @@ import { useAuthStore } from '@/utils/authStore';
 import { openBrowser, registerPreflightCheck } from '@/utils/requests';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -175,11 +176,11 @@ export default function SignInScreen() {
                 <Pressable
                     onPress={handleSignInStart}
                     style={({ pressed }) => [
-                        tw`h-14 rounded-2xl justify-center items-center bg-[#FFE500]`,
+                        tw`h-14 rounded-full justify-center items-center bg-[#FFE500]`,
                         pressed && tw`opacity-80`,
                     ]}
                 >
-                    <Text style={tw`text-black text-base font-bold`}>Sign In</Text>
+                    <Text style={tw`text-black text-lg font-bold`}>Sign In</Text>
                 </Pressable>
             </View>
 
@@ -187,11 +188,11 @@ export default function SignInScreen() {
                 <Pressable
                     onPress={handleRegisterStart}
                     style={({ pressed }) => [
-                        tw`h-14 rounded-2xl justify-center items-center border-2 border-[#FFE500]`,
+                        tw`h-14 rounded-full justify-center items-center border-2 border-[#FFE500]`,
                         pressed && tw`opacity-80`,
                     ]}
                 >
-                    <Text style={tw`text-[#FFE500] text-base font-bold`}>Create Account</Text>
+                    <Text style={tw`text-[#FFE500] text-lg font-bold`}>Create Account</Text>
                 </Pressable>
             </View>
         </Animated.View>
@@ -223,7 +224,7 @@ export default function SignInScreen() {
                                 key={srv.value}
                                 onPress={() => setSelectedServer(srv.value)}
                                 style={({ pressed }) => [
-                                    tw`px-4 py-4 rounded-2xl border-2`,
+                                    tw`px-6 py-4 rounded-2xl border-2`,
                                     tw`${active ? 'bg-transparent border-[#FFE500]' : 'bg-transparent border-gray-700'}`,
                                     pressed && tw`opacity-80`,
                                 ]}
@@ -240,7 +241,7 @@ export default function SignInScreen() {
                     onPress={handleSignInServerSelected}
                     disabled={isLoading}
                     style={({ pressed }) => [
-                        tw`h-14 rounded-2xl justify-center items-center`,
+                        tw`h-14 rounded-full justify-center items-center`,
                         isLoading ? tw`bg-[#FFE500]/60` : tw`bg-[#FFE500]`,
                         pressed && !isLoading && tw`opacity-80`,
                     ]}
@@ -281,7 +282,7 @@ export default function SignInScreen() {
                                 key={srv.value}
                                 onPress={() => setSelectedServer(srv.value)}
                                 style={({ pressed }) => [
-                                    tw`px-4 py-4 rounded-2xl border-2`,
+                                    tw`px-6 py-4 rounded-2xl border-2`,
                                     tw`${active ? 'bg-transparent border-[#FFE500]' : 'bg-transparent border-gray-700'}`,
                                     pressed && tw`opacity-80`,
                                 ]}
@@ -317,7 +318,7 @@ export default function SignInScreen() {
                     onPress={handleRegisterServerSelected}
                     disabled={isLoading}
                     style={({ pressed }) => [
-                        tw`h-14 rounded-2xl justify-center items-center`,
+                        tw`h-14 rounded-full justify-center items-center`,
                         isLoading ? tw`bg-[#FFE500]/60` : tw`bg-[#FFE500]`,
                         pressed && !isLoading && tw`opacity-80`,
                     ]}
@@ -375,7 +376,7 @@ export default function SignInScreen() {
                     onPress={() => handleSignInSubmit(customServerUrl)}
                     disabled={isLoading || !isValidUrl(customServerUrl)}
                     style={({ pressed }) => [
-                        tw`h-14 rounded-2xl justify-center items-center`,
+                        tw`h-14 rounded-full justify-center items-center`,
                         isLoading || !isValidUrl(customServerUrl) ? tw`bg-[#FFE500]/40` : tw`bg-[#FFE500]`,
                         pressed && isValidUrl(customServerUrl) && !isLoading && tw`opacity-80`,
                     ]}
@@ -453,7 +454,7 @@ export default function SignInScreen() {
                     onPress={() => handleRegisterSubmit(customServerUrl)}
                     disabled={isLoading || !isValidUrl(customServerUrl)}
                     style={({ pressed }) => [
-                        tw`h-14 rounded-2xl justify-center items-center`,
+                        tw`h-14 rounded-full justify-center items-center`,
                         isLoading || !isValidUrl(customServerUrl) ? tw`bg-[#FFE500]/40` : tw`bg-[#FFE500]`,
                         pressed && isValidUrl(customServerUrl) && !isLoading && tw`opacity-80`,
                     ]}
@@ -473,6 +474,7 @@ export default function SignInScreen() {
             style={tw`flex-1 bg-black`}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
+            <StatusBar style="light" />
             {currentStep === 'initial' && renderInitial()}
             {currentStep === 'signin-server' && renderSignInServer()}
             {currentStep === 'signin-custom-url' && renderSignInCustomUrl()}
