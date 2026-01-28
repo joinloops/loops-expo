@@ -20,10 +20,9 @@ export default function SettingsScreen() {
 
     const performLogOut = async () => {
         queryClient.clear();
-        router.dismissAll();
-        router.replace('/');
         notificationStore.resetBadgeCount();
-        setTimeout(() => logOut(), 100);
+        logOut();
+        router.replace('/');
     };
 
     const handleSignOut = () => {
@@ -162,7 +161,7 @@ export default function SettingsScreen() {
                     onPress={() => handleSignOut()}
                 />
                 <View style={tw`flex justify-center items-center mt-5`}>
-                    <Text style={tw`text-gray-500`}>Loops v1.0.1.23</Text>
+                    <Text style={tw`text-gray-500`}>Loops v1.0.1.24</Text>
                 </View>
             </ScrollView>
         </View>

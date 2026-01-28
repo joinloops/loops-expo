@@ -2,7 +2,6 @@ import { Divider, SectionHeader, SettingsItem } from '@/components/settings/Stac
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuthStore } from '@/utils/authStore';
 import { useNotificationStore } from '@/utils/notificationStore';
-import { openLocalLink } from '@/utils/requests';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import React from 'react';
@@ -18,17 +17,9 @@ export default function AccountScreen() {
 
     const performLogOut = () => {
         queryClient.clear();
-        router.dismissAll();
-        router.replace('/');
         notificationStore.resetBadgeCount();
-        setTimeout(() => logOut(), 100);
-    };
-
-    const handleDeleteAccount = async () => {
-        await openLocalLink('dashboard/account/delete', {
-            presentationStyle: 'popover',
-            showTitle: false,
-        });
+        logOut();
+        router.replace('/');
     };
 
     const handleSignOut = () => {
@@ -79,9 +70,15 @@ export default function AccountScreen() {
 
                 <SectionHeader title="Account Control" />
                 <SettingsItem
+                    icon="timer-outline"
+                    label="Deactivate account"
+                    onPress={() => router.push('/private/settings/account/deactivate')}
+                />
+                    <Divider />
+                <SettingsItem
                     icon="trash-outline"
                     label="Delete account"
-                    onPress={() => handleDeleteAccount()}
+                    onPress={() => router.push('/private/settings/account/delete')}
                 />
                 <Divider />
                 <SettingsItem

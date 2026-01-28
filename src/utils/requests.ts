@@ -967,6 +967,14 @@ export async function updateDeleteAccountLink(id: any): Promise<any> {
     return await _selfPost(`api/v1/account/settings/links/delete/${id}`);
 }
 
+export const deactivateAccount = async (data) => {
+    return await _selfPost('api/v1/account/settings/account/disable', data);
+};
+
+export const deleteAccount = async (data) => {
+    return await _selfPost('api/v1/account/settings/account/delete', data);
+};
+
 // ============================================================================
 // EXPLORE
 // ============================================================================
