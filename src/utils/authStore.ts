@@ -200,15 +200,25 @@ export const useAuthStore = create(
                 // Clear OAuth credentials
                 OAuthService.logout();
 
-                // Cear store state
-                set((state) => ({
-                    ...state,
+                set({
                     isLoggedIn: false,
+                    shouldCreateAccount: false,
+                    hasCompletedOnboarding: false,
+                    _hasHydrated: true,
                     user: null,
                     server: null,
-                }));
+                    hideForYouFeed: false,
+                    defaultFeed: 'local',
+                    autoplayVideos: true,
+                    loopVideos: true,
+                    muteOnOpen: false,
+                    autoExpandCw: false,
+                    appearance: 'light',
+                });
 
-                onComplete?.();
+                SecureStore.deleteItemAsync('auth-store.v0.5').catch((error) => {
+                    console.error('Failed to clear persisted auth store:', error);
+                });
             },
 
             completeOnboarding: () => {
