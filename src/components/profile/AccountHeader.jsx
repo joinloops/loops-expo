@@ -139,7 +139,7 @@ export default function AccountHeader(props) {
                             {!state?.blocking && (
                                 <Button
                                     title={state?.following ? 'Following' : 'Follow'}
-                                    theme={state?.following ? 'primary-outlined' : 'primary'}
+                                    theme={state?.following ? 'primary' : 'primary'}
                                     loading={!state}
                                     style={tw`px-10`}
                                     onPress={props.onFollowPress}
