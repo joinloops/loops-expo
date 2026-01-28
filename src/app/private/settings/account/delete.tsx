@@ -79,7 +79,7 @@ export default function DeleteAccountScreen() {
                 {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () => mutation.mutate({ password }),
+                    onPress: () => mutation.mutate({ password: password }),
                 },
             ]
         );
