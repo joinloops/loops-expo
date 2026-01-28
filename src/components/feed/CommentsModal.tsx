@@ -107,9 +107,17 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
             return await commentPost(data);
         },
         onSuccess: async (res) => {
-            await queryClient.refetchQueries(['videoComments', item?.id], {
-                active: true,
-                exact: true,
+            queryClient.setQueryData(['videoComments', item?.id], (old) => {
+                if (!old) return old;
+                
+                return {
+                    ...old,
+                    pages: old.pages.map((page, index) => 
+                        index === 0
+                            ? { ...page, data: [res.data[0], ...page.data] }
+                            : page
+                    ),
+                };
             });
         },
     });
@@ -118,11 +126,29 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         mutationFn: async (data: CommentDeletePayload) => {
             return await commentDelete(data);
         },
-        onSuccess: async (res) => {
-            await queryClient.refetchQueries(['videoComments', item?.id], {
-                active: true,
-                exact: true,
+        onMutate: async (variables) => {
+            await queryClient.cancelQueries({ queryKey: ['videoComments', item?.id] });
+            
+            const previousComments = queryClient.getQueryData(['videoComments', item?.id]);
+            
+            queryClient.setQueryData(['videoComments', item?.id], (old) => {
+                if (!old) return old;
+                
+                return {
+                    ...old,
+                    pages: old.pages.map((page) => ({
+                        ...page,
+                        data: page.data.filter((comment) => comment.id !== variables.commentId),
+                    })),
+                };
             });
+            
+            return { previousComments };
+        },
+        onError: (err, variables, context) => {
+            if (context?.previousComments) {
+                queryClient.setQueryData(['videoComments', item?.id], context.previousComments);
+            }
         },
     });
 
@@ -130,11 +156,63 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         mutationFn: async (data: CommentReplyDeletePayload) => {
             return await commentReplyDelete(data);
         },
-        onSuccess: async (res) => {
-            await queryClient.refetchQueries(['videoComments', item?.id], {
-                active: true,
-                exact: true,
+        onMutate: async (variables) => {
+            await queryClient.cancelQueries({ queryKey: ['videoComments', item?.id] });
+            await queryClient.cancelQueries({ 
+                queryKey: ['videoReplies', item.id, variables.parentId] 
             });
+            
+            const previousComments = queryClient.getQueryData(['videoComments', item?.id]);
+            const previousReplies = queryClient.getQueryData([
+                'videoReplies',
+                item.id,
+                variables.parentId,
+            ]);
+            
+            queryClient.setQueryData(['videoReplies', item.id, variables.parentId], (old) => {
+                if (!old) return old;
+                
+                return {
+                    ...old,
+                    pages: old.pages.map((page) => ({
+                        ...page,
+                        data: page.data.filter((reply) => reply.id !== variables.commentId),
+                    })),
+                };
+            });
+            
+            queryClient.setQueryData(['videoComments', item?.id], (old) => {
+                if (!old) return old;
+                
+                return {
+                    ...old,
+                    pages: old.pages.map((page) => ({
+                        ...page,
+                        data: page.data.map((comment) => {
+                            if (comment.id === variables.parentId) {
+                                return {
+                                    ...comment,
+                                    replies: Math.max(0, comment.replies - 1),
+                                };
+                            }
+                            return comment;
+                        }),
+                    })),
+                };
+            });
+            
+            return { previousComments, previousReplies };
+        },
+        onError: (err, variables, context) => {
+            if (context?.previousComments) {
+                queryClient.setQueryData(['videoComments', item?.id], context.previousComments);
+            }
+            if (context?.previousReplies) {
+                queryClient.setQueryData(
+                    ['videoReplies', item.id, variables.parentId],
+                    context.previousReplies,
+                );
+            }
         },
     });
 
@@ -739,7 +817,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     <View
                         style={tw`flex-row justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700`}>
                         <Text style={tw`text-lg font-bold text-black dark:text-white`}>
-                            {totalComments} comments
+                            {totalComments} { totalComments === 1 ? 'comment' : 'comments'}
                         </Text>
                         <TouchableOpacity onPress={onClose}>
                             <Ionicons name="close" size={28} color={isDark ? '#fff' : '#000'} />
