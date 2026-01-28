@@ -52,31 +52,32 @@ export default function OnboardingStepOne() {
             />
 
             <View style={tw`flex-1 items-center justify-center px-6`}>
-                <Animated.View
-                    entering={FadeIn.duration(450)}
-                    style={[
-                        {
-                            width: HERO_SIZE,
-                            height: HERO_SIZE,
-                            borderRadius: HERO_SIZE / 2,
-                        },
-                        tw`items-center justify-center pl-2`,
-                        { backgroundColor: '#FFE500' },
-                        pulseStyle,
-                    ]}
-                >
-                    <Ionicons name="play" size={64} color="#000" />
+                <Animated.View entering={FadeIn.duration(450)}>
+                    <Animated.View
+                        style={[
+                            {
+                                width: HERO_SIZE,
+                                height: HERO_SIZE,
+                                borderRadius: HERO_SIZE / 2,
+                            },
+                            tw`items-center justify-center pl-2`,
+                            { backgroundColor: '#FFE500' },
+                            pulseStyle,
+                        ]}
+                    >
+                        <Ionicons name="play" size={64} color="#000" />
+                    </Animated.View>
                 </Animated.View>
 
                 <Animated.View entering={FadeInUp.delay(120).duration(500)} style={tw`items-center mt-7 w-full`}>
                     <XStack style={tw`flex-row flex-wrap justify-center max-w-xs`}>
-                        <StackText fontSize="$8" fontWeight={700} textColor="text-white">
+                        <StackText fontSize="$8" fontWeight={500} textColor="text-white">
                             Watch.&nbsp;
                         </StackText>
                         <StackText fontSize="$8" fontWeight={500} textColor="text-white">
                             Capture.&nbsp;
                         </StackText>
-                        <StackText fontSize="$8" fontWeight={300} textColor="text-white">
+                        <StackText fontSize="$8" fontWeight={500} textColor="text-white">
                             Loop.
                         </StackText>
                     </XStack>
