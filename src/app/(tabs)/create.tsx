@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as MediaLibrary from 'expo-media-library';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,6 +12,7 @@ import {
     Animated,
     Dimensions,
     Linking,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -76,7 +78,6 @@ export default function CameraScreen() {
 
     const [zoomText, setZoomText] = useState('1x');
 
-    // Handle permission request
     const handleRequestPermission = useCallback(async () => {
         setIsRequestingPermission(true);
         try {
@@ -256,8 +257,25 @@ export default function CameraScreen() {
         setFlash((prev) => (prev === 'off' ? 'on' : 'off'));
     };
 
-    const handleClose = () => {
-        router.reset();
+    const handleClose = async () => {
+        if (isRecording) {
+            try {
+                await camera.current?.stopRecording();
+            } catch (error) {
+                console.error('Error stopping recording on close:', error);
+            }
+        }
+        
+        if (recordingTimer.current) {
+            clearInterval(recordingTimer.current);
+            recordingTimer.current = null;
+        }
+        
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/');
+        }
     };
 
     const handleAddSound = () => {
@@ -265,21 +283,56 @@ export default function CameraScreen() {
     };
 
     const handleUpload = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['videos'],
-            allowsEditing: true,
-            exif: false,
-            aspect: [9, 16],
-            quality: 1,
-            selectionLimit: 1,
-            videoMaxDuration: 180,
-        });
+        try {
+            if(Platform.OS === 'android') {
+                const { status } = await MediaLibrary.getPermissionsAsync();
+                
+                if (status === 'undetermined') {
+                    const { status: newStatus } = await MediaLibrary.requestPermissionsAsync();
+                    
+                    if (newStatus !== 'granted') {
+                        Alert.alert(
+                            'Permission Required',
+                            'Please enable Photo Library access in your device settings to upload videos.',
+                            [
+                                { text: 'Cancel', style: 'cancel' },
+                                { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                            ],
+                        );
+                        return;
+                    }
+                } else if (status === 'denied') {
+                    Alert.alert(
+                        'Permission Required',
+                        'Please enable Photo Library access in your device settings to upload videos.',
+                        [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                        ],
+                    );
+                    return;
+                }
+            }
 
-        if (result.assets && result.assets.length > 0) {
-            router.push({
-                pathname: '/private/camera/preview',
-                params: { videoPath: result.assets[0].uri },
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['videos'],
+                allowsEditing: true,
+                exif: false,
+                aspect: [9, 16],
+                quality: 1,
+                selectionLimit: 1,
+                videoMaxDuration: 180,
             });
+
+            if (result.assets && result.assets.length > 0) {
+                router.push({
+                    pathname: '/private/camera/preview',
+                    params: { videoPath: result.assets[0].uri },
+                });
+            }
+        } catch (error) {
+            console.error('Error accessing media library:', error);
+            Alert.alert('Error', 'Failed to access photo library. Please try again.');
         }
     };
 
@@ -312,13 +365,13 @@ export default function CameraScreen() {
     if (!hasAllPermissions) {
         const permissionText =
             missingPermissions.length === 2
-                ? 'Camera and Microphone Access Required'
-                : `${missingPermissions[0]} Access Required`;
+                ? 'Camera and Microphone Access'
+                : `${missingPermissions[0]} Access`;
 
         const descriptionText =
             missingPermissions.length === 2
-                ? 'To record videos with audio, please grant camera and microphone permissions. You can change these in your device settings at any time.'
-                : `To record videos with audio, please grant ${missingPermissions[0].toLowerCase()} permission. You can change this in your device settings at any time.`;
+                ? 'This app needs access to your camera and microphone to record videos. You can manage these permissions in Settings at any time.'
+                : `This app needs access to your ${missingPermissions[0].toLowerCase()} to record videos. You can manage this permission in Settings at any time.`;
 
         return (
             <View style={styles.container}>
@@ -348,7 +401,7 @@ export default function CameraScreen() {
                             onPress={handleRequestPermission}
                             disabled={isRequestingPermission}>
                             <Text style={styles.permissionButtonText}>
-                                {isRequestingPermission ? 'Requesting...' : 'Enable Permissions'}
+                                {isRequestingPermission ? 'Loading...' : 'Continue'}
                             </Text>
                         </TouchableOpacity>
 
