@@ -1,6 +1,7 @@
 import Avatar from '@/components/Avatar';
 import LinkifiedCaption from '@/components/feed/LinkifiedCaption';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
+import { useAuthStore } from '@/utils/authStore';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -46,12 +47,15 @@ export default function VideoPlayer({
     const router = useRouter();
     const [playSensitive, setPlaySensitive] = useState(false);
     const controlsTimeoutRef = useRef(null);
+    const isMuted = useAuthStore((state) => state.isMuted);
+    const setIsMuted = useAuthStore((state) => state.setIsMuted);
 
     const playbackRate = videoPlaybackRates[item.id] || 1.0;
 
     const player = useVideoPlayer(item.media.src_url, (player) => {
         player.loop = true;
         player.playbackRate = playbackRate;
+        player.muted = isMuted
     });
 
     useEffect(() => {
@@ -115,6 +119,10 @@ export default function VideoPlayer({
         }
     }, [isActive]);
 
+    useEffect(() => {
+        player.muted = isMuted
+    }, [isMuted])
+
     const handleLike = () => {
         setIsLiked(!isLiked);
         onLike(item.id, !isLiked);
@@ -142,6 +150,10 @@ export default function VideoPlayer({
             console.log('Toggle play/pause error:', error);
         }
     };
+
+    const toggleMute = () => {
+        setIsMuted(!isMuted)
+    }
 
     const handleScreenPress = () => {
         if (!isMountedRef.current) {
@@ -242,9 +254,18 @@ export default function VideoPlayer({
                                 e?.stopPropagation?.();
                                 togglePlayPause();
                             }}
-                            style={styles.playButton}
+                            style={styles.controlButton}
                             activeOpacity={0.7}>
                             <Ionicons name={isPlaying ? 'pause' : 'play'} size={60} color="white" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={(e) => {
+                                e?.stopPropagation?.();
+                                toggleMute();
+                            }}
+                            style={[styles.controlButton, styles.muteButton]}
+                            activeOpacity={0.7}>
+                            <Ionicons name={isMuted ? 'volume-mute-outline' : 'volume-high-outline'} size={60} color="white" />
                         </TouchableOpacity>
                     </View>
                 )}
@@ -374,7 +395,7 @@ const styles = StyleSheet.create({
         zIndex: 10,
         elevation: 10,
     },
-    playButton: {
+    controlButton: {
         width: 80,
         height: 80,
         borderRadius: 40,
@@ -383,6 +404,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 11,
         elevation: 11,
+    },
+    muteButton: {
+        marginTop: 30
     },
     sensitiveOverlay: {
         ...StyleSheet.absoluteFillObject,
