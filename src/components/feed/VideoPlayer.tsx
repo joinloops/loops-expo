@@ -47,8 +47,8 @@ export default function VideoPlayer({
     const router = useRouter();
     const [playSensitive, setPlaySensitive] = useState(false);
     const controlsTimeoutRef = useRef(null);
-    const isMuted = useAuthStore((state) => state.isMuted);
     const setIsMuted = useAuthStore((state) => state.setIsMuted);
+    const isMuted = useAuthStore((state) => state.isMuted);
 
     const playbackRate = videoPlaybackRates[item.id] || 1.0;
 

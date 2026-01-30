@@ -8,6 +8,7 @@ import {
     fetchForYouFeed,
     fetchLocalFeed,
     getConfiguration,
+    getPreferences,
     recordImpression,
     videoBookmark,
     videoLike,
@@ -48,6 +49,7 @@ export default function LoopsFeed({ navigation }) {
     const insets = useSafeAreaInsets();
     const hideForYouFeed = useAuthStore((state) => state.hideForYouFeed);
     const defaultFeed = useAuthStore((state) => state.defaultFeed);
+    const setIsMuted = useAuthStore((state) => state.setIsMuted);
     const [activeTab, setActiveTab] = useState(defaultFeed);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedVideo, setSelectedVideo] = useState(null);
@@ -79,7 +81,14 @@ export default function LoopsFeed({ navigation }) {
         queryFn: getConfiguration,
     });
 
+    const { data: appPreferences, isLoading: isPreferencesLoading } = useQuery({
+        queryKey: ['appPreferences'],
+        queryFn: getPreferences,
+    });
+
     const forYouEnabled = appConfig?.fyf === true && !hideForYouFeed;
+
+    const muteOnOpen = appPreferences?.settings?.mute_on_open === true;
 
     useEffect(() => {
         if (!isConfigLoading && appConfig) {
@@ -88,6 +97,12 @@ export default function LoopsFeed({ navigation }) {
             }
         }
     }, [isConfigLoading, appConfig, forYouEnabled, activeTab]);
+
+    useEffect(() => {
+        if (appPreferences && !isPreferencesLoading) {
+            setIsMuted(muteOnOpen);
+        }
+    }, [appPreferences, isPreferencesLoading]);
 
     const recordVideoImpression = useCallback(
         async (video, duration) => {

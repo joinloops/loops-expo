@@ -33,6 +33,7 @@ type UserState = {
     syncPreferencesFromServer: () => Promise<void>;
     setHideForYouFeed: (value: boolean) => Promise<void>;
     setDefaultFeed: (feed: 'following' | 'local' | 'forYou') => Promise<void>;
+    setMuteOnOpen: (value: boolean) => Promise<void>;
     setIsMuted: (value: boolean) => Promise<void>;
     updatePreference: (key: string, value: any) => Promise<void>;
 };
@@ -179,6 +180,10 @@ export const useAuthStore = create(
 
             setDefaultFeed: async (feed: 'following' | 'local' | 'forYou') => {
                 await get().updatePreference('defaultFeed', feed);
+            },
+
+            setMuteOnOpen: async (value: boolean) => {
+                await get().updatePreference('muteOnOpen', value);
             },
 
             setIsMuted: async (value: boolean) => {
