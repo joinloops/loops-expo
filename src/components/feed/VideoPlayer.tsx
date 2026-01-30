@@ -241,7 +241,7 @@ export default function VideoPlayer({
     }
 
     function OnProgressBarTouchStart(event: GestureResponderEvent): void {
-
+        setShowControls(false)
         setShowDurationControl(true)
 
         player.pause();
@@ -265,7 +265,6 @@ export default function VideoPlayer({
     }
 
     function OnProgressBarTouchEnd(event: GestureResponderEvent): void {
-
         setShowDurationControl(false)
 
         player.play();
