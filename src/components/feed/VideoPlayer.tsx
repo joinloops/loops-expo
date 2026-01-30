@@ -2,22 +2,27 @@ import Avatar from '@/components/Avatar';
 import LinkifiedCaption from '@/components/feed/LinkifiedCaption';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { useAuthStore } from '@/utils/authStore';
+import { getTimer } from '@/utils/ui';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useEventListener } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     Dimensions,
+    GestureResponderEvent,
     Platform,
     Pressable,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const PROGRESS_BAR_HEIGHT = 15
 
 export default function VideoPlayer({
     item,
@@ -36,10 +41,12 @@ export default function VideoPlayer({
     navigation,
     onNavigate,
     tabBarHeight = 60,
+    onProgressionBarControlled
 }) {
     const [isLiked, setIsLiked] = useState(item.has_liked);
     const [isBookmarked, setIsBookmarked] = useState(item.has_bookmarked);
     const [showControls, setShowControls] = useState(false);
+    const [showDurationControl, setShowDurationControl] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const manualControlRef = useRef(false);
     const isMountedRef = useRef(true);
@@ -49,22 +56,28 @@ export default function VideoPlayer({
     const controlsTimeoutRef = useRef(null);
     const setIsMuted = useAuthStore((state) => state.setIsMuted);
     const isMuted = useAuthStore((state) => state.isMuted);
+    // Elapsed time progression in percent
+    const [elapsedTimeProgression, setElapsedTimeProgression] = useState<number>(0);
+    const [elapsedTime, setElapsedTime] = useState<string>("00:00");
 
     const playbackRate = videoPlaybackRates[item.id] || 1.0;
 
     const player = useVideoPlayer(item.media.src_url, (player) => {
         player.loop = true;
         player.playbackRate = playbackRate;
-        player.muted = isMuted
+        player.muted = isMuted;
+        player.timeUpdateEventInterval = 1;
     });
 
-    useEffect(() => {
-        isMountedRef.current = true;
+    const totalTime = getTimer(player.duration)
 
-        return () => {
-            isMountedRef.current = false;
-        };
-    }, []);
+    useEventListener(player, "timeUpdate", (payload) => {
+        if (isPlaying) {
+            const progression = payload.currentTime * 100 / player.duration
+            setElapsedTimeProgression(progression)
+            setElapsedTime(getTimer(player.currentTime))
+        }
+    });
 
     useEffect(() => {
         if (!player) return;
@@ -227,6 +240,40 @@ export default function VideoPlayer({
         );
     }
 
+    function OnProgressBarTouchStart(event: GestureResponderEvent): void {
+
+        setShowDurationControl(true)
+
+        player.pause();
+        setIsPlaying(false);
+
+        onProgressionBarControlled(true)
+    }
+
+    function onProgressBarTouchMove(event: GestureResponderEvent): void {
+        const newCurentTime = player.duration * event.nativeEvent.pageX / SCREEN_WIDTH
+        player.currentTime = newCurentTime
+
+        const progression = player.currentTime * 100 / player.duration
+        setElapsedTimeProgression(progression)
+
+        // Preview
+        player.play()
+        player.pause()
+
+        setElapsedTime(getTimer(player.currentTime))
+    }
+
+    function OnProgressBarTouchEnd(event: GestureResponderEvent): void {
+
+        setShowDurationControl(false)
+
+        player.play();
+        setIsPlaying(true);
+
+        onProgressionBarControlled(false)
+    }
+
     return (
         <View style={styles.videoContainer}>
             <View style={styles.videoWrapper}>
@@ -277,96 +324,121 @@ export default function VideoPlayer({
                 pointerEvents="none"
             />
 
-            <View style={[styles.rightActions, { bottom: bottomInset + tabBarHeight + 20 }]}>
-                <PressableHaptics
-                    style={styles.actionButton}
-                    onPress={() => router.push(`/private/profile/${item.account.id}`)}>
-                    <View style={styles.avatarContainer}>
-                        <Avatar url={item.account?.avatar} />
+            {!showDurationControl && (
+                <>
+                    <View style={[styles.rightActions, { bottom: bottomInset + tabBarHeight + 20 + PROGRESS_BAR_HEIGHT }]}>
+                        <PressableHaptics
+                            style={styles.actionButton}
+                            onPress={() => router.push(`/private/profile/${item.account.id}`)}>
+                            <View style={styles.avatarContainer}>
+                                <Avatar url={item.account?.avatar} />
+                            </View>
+                        </PressableHaptics>
+
+                        <PressableHaptics style={styles.actionButton} onPress={handleLike}>
+                            <Ionicons name={'heart'} size={35} color={isLiked ? '#FF2D55' : 'white'} />
+                            <Text style={styles.actionText}>
+                                {item.likes + (isLiked && !item.has_liked ? 1 : 0)}
+                            </Text>
+                        </PressableHaptics>
+
+                        <TouchableOpacity style={styles.actionButton} onPress={() => onComment(item)}>
+                            <Ionicons name="chatbubble" size={32} color="white" />
+                            {item.permissions?.can_comment && (
+                                <Text style={styles.actionText}>{item.comments}</Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.actionButton} onPress={handleBookmark}>
+                            <Ionicons
+                                name="bookmark"
+                                size={32}
+                                color={isBookmarked ? '#FF2D55' : 'white'}
+                            />
+                            <Text style={styles.actionText}>
+                                {item.bookmarks + (isBookmarked && !item.has_bookmarked ? 1 : 0)}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.actionButton} onPress={() => onShare(item)}>
+                            <Ionicons name="arrow-redo" size={32} color="white" />
+                            <Text style={styles.actionText}>{item.shares}</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.actionButton} onPress={() => onOther(item)}>
+                            <MaterialCommunityIcons name="dots-horizontal" size={32} color="white" />
+                        </TouchableOpacity>
                     </View>
-                </PressableHaptics>
 
-                <PressableHaptics style={styles.actionButton} onPress={handleLike}>
-                    <Ionicons name={'heart'} size={35} color={isLiked ? '#FF2D55' : 'white'} />
-                    <Text style={styles.actionText}>
-                        {item.likes + (isLiked && !item.has_liked ? 1 : 0)}
-                    </Text>
-                </PressableHaptics>
+                    <View style={[styles.bottomInfo, { bottom: bottomInset + tabBarHeight + 10 + PROGRESS_BAR_HEIGHT * 2 }]}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                onNavigate?.();
+                                router.push(`/private/profile/${item.account.id}`);
+                            }}>
+                            <Text style={styles.username}>@{item.account.username}</Text>
+                        </TouchableOpacity>
+                        {item.caption && (
+                            <LinkifiedCaption
+                                caption={item.caption}
+                                tags={item.tags || []}
+                                mentions={item.mentions || []}
+                                style={styles.caption}
+                                numberOfLines={1}
+                                onHashtagPress={(tag) => {
+                                    onNavigate?.();
+                                    router.push(`/private/search?query=${tag}`);
+                                }}
+                                onMentionPress={(username, profileId) => {
+                                    onNavigate?.();
+                                    router.push(`/private/profile/${profileId}`);
+                                }}
+                                onMorePress={() => onComment(item)}
+                            />
+                        )}
 
-                <TouchableOpacity style={styles.actionButton} onPress={() => onComment(item)}>
-                    <Ionicons name="chatbubble" size={32} color="white" />
-                    {item.permissions?.can_comment && (
-                        <Text style={styles.actionText}>{item.comments}</Text>
-                    )}
-                </TouchableOpacity>
+                        {item?.meta?.contains_ai && (
+                            <View>
+                                <View style={styles.aiLabelWrapper}>
+                                    <Text style={styles.aiLabelText}>Creator labeled as AI-generated</Text>
+                                </View>
+                            </View>
+                        )}
 
-                <TouchableOpacity style={styles.actionButton} onPress={handleBookmark}>
-                    <Ionicons
-                        name="bookmark"
-                        size={32}
-                        color={isBookmarked ? '#FF2D55' : 'white'}
-                    />
-                    <Text style={styles.actionText}>
-                        {item.bookmarks + (isBookmarked && !item.has_bookmarked ? 1 : 0)}
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.actionButton} onPress={() => onShare(item)}>
-                    <Ionicons name="arrow-redo" size={32} color="white" />
-                    <Text style={styles.actionText}>{item.shares}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.actionButton} onPress={() => onOther(item)}>
-                    <MaterialCommunityIcons name="dots-horizontal" size={32} color="white" />
-                </TouchableOpacity>
-            </View>
-
-            <View style={[styles.bottomInfo, { bottom: bottomInset + tabBarHeight + 10 }]}>
-                <TouchableOpacity
-                    onPress={() => {
-                        onNavigate?.();
-                        router.push(`/private/profile/${item.account.id}`);
-                    }}>
-                    <Text style={styles.username}>@{item.account.username}</Text>
-                </TouchableOpacity>
-                {item.caption && (
-                    <LinkifiedCaption
-                        caption={item.caption}
-                        tags={item.tags || []}
-                        mentions={item.mentions || []}
-                        style={styles.caption}
-                        numberOfLines={1}
-                        onHashtagPress={(tag) => {
-                            onNavigate?.();
-                            router.push(`/private/search?query=${tag}`);
-                        }}
-                        onMentionPress={(username, profileId) => {
-                            onNavigate?.();
-                            router.push(`/private/profile/${profileId}`);
-                        }}
-                        onMorePress={() => onComment(item)}
-                    />
-                )}
-
-                {item?.meta?.contains_ai && (
-                    <View>
-                        <View style={styles.aiLabelWrapper}>
-                            <Text style={styles.aiLabelText}>Creator labeled as AI-generated</Text>
+                        <View style={styles.audioInfo}>
+                            <Ionicons name="musical-notes" size={14} color="white" />
+                            <Text style={styles.audioText}>Original Audio</Text>
                         </View>
+                        {item?.meta?.contains_ad && (
+                            <View>
+                                <View style={styles.aiLabelWrapper}>
+                                    <Text style={styles.aiLabelText}>Sponsored</Text>
+                                </View>
+                            </View>
+                        )}
                     </View>
-                )}
+                </>
+            )}
 
-                <View style={styles.audioInfo}>
-                    <Ionicons name="musical-notes" size={14} color="white" />
-                    <Text style={styles.audioText}>Original Audio</Text>
+            {showDurationControl && (
+                <View style={[styles.durationControlOverlay, { bottom: bottomInset + tabBarHeight + 10 + PROGRESS_BAR_HEIGHT * 2 + 60 }]}>
+                    <Text style={styles.durationControlText}>{elapsedTime} / {totalTime}</Text>
                 </View>
-                {item?.meta?.contains_ad && (
-                    <View>
-                        <View style={styles.aiLabelWrapper}>
-                            <Text style={styles.aiLabelText}>Sponsored</Text>
-                        </View>
-                    </View>
-                )}
+            )}
+
+            <View style={[styles.progressSection, {
+                bottom: bottomInset + tabBarHeight + (showDurationControl ? 0 : 10) + 10,
+                height: PROGRESS_BAR_HEIGHT + (showDurationControl ? PROGRESS_BAR_HEIGHT : 0),
+            }]} onTouchStart={OnProgressBarTouchStart} onTouchMove={onProgressBarTouchMove} onTouchEnd={OnProgressBarTouchEnd}>
+                <View style={[styles.progressBarDot, {
+                    width: (showDurationControl ? PROGRESS_BAR_HEIGHT * 1.5 : PROGRESS_BAR_HEIGHT * 0.75),
+                    height: (showDurationControl ? PROGRESS_BAR_HEIGHT * 1.5 : PROGRESS_BAR_HEIGHT * 0.75),
+                    left: `${elapsedTimeProgression}%`,
+                    top: (showDurationControl ? PROGRESS_BAR_HEIGHT * 0.25 : PROGRESS_BAR_HEIGHT * 0.5),
+                }]}></View>
+                <View style={[styles.progressBar]}>
+                    <View style={[styles.progressBarValue, { width: `${elapsedTimeProgression}%` }]}></View>
+                </View>
             </View>
         </View>
     );
@@ -387,8 +459,20 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: '#000',
     },
+    durationControlOverlay: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+    },
+    durationControlText: {
+        fontSize: 40,
+        color: "white",
+        fontWeight: "bold"
+    },
     controlsOverlay: {
         ...StyleSheet.absoluteFillObject,
+        bottom: PROGRESS_BAR_HEIGHT,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.3)',
@@ -561,5 +645,31 @@ const styles = StyleSheet.create({
     aiLabelText: {
         color: '#ffffff',
         fontWeight: 500,
+    },
+    progressSection: {
+        position: 'absolute',
+        left: 12,
+        right: 12
+    },
+    progressBar: {
+        width: '100%',
+        height: '33.33%',
+        marginTop: PROGRESS_BAR_HEIGHT * 0.66,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 30,
+        zIndex: 15,
+    },
+    progressBarValue: {
+        height: "100%",
+        backgroundColor: 'rgba(255, 255, 255, 0.6)',
+        borderTopLeftRadius: 30,
+        borderBottomLeftRadius: 30
+    },
+    progressBarDot: {
+        borderRadius: 50,
+        backgroundColor: 'rgb(255, 255, 255)',
+        position: 'absolute',
+        bottom: 0,
+        marginLeft: -PROGRESS_BAR_HEIGHT * 0.25
     },
 });
