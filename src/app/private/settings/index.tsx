@@ -123,6 +123,12 @@ export default function SettingsScreen() {
                     onPress={() => router.push('/private/settings/content/feeds')}
                 />
                 <Divider />
+                <SettingsItem
+                    icon="play-outline"
+                    label="Videos"
+                    onPress={() => router.push('/private/settings/content/videos')}
+                />
+                <Divider />
                 {/* <SettingsItem icon="play-circle-outline" label="Playback" onPress={() => router.push('/private/settings/content/playback')} />
                 <Divider /> */}
                 {/* <Divider /> */}
