@@ -41,7 +41,7 @@ export default function VideoPlayer({
     navigation,
     onNavigate,
     tabBarHeight = 60,
-    onProgressionBarControlled
+    onTimelineControlled
 }) {
     const [isLiked, setIsLiked] = useState(item.has_liked);
     const [isBookmarked, setIsBookmarked] = useState(item.has_bookmarked);
@@ -240,17 +240,17 @@ export default function VideoPlayer({
         );
     }
 
-    function OnProgressBarTouchStart(event: GestureResponderEvent): void {
+    function OnTimelineTouchStart(event: GestureResponderEvent): void {
         setShowControls(false)
         setShowDurationControl(true)
 
         player.pause();
         setIsPlaying(false);
 
-        onProgressionBarControlled(true)
+        onTimelineControlled(true)
     }
 
-    function onProgressBarTouchMove(event: GestureResponderEvent): void {
+    function onTimelineTouchMove(event: GestureResponderEvent): void {
         const newCurentTime = player.duration * event.nativeEvent.pageX / SCREEN_WIDTH
         player.currentTime = newCurentTime
 
@@ -264,13 +264,13 @@ export default function VideoPlayer({
         setElapsedTime(getTimer(player.currentTime))
     }
 
-    function OnProgressBarTouchEnd(event: GestureResponderEvent): void {
+    function OnTimelineTouchEnd(event: GestureResponderEvent): void {
         setShowDurationControl(false)
 
         player.play();
         setIsPlaying(true);
 
-        onProgressionBarControlled(false)
+        onTimelineControlled(false)
     }
 
     return (
@@ -425,18 +425,18 @@ export default function VideoPlayer({
                 </View>
             )}
 
-            <View style={[styles.progressSection, {
+            <View style={[styles.timelineSection, {
                 bottom: bottomInset + tabBarHeight + (showDurationControl ? 0 : 10) + 10,
                 height: PROGRESS_BAR_HEIGHT + (showDurationControl ? PROGRESS_BAR_HEIGHT : 0),
-            }]} onTouchStart={OnProgressBarTouchStart} onTouchMove={onProgressBarTouchMove} onTouchEnd={OnProgressBarTouchEnd}>
-                <View style={[styles.progressBarDot, {
+            }]} onTouchStart={OnTimelineTouchStart} onTouchMove={onTimelineTouchMove} onTouchEnd={OnTimelineTouchEnd}>
+                <View style={[styles.timelineController, {
                     width: (showDurationControl ? PROGRESS_BAR_HEIGHT * 1.5 : PROGRESS_BAR_HEIGHT * 0.75),
                     height: (showDurationControl ? PROGRESS_BAR_HEIGHT * 1.5 : PROGRESS_BAR_HEIGHT * 0.75),
                     left: `${elapsedTimeProgression}%`,
                     top: (showDurationControl ? PROGRESS_BAR_HEIGHT * 0.25 : PROGRESS_BAR_HEIGHT * 0.5),
                 }]}></View>
-                <View style={[styles.progressBar]}>
-                    <View style={[styles.progressBarValue, { width: `${elapsedTimeProgression}%` }]}></View>
+                <View style={[styles.timeline]}>
+                    <View style={[styles.timelineValue, { width: `${elapsedTimeProgression}%` }]}></View>
                 </View>
             </View>
         </View>
@@ -645,12 +645,12 @@ const styles = StyleSheet.create({
         color: '#ffffff',
         fontWeight: 500,
     },
-    progressSection: {
+    timelineSection: {
         position: 'absolute',
         left: 12,
         right: 12
     },
-    progressBar: {
+    timeline: {
         width: '100%',
         height: '33.33%',
         marginTop: PROGRESS_BAR_HEIGHT * 0.66,
@@ -658,13 +658,13 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         zIndex: 15,
     },
-    progressBarValue: {
+    timelineValue: {
         height: "100%",
         backgroundColor: 'rgba(255, 255, 255, 0.6)',
         borderTopLeftRadius: 30,
         borderBottomLeftRadius: 30
     },
-    progressBarDot: {
+    timelineController: {
         borderRadius: 50,
         backgroundColor: 'rgb(255, 255, 255)',
         position: 'absolute',

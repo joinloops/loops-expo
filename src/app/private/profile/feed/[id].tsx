@@ -39,7 +39,7 @@ export default function ProfileFeed({navigation}) {
     const muteOnOpen = useAuthStore((state) => state.muteOnOpen)
     const flatListRef = useRef(null);
     const router = useRouter();
-    const [progressionBarIsControlled, setProgressionBarIsControlled] = useState<boolean>(false);
+    const [timelineIsControlled, setTimelineIsControlled] = useState<boolean>(false);
 
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 50,
@@ -173,7 +173,7 @@ export default function ProfileFeed({navigation}) {
             videoPlaybackRates={videoPlaybackRates}
             navigation={navigation}
             onNavigate={handleNavigate}
-            onProgressionBarControlled={setProgressionBarIsControlled}
+            onTimelineControlled={setTimelineIsControlled}
             tabBarHeight={0}
         />
     ), [currentIndex, insets.bottom, showComments, showShare, showOther, selectedVideo, screenFocused, videoPlaybackRates, navigation]);
@@ -224,7 +224,7 @@ export default function ProfileFeed({navigation}) {
                 renderItem={renderItem}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 pagingEnabled
-                scrollEnabled={!progressionBarIsControlled}
+                scrollEnabled={!timelineIsControlled}
                 showsVerticalScrollIndicator={false}
                 snapToInterval={SCREEN_HEIGHT}
                 snapToAlignment="start"

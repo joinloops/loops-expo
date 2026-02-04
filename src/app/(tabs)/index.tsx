@@ -62,7 +62,7 @@ export default function LoopsFeed({ navigation }) {
     const router = useRouter();
     const currentVideoRef = useRef(null);
     const watchStartTimeRef = useRef(null);
-    const [progressionBarIsControlled, setProgressionBarIsControlled] = useState<boolean>(false);
+    const [timelineIsControlled, setTimelineIsControlled] = useState<boolean>(false);
 
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 50,
@@ -286,7 +286,7 @@ export default function LoopsFeed({ navigation }) {
                     navigation={navigation}
                     onNavigate={handleNavigate}
                     tabBarHeight={TAB_BAR_HEIGHT}
-                    onProgressionBarControlled={setProgressionBarIsControlled}
+                    onTimelineControlled={setTimelineIsControlled}
                 />
             );
         },
@@ -412,7 +412,7 @@ export default function LoopsFeed({ navigation }) {
                 disableIntervalMomentum
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 pagingEnabled
-                scrollEnabled={!progressionBarIsControlled}
+                scrollEnabled={!timelineIsControlled}
                 showsVerticalScrollIndicator={false}
                 snapToInterval={SCREEN_HEIGHT}
                 snapToAlignment="start"
