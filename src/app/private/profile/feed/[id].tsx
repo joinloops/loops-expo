@@ -36,7 +36,6 @@ export default function ProfileFeed({navigation}) {
     const [showOther, setShowOther] = useState(false);
     const [videoPlaybackRates, setVideoPlaybackRates] = useState({});
     const [screenFocused, setScreenFocused] = useState(true);
-    const muteOnOpen = useAuthStore((state) => state.muteOnOpen)
     const flatListRef = useRef(null);
     const router = useRouter();
     const [timelineIsControlled, setTimelineIsControlled] = useState<boolean>(false);
