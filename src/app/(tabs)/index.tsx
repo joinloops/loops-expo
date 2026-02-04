@@ -409,6 +409,7 @@ export default function LoopsFeed({ navigation }) {
                 ref={flatListRef}
                 data={videosWithEnd}
                 renderItem={renderItem}
+                disableIntervalMomentum
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 pagingEnabled
                 scrollEnabled={!progressionBarIsControlled}

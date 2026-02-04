@@ -220,6 +220,7 @@ export default function ProfileFeed({navigation}) {
             <FlatList
                 ref={flatListRef}
                 data={videos}
+                disableIntervalMomentum
                 renderItem={renderItem}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 pagingEnabled
