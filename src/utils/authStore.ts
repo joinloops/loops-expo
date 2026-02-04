@@ -17,6 +17,7 @@ type UserState = {
     autoplayVideos: boolean;
     loopVideos: boolean;
     muteOnOpen: boolean;
+    isMuted: boolean;
     autoExpandCw: boolean;
     appearance: 'light' | 'dark' | 'system';
     loginWithOAuth: (server: string, scopes?: string) => Promise<boolean>;
@@ -32,6 +33,8 @@ type UserState = {
     syncPreferencesFromServer: () => Promise<void>;
     setHideForYouFeed: (value: boolean) => Promise<void>;
     setDefaultFeed: (feed: 'following' | 'local' | 'forYou') => Promise<void>;
+    setMuteOnOpen: (value: boolean) => Promise<void>;
+    setIsMuted: (value: boolean) => Promise<void>;
     updatePreference: (key: string, value: any) => Promise<void>;
 };
 
@@ -49,6 +52,7 @@ export const useAuthStore = create(
             autoplayVideos: true,
             loopVideos: true,
             muteOnOpen: false,
+            isMuted: false,
             autoExpandCw: false,
             appearance: 'light',
 
@@ -178,6 +182,17 @@ export const useAuthStore = create(
                 await get().updatePreference('defaultFeed', feed);
             },
 
+            setMuteOnOpen: async (value: boolean) => {
+                await get().updatePreference('muteOnOpen', value);
+            },
+
+            setIsMuted: async (value: boolean) => {
+                set((state) => ({
+                    ...state,
+                    isMuted: value
+                }));
+            },
+
             setUser: (user: LoopsUser, server: string) => {
                 set((state) => ({
                     ...state,
@@ -212,6 +227,7 @@ export const useAuthStore = create(
                     autoplayVideos: true,
                     loopVideos: true,
                     muteOnOpen: false,
+                    isMuted: false,
                     autoExpandCw: false,
                     appearance: 'light',
                 });

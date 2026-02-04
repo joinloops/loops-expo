@@ -37,6 +37,7 @@ export default function ProfileFeed({navigation}) {
     const [screenFocused, setScreenFocused] = useState(true);
     const flatListRef = useRef(null);
     const router = useRouter();
+    const [timelineIsControlled, setTimelineIsControlled] = useState<boolean>(false);
 
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 50,
@@ -170,6 +171,7 @@ export default function ProfileFeed({navigation}) {
             videoPlaybackRates={videoPlaybackRates}
             navigation={navigation}
             onNavigate={handleNavigate}
+            onTimelineControlledChanged={setTimelineIsControlled}
             tabBarHeight={0}
         />
     ), [currentIndex, insets.bottom, showComments, showShare, showOther, selectedVideo, screenFocused, videoPlaybackRates, navigation]);
@@ -216,9 +218,11 @@ export default function ProfileFeed({navigation}) {
             <FlatList
                 ref={flatListRef}
                 data={videos}
+                disableIntervalMomentum
                 renderItem={renderItem}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 pagingEnabled
+                scrollEnabled={!timelineIsControlled}
                 showsVerticalScrollIndicator={false}
                 snapToInterval={SCREEN_HEIGHT}
                 snapToAlignment="start"

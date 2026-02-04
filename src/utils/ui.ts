@@ -49,9 +49,9 @@ export function prettyCount(
     opts?: { precision?: number; rounding?: 'round' | 'floor' | 'ceil' },
 ): string {
     const num = typeof n === 'string' ? parseFloat(n) : n;
-    
+
     if (!Number.isFinite(num) || isNaN(num)) return '0';
-    
+
     const abs = Math.abs(num);
     const sign = num < 0 ? '-' : '';
     const precision = opts?.precision ?? 0;
@@ -101,16 +101,16 @@ export function timeAgo(input: Date | number | string, now?: Date | number): str
     if (h < 24) {
         if (s < 5) return 'now';
         if (s < 60) return `${s}s`;
-        
+
         const m = Math.floor(s / 60);
         if (m < 60) return `${m}m`;
-        
+
         return `${h}h`;
     }
 
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
     const month = months[d.getMonth()];
     const day = d.getDate();
     const year = d.getFullYear();
@@ -119,7 +119,7 @@ export function timeAgo(input: Date | number | string, now?: Date | number): str
     if (year === currentYear) {
         return `${month} ${day}`;
     }
-    
+
     return `${month} ${day}, ${year}`;
 }
 
@@ -180,6 +180,32 @@ export function toISODate(input: Date | number | string): string {
     return `${y}-${m}-${day}`;
 }
 
+/**
+ * Adding a zero to the left of the digits to get a two-digit number
+ * @example
+ * strPadLeft(1) -> "01"
+ * strPadLeft(20) -> "20"
+* */
+export function strPadLeft(value: number) {
+    return value.toString().padStart(2, '0');
+}
+
+/**
+ * Convert seconds to minutes and seconds
+ * @param totalSeconds 
+ * @returns timer format MM:SS
+ * @example
+ * convertSecondsToTimeString(90) -> "01:30"
+ * convertSecondsToTimeString(20) -> "00:20"
+ */
+export function convertSecondsToTimeString(totalSeconds: number): string {
+    const minutes = Math.floor(totalSeconds / 60);
+    let seconds = totalSeconds - minutes * 60;
+    seconds = Math.floor(seconds)
+    const videoDuration = strPadLeft(minutes) + ':' + strPadLeft(seconds);
+    return videoDuration
+}
+
 export default {
     truncate,
     prettyCount,
@@ -189,4 +215,5 @@ export default {
     startOfDay,
     endOfDay,
     toISODate,
+    convertSecondsToTimeString
 };
