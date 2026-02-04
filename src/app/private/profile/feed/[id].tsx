@@ -2,7 +2,6 @@ import CommentsModal from '@/components/feed/CommentsModal';
 import OtherModal from '@/components/feed/OtherModal';
 import ShareModal from '@/components/feed/ShareModal';
 import VideoPlayer from '@/components/feed/VideoPlayer';
-import { useAuthStore } from '@/utils/authStore';
 import { fetchUserVideoCursor, videoBookmark, videoLike, videoUnbookmark, videoUnlike } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -172,7 +171,7 @@ export default function ProfileFeed({navigation}) {
             videoPlaybackRates={videoPlaybackRates}
             navigation={navigation}
             onNavigate={handleNavigate}
-            onTimelineControlled={setTimelineIsControlled}
+            onTimelineControlledChanged={setTimelineIsControlled}
             tabBarHeight={0}
         />
     ), [currentIndex, insets.bottom, showComments, showShare, showOther, selectedVideo, screenFocused, videoPlaybackRates, navigation]);

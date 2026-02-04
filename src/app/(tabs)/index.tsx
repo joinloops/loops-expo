@@ -286,7 +286,7 @@ export default function LoopsFeed({ navigation }) {
                     navigation={navigation}
                     onNavigate={handleNavigate}
                     tabBarHeight={TAB_BAR_HEIGHT}
-                    onTimelineControlled={setTimelineIsControlled}
+                    onTimelineControlledChanged={setTimelineIsControlled}
                 />
             );
         },

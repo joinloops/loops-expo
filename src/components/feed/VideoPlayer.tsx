@@ -41,7 +41,7 @@ export default function VideoPlayer({
     navigation,
     onNavigate,
     tabBarHeight = 60,
-    onTimelineControlled
+    onTimelineControlledChanged
 }) {
     const [isLiked, setIsLiked] = useState(item.has_liked);
     const [isBookmarked, setIsBookmarked] = useState(item.has_bookmarked);
@@ -247,7 +247,7 @@ export default function VideoPlayer({
         player.pause();
         setIsPlaying(false);
 
-        onTimelineControlled(true)
+        onTimelineControlledChanged(true)
     }
 
     function onTimelineTouchMove(event: GestureResponderEvent): void {
@@ -270,7 +270,7 @@ export default function VideoPlayer({
         player.play();
         setIsPlaying(true);
 
-        onTimelineControlled(false)
+        onTimelineControlledChanged(false)
     }
 
     return (
