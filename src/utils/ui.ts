@@ -195,10 +195,10 @@ export function strPadLeft(value: number) {
  * @param totalSeconds 
  * @returns timer format MM:SS
  * @example
- * getTimer(90) -> "01:30"
- * getTimer(20) -> "00:20"
+ * convertSecondsToTimeString(90) -> "01:30"
+ * convertSecondsToTimeString(20) -> "00:20"
  */
-export function getTimer(totalSeconds: number): string {
+export function convertSecondsToTimeString(totalSeconds: number): string {
     const minutes = Math.floor(totalSeconds / 60);
     let seconds = totalSeconds - minutes * 60;
     seconds = Math.floor(seconds)
@@ -215,5 +215,5 @@ export default {
     startOfDay,
     endOfDay,
     toISODate,
-    getTimer
+    convertSecondsToTimeString
 };

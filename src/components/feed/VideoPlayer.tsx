@@ -2,7 +2,7 @@ import Avatar from '@/components/Avatar';
 import LinkifiedCaption from '@/components/feed/LinkifiedCaption';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { useAuthStore } from '@/utils/authStore';
-import { getTimer } from '@/utils/ui';
+import { convertSecondsToTimeString } from '@/utils/ui';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEventListener } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -69,13 +69,13 @@ export default function VideoPlayer({
         player.timeUpdateEventInterval = 1;
     });
 
-    const totalTime = getTimer(player.duration)
+    const totalTime = convertSecondsToTimeString(player.duration)
 
     useEventListener(player, "timeUpdate", (payload) => {
         if (isPlaying) {
             const progression = payload.currentTime * 100 / player.duration
             setElapsedTimeProgression(progression)
-            setElapsedTime(getTimer(player.currentTime))
+            setElapsedTime(convertSecondsToTimeString(player.currentTime))
         }
     });
 
@@ -261,7 +261,7 @@ export default function VideoPlayer({
         player.play()
         player.pause()
 
-        setElapsedTime(getTimer(player.currentTime))
+        setElapsedTime(convertSecondsToTimeString(player.currentTime))
     }
 
     function OnTimelineTouchEnd(event: GestureResponderEvent): void {
