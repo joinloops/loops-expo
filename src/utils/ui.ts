@@ -187,7 +187,7 @@ export function toISODate(input: Date | number | string): string {
  * strPadLeft(20) -> "20"
 * */
 export function strPadLeft(value: number) {
-    return (new Array(2 + 1).join('0') + value).slice(-2);
+    return value.toString().padStart(2, '0');
 }
 
 /**
