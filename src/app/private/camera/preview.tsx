@@ -1,6 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
+import { XStack } from '@/components/ui/Stack';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useEventListener } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as MediaLibrary from 'expo-media-library';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -16,6 +18,8 @@ export default function PreviewScreen() {
     const { videoPath, duration, isUpload } = params;
     const [selectedSound, setSelectedSound] = useState('');
     const [isPlaying, setIsPlaying] = useState(true);
+    const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
+    const [isSaving, setIsSaving] = useState(false);
 
     const player = useVideoPlayer(videoPath as string, (player) => {
         player.loop = true;
@@ -63,6 +67,26 @@ export default function PreviewScreen() {
         setIsPlaying(!isPlaying);
     };
 
+    const handleDownload = async () => {
+        if (!mediaPermission?.granted) {
+            const { granted } = await requestMediaPermission();
+            if (!granted) {
+                Alert.alert('Permission Required', 'Please allow access to your camera roll to save videos.');
+                return;
+            }
+        }
+
+        try {
+            setIsSaving(true);
+            await MediaLibrary.saveToLibraryAsync(videoPath as string);
+            Alert.alert('Saved!', 'Video saved to your camera roll.');
+        } catch (e) {
+            Alert.alert('Error', 'Failed to save video.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <View style={styles.container}>
             <StatusBar style="light" />
@@ -106,12 +130,26 @@ export default function PreviewScreen() {
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.rightControls}></View>
+            <View style={styles.rightControls} />
 
             <View style={styles.bottomContainer}>
-                <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
-                    <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
-                </TouchableOpacity>
+                <XStack gap={"$3"}>
+                    <TouchableOpacity 
+                        accessible={true}
+                        accessibilityLabel="Play and pause button" 
+                        onPress={togglePlayPause} 
+                        style={styles.controlButton}>
+                        <Feather name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        accessible={true}
+                        accessibilityLabel="Download video button" 
+                        onPress={handleDownload} 
+                        style={styles.controlButton}
+                        disabled={isSaving}>
+                    <Feather name={isSaving ? 'loader' : 'download'} size={28} color="#fff" />
+                      </TouchableOpacity>
+                </XStack>
 
                 <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
                     <Text style={styles.nextButtonText}>Next</Text>
