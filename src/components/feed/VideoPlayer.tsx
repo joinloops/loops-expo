@@ -151,7 +151,6 @@ export default function VideoPlayer({
         const newShowControls = !showControls;
         setShowControls(newShowControls);
 
-        // Clear any existing timeout
         if (controlsTimeoutRef.current) {
             clearTimeout(controlsTimeoutRef.current);
             controlsTimeoutRef.current = null;
@@ -180,6 +179,9 @@ export default function VideoPlayer({
     const handleViewSensitiveContent = () => {
         setPlaySensitive(true);
     };
+
+    const likeCount = item.likes + (isLiked && !item.has_liked ? 1 : 0);
+    const bookmarkCount = item.bookmarks + (isBookmarked && !item.has_bookmarked ? 1 : 0);
 
     if (item.is_sensitive && !playSensitive) {
         return (
@@ -225,7 +227,7 @@ export default function VideoPlayer({
                     nativeControls={false}
                     accessible={true}
                     accessibilityLabel={item.media.alt_text || 'Video content'}
-                    accessibilityHint="Double tap to play or pause"
+                    accessibilityHint="Tap to show playback controls"
                     contentFit="contain"
                 />
 
@@ -233,6 +235,10 @@ export default function VideoPlayer({
                     style={StyleSheet.absoluteFill}
                     onPress={() => handleScreenPress()}
                     disabled={showControls}
+                    accessible={true}
+                    accessibilityLabel="Video"
+                    accessibilityHint="Tap to show playback controls"
+                    accessibilityRole="button"
                 />
 
                 {showControls && (
@@ -243,7 +249,11 @@ export default function VideoPlayer({
                                 togglePlayPause();
                             }}
                             style={styles.playButton}
-                            activeOpacity={0.7}>
+                            activeOpacity={0.7}
+                            accessible={true}
+                            accessibilityLabel={isPlaying ? 'Pause video' : 'Play video'}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: isPlaying }}>
                             <Ionicons name={isPlaying ? 'pause' : 'play'} size={60} color="white" />
                         </TouchableOpacity>
                     </View>
@@ -259,43 +269,85 @@ export default function VideoPlayer({
             <View style={[styles.rightActions, { bottom: bottomInset + tabBarHeight + 20 }]}>
                 <PressableHaptics
                     style={styles.actionButton}
-                    onPress={() => router.push(`/private/profile/${item.account.id}`)}>
+                    onPress={() => router.push(`/private/profile/${item.account.id}`)}
+                    accessible={true}
+                    accessibilityLabel={`View ${item.account.username}'s profile`}
+                    accessibilityRole="button">
                     <View style={styles.avatarContainer}>
                         <Avatar url={item.account?.avatar} />
                     </View>
                 </PressableHaptics>
 
-                <PressableHaptics style={styles.actionButton} onPress={handleLike}>
+                <PressableHaptics
+                    style={styles.actionButton}
+                    onPress={handleLike}
+                    accessible={true}
+                    accessibilityLabel={isLiked ? `Unlike. ${likeCount} likes` : `Like. ${likeCount} likes`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isLiked }}>
                     <Ionicons name={'heart'} size={35} color={isLiked ? '#FF2D55' : 'white'} />
-                    <Text style={styles.actionText}>
-                        {item.likes + (isLiked && !item.has_liked ? 1 : 0)}
+                    <Text style={styles.actionText} accessibilityElementsHidden={true}>
+                        {likeCount}
                     </Text>
                 </PressableHaptics>
 
-                <TouchableOpacity style={styles.actionButton} onPress={() => onComment(item)}>
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => onComment(item)}
+                    accessible={true}
+                    accessibilityLabel={
+                        item.permissions?.can_comment
+                            ? `Comments. ${item.comments} comments`
+                            : 'Comments are disabled'
+                    }
+                    accessibilityRole="button">
                     <Ionicons name="chatbubble" size={32} color="white" />
                     {item.permissions?.can_comment && (
-                        <Text style={styles.actionText}>{item.comments}</Text>
+                        <Text style={styles.actionText} accessibilityElementsHidden={true}>
+                            {item.comments}
+                        </Text>
                     )}
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionButton} onPress={handleBookmark}>
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={handleBookmark}
+                    accessible={true}
+                    accessibilityLabel={
+                        isBookmarked
+                            ? `Remove bookmark. ${bookmarkCount} bookmarks`
+                            : `Bookmark. ${bookmarkCount} bookmarks`
+                    }
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isBookmarked }}>
                     <Ionicons
                         name="bookmark"
                         size={32}
                         color={isBookmarked ? '#FF2D55' : 'white'}
                     />
-                    <Text style={styles.actionText}>
-                        {item.bookmarks + (isBookmarked && !item.has_bookmarked ? 1 : 0)}
+                    <Text style={styles.actionText} accessibilityElementsHidden={true}>
+                        {bookmarkCount}
                     </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionButton} onPress={() => onShare(item)}>
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => onShare(item)}
+                    accessible={true}
+                    accessibilityLabel={`Share. ${item.shares} shares`}
+                    accessibilityRole="button">
                     <Ionicons name="arrow-redo" size={32} color="white" />
-                    <Text style={styles.actionText}>{item.shares}</Text>
+                    <Text style={styles.actionText} accessibilityElementsHidden={true}>
+                        {item.shares}
+                    </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionButton} onPress={() => onOther(item)}>
+                <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => onOther(item)}
+                    accessible={true}
+                    accessibilityLabel="More options"
+                    accessibilityRole="button">
                     <MaterialCommunityIcons name="dots-horizontal" size={32} color="white" />
                 </TouchableOpacity>
             </View>
@@ -305,7 +357,10 @@ export default function VideoPlayer({
                     onPress={() => {
                         onNavigate?.();
                         router.push(`/private/profile/${item.account.id}`);
-                    }}>
+                    }}
+                    accessible={true}
+                    accessibilityLabel={`View @${item.account.username}'s profile`}
+                    accessibilityRole="link">
                     <Text style={styles.username}>@{item.account.username}</Text>
                 </TouchableOpacity>
                 {item.caption && (
@@ -329,19 +384,32 @@ export default function VideoPlayer({
 
                 {item?.meta?.contains_ai && (
                     <View>
-                        <View style={styles.aiLabelWrapper}>
+                        <View
+                            style={styles.aiLabelWrapper}
+                            accessible={true}
+                            accessibilityLabel="Creator labeled this as AI-generated content"
+                            accessibilityRole="text">
                             <Text style={styles.aiLabelText}>Creator labeled as AI-generated</Text>
                         </View>
                     </View>
                 )}
 
-                <View style={styles.audioInfo}>
-                    <Ionicons name="musical-notes" size={14} color="white" />
+                <View
+                    style={styles.audioInfo}
+                    accessible={true}
+                    accessibilityLabel="Original Audio"
+                    accessibilityRole="text">
+                    <Ionicons name="musical-notes" size={14} color="white" importantForAccessibility="no" />
                     <Text style={styles.audioText}>Original Audio</Text>
                 </View>
+
                 {item?.meta?.contains_ad && (
                     <View>
-                        <View style={styles.aiLabelWrapper}>
+                        <View
+                            style={styles.aiLabelWrapper}
+                            accessible={true}
+                            accessibilityLabel="Sponsored content"
+                            accessibilityRole="text">
                             <Text style={styles.aiLabelText}>Sponsored</Text>
                         </View>
                     </View>
@@ -455,7 +523,7 @@ const styles = StyleSheet.create({
                             offsetX: 0,
                             offsetY: 2,
                             standardDeviation: '3px',
-                            color: '#0000004D', // 30% opacity
+                            color: '#0000004D',
                         },
                     },
                 ],
