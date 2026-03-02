@@ -69,8 +69,8 @@ export default function AppearanceScreen() {
 
     const RadioButton = ({ selected }: { selected: boolean }) => (
         <View
-            style={tw`w-6 h-6 rounded-full border-2 ${selected ? 'border-red-500' : 'border-gray-300'} items-center justify-center`}>
-            {selected && <View style={tw`w-3.5 h-3.5 rounded-full bg-red-500`} />}
+            style={tw`w-6 h-6 rounded-full border-2 ${selected ? 'border-[#F02C56]' : 'border-gray-300'} items-center justify-center`}>
+            {selected && <View style={tw`w-3.5 h-3.5 rounded-full bg-[#F02C56]`} />}
         </View>
     );
 

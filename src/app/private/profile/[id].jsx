@@ -43,7 +43,7 @@ const EmptyVideos = memo(({ activeTab }) => (
 
 const LoadingIndicator = memo(() => (
     <YStack paddingY="$8" alignItems="center">
-        <ActivityIndicator size="large" color="#FE2C55" />
+        <ActivityIndicator size="large" color="#F02C56" />
     </YStack>
 ));
 
@@ -296,7 +296,7 @@ export default function ProfileScreen() {
                         ),
                     }}
                 />
-                <ActivityIndicator size="large" color="#FE2C55" />
+                <ActivityIndicator size="large" color="#F02C56" />
             </View>
         );
     }

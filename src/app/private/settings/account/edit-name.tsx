@@ -57,7 +57,7 @@ export default function EditNameScreen() {
                             <Text
                                 style={[
                                     tw`text-base font-semibold`,
-                                    name.trim() ? tw`text-blue-500` : tw`text-gray-400`,
+                                    name.trim() ? tw`text-[#F02C56]` : tw`text-gray-400`,
                                 ]}>
                                 Save
                             </Text>

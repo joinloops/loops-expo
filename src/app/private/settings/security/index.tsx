@@ -176,7 +176,7 @@ export default function SecurityScreen() {
                     isActive={cameraPermission === 'granted'}
                     inactiveText={getPermissionLabel(cameraPermission)}
                     onPress={handleCameraPermission}
-                    activeIconColor="#10b981"
+                    activeIconColor="#F02C56"
                 />
                 <Divider />
                 <SettingsStatusItem
@@ -185,7 +185,7 @@ export default function SecurityScreen() {
                     isActive={microphonePermission === 'granted'}
                     inactiveText={getPermissionLabel(microphonePermission)}
                     onPress={handleMicrophonePermission}
-                    activeIconColor="#10b981"
+                    activeIconColor="#F02C56"
                 />
                 <Divider />
                 <SettingsStatusItem
@@ -194,7 +194,7 @@ export default function SecurityScreen() {
                     isActive={photosPermission === 'granted'}
                     inactiveText={getPermissionLabel(photosPermission)}
                     onPress={handlePhotosPermission}
-                    activeIconColor="#10b981"
+                    activeIconColor="#F02C56"
                 />
             </ScrollView>
         </View>
