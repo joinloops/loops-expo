@@ -129,7 +129,8 @@ const SuggestedAccountCard = ({
                     onPress={() => onFollow(account.id)}
                     disabled={isFollowing || isHiding}
                     style={({ pressed }) => [
-                        tw`bg-red-500 rounded-2xl px-6 py-2`,
+                        tw`rounded-2xl px-6 py-2`,
+                        { backgroundColor: '#F02C56' },
                         (pressed || isFollowing) && tw`opacity-70`,
                     ]}>
                     {isFollowing ? (
@@ -297,7 +298,7 @@ export default function NotificationScreen() {
             id: 'activity',
             icon: 'notifications' as const,
             iconColor: '#FFFFFF',
-            iconBgColor: '#FF2C55',
+            iconBgColor: '#F02C56',
             title: 'Activities',
             subtitle: latestNotifications.activity
                 ? getNotificationMessage(latestNotifications.activity)

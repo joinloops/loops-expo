@@ -225,7 +225,7 @@ export default function BirthdateSettingsScreen() {
                                 )}
 
                                 <Pressable
-                                    style={tw`bg-blue-500 rounded-full py-4 px-6 items-center ${
+                                    style={tw`bg-[#F02C56] rounded-full py-4 px-6 items-center ${
                                         updateBirthdateMutation.isPending ? 'opacity-50' : ''
                                     }`}
                                     onPress={handleSetBirthdate}

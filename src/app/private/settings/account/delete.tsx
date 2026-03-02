@@ -17,7 +17,6 @@ import {
 } from 'react-native';
 import tw from 'twrnc';
 
-
 export default function DeleteAccountScreen() {
     const { logOut } = useAuthStore();
     const [password, setPassword] = useState('');
@@ -55,11 +54,14 @@ export default function DeleteAccountScreen() {
                         onPress: () => performLogOut(),
                     },
                 ],
-                { cancelable: false }
+                { cancelable: false },
             );
         },
         onError: (error) => {
-            const errorMessage = error.response?.data?.message || error.message || 'Failed to delete account. Please try again.';
+            const errorMessage =
+                error.response?.data?.message ||
+                error.message ||
+                'Failed to delete account. Please try again.';
             setPasswordError(errorMessage);
             Alert.alert('Error', errorMessage);
         },
@@ -67,7 +69,7 @@ export default function DeleteAccountScreen() {
 
     const handleDelete = useCallback(() => {
         setPasswordError('');
-        
+
         Alert.alert(
             'Delete Account?',
             'This action cannot be undone. Your account and all associated data will be permanently deleted.',
@@ -81,7 +83,7 @@ export default function DeleteAccountScreen() {
                     style: 'destructive',
                     onPress: () => mutation.mutate({ password: password }),
                 },
-            ]
+            ],
         );
     }, [mutation, password]);
 
@@ -103,7 +105,8 @@ export default function DeleteAccountScreen() {
                 style={tw`flex-1`}>
                 <ScrollView style={tw`flex-1`} contentContainerStyle={tw`p-5`}>
                     <View style={tw`bg-red-50 dark:bg-red-950 p-4 rounded-lg mb-6`}>
-                        <Text style={tw`text-red-800 dark:text-red-200 font-semibold text-base mb-2`}>
+                        <Text
+                            style={tw`text-red-800 dark:text-red-200 font-semibold text-base mb-2`}>
                             Warning: This action is permanent
                         </Text>
                         <Text style={tw`text-red-700 dark:text-red-300 text-sm`}>
@@ -169,9 +172,7 @@ export default function DeleteAccountScreen() {
                             </Pressable>
                         </View>
                         {passwordError ? (
-                            <Text style={tw`text-red-500 text-sm mt-2`}>
-                                {passwordError}
-                            </Text>
+                            <Text style={tw`text-red-500 text-sm mt-2`}>{passwordError}</Text>
                         ) : null}
                     </View>
 
@@ -200,7 +201,7 @@ export default function DeleteAccountScreen() {
                             Changed your mind?
                         </Text>
                         <Pressable onPress={() => router.back()}>
-                            <Text style={tw`text-blue-500 text-base font-medium`}>
+                            <Text style={tw`text-[#F02C56] text-base font-medium`}>
                                 Keep My Account
                             </Text>
                         </Pressable>

@@ -249,10 +249,10 @@ export default function PasswordChangeScreen() {
                         onPress={handleSubmit}
                         disabled={!isFormValid || updatePasswordMutation.isPending}
                         style={({ pressed }) => [
-                            tw`bg-blue-600 rounded-lg py-4 items-center`,
+                            tw`bg-[#F02C56] rounded-lg py-4 items-center`,
                             (!isFormValid || updatePasswordMutation.isPending) &&
-                                tw`bg-gray-400 dark:bg-gray-900 opacity-50`,
-                            pressed && isFormValid && tw`bg-blue-700`,
+                                tw`bg-gray-400 dark:bg-gray-800 opacity-50`,
+                            pressed && isFormValid && tw`opacity-70`,
                         ]}>
                         {updatePasswordMutation.isPending ? (
                             <ActivityIndicator color="#fff" />
