@@ -16,6 +16,7 @@ const DEFAULT_FALLBACK_URL = 'https://loopsusercontent.com/avatars/default.jpg?v
 
 // Built-in theme presets.
 const THEMES = {
+    tab: { size: 24, radius: 9999, borderWidth: 0, borderColor: '#101828' },
     sm: { size: 32, radius: 9999, borderWidth: 0, borderColor: 'transparent' },
     md: { size: 40, radius: 9999, borderWidth: 0, borderColor: 'transparent' },
     lg: { size: 56, radius: 9999, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' },
