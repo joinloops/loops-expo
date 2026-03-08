@@ -6,7 +6,7 @@ import { useNotificationStore } from '@/utils/notificationStore';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useMemo } from 'react';
-import { Platform, Image } from 'react-native';
+import { Platform, Image, StyleSheet } from 'react-native';
 import props from '@/components/profile/AccountHeader';
 import tw from 'twrnc';
 
@@ -96,12 +96,20 @@ export default function TabsLayout() {
                     headerShown: false,
                     tabBarIcon: ({ focused, color }) => {
                         let iconName;
-                        let size = 28;
+                        let size = 32;
+                        let background = [{backgroundColor: 'red'}];
 
-                        iconName = focused ? 'plus-box' : 'plus-box-outline';
+                        iconName = focused ? 'plus' : 'plus';
+                        if (colorScheme === 'dark') {
+                            color = focused ? '#000' : '#E5E7EB'
+                            background = focused ? [styles.createButton, {backgroundColor: '#E5E7EB'}] : [styles.createButton, {backgroundColor: '#1e2939'}]
+                        } else {
+                            color = focused ? '#fff' : '#1e2939'
+                            background = focused ? [styles.createButton, {backgroundColor: '#1e2939'}] : [styles.createButton, {backgroundColor: '#E5E7EB'}]
+                        };
                         // size = focused ? 32 : 28;
 
-                        return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
+                        return <MaterialCommunityIcons name={iconName} size={size} color={color} style={background} />;
                     },
                 }}
             />
@@ -152,3 +160,15 @@ export default function TabsLayout() {
         </Tabs>
     );
 }
+
+const styles = StyleSheet.create({
+    createButton: {
+        display: 'flex',
+        textAlign: 'center',
+        height: 38,
+        paddingTop: 3,
+        width: 44,
+        borderRadius: 8,
+        marginTop: 2,   
+    },
+});
