@@ -5,6 +5,8 @@ import React from 'react';
 import { Dimensions, Modal, Pressable, Share, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tw from 'twrnc';
+import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 60;
@@ -85,9 +87,28 @@ export default function ShareModal({ visible, item, onClose }) {
         },
     ];
 
+    const translateY = useSharedValue(0);
+    const context = useSharedValue({y: 0});
+
+    const gesture = Gesture.Pan().onStart(() => {
+        context.value = { y: translateY.value };
+    }).onUpdate((event) => {
+        translateY.value = event.translationY + context.value.y;
+        translateY.value = Math.max(translateY.value, 0);
+        console.log(translateY.value)
+    });
+
+    const swipeStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateY: translateY.value}]
+        }
+    });
+
     return (
         <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
-            <View style={tw`flex-1 justify-end`}>
+            <GestureHandlerRootView style={{flex:1}}>
+            <GestureDetector gesture={gesture}>
+            <Animated.View style={[tw`flex-1 justify-end`, swipeStyle]}>
                 <Pressable style={tw`absolute inset-0`} onPress={onClose} />
                 <View
                     style={[
@@ -129,7 +150,9 @@ export default function ShareModal({ visible, item, onClose }) {
                         <Text style={tw`text-base font-semibold text-[#007AFF]`}>Cancel</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
+            </Animated.View>
+            </GestureDetector>
+            </GestureHandlerRootView>
         </Modal>
     );
 }
