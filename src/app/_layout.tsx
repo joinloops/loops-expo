@@ -3,6 +3,7 @@ import { useAuthStore } from '@/utils/authStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as NavigationBar from 'expo-navigation-bar';
 import React, { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -19,12 +20,21 @@ function AppContent() {
     const { colorScheme } = useTheme();
     const systemColorScheme = useColorScheme();
 
+    const getNavigationBarStyle = () => {
+        if (colorScheme === 'device') {
+            return systemColorScheme === 'dark' ? NavigationBar.setButtonStyleAsync('light') : NavigationBar.setButtonStyleAsync('dark');
+        }
+        return colorScheme === 'dark' ? NavigationBar.setButtonStyleAsync('light') : NavigationBar.setButtonStyleAsync('dark');
+    };
+
     const getStatusBarStyle = () => {
         if (colorScheme === 'device') {
             return systemColorScheme === 'dark' ? 'light' : 'dark';
         }
         return colorScheme === 'dark' ? 'light' : 'dark';
     };
+
+    getNavigationBarStyle();
 
     return (
         <React.Fragment>
