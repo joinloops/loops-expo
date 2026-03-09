@@ -3,13 +3,12 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useNotificationPolling } from '@/hooks/useNotificationPolling';
 import { useAuthStore } from '@/utils/authStore';
 import { useNotificationStore } from '@/utils/notificationStore';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useMemo } from 'react';
-import { Platform, Image, StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import props from '@/components/profile/AccountHeader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import tw from 'twrnc';
 
 export default function TabsLayout() {
     const { user } = useAuthStore();
@@ -38,7 +37,7 @@ export default function TabsLayout() {
                     backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
                     borderTopWidth: 2,
                     borderColor: colorScheme === 'dark' ? '#1e2939' : '#E5E7EB',
-                    height: (Platform.OS === 'ios' ? 76 : 76) + insets.bottom,
+                    height: (Platform.OS === 'ios' ? 72 : 72) + insets.bottom,
                     paddingTop: Platform.OS === 'ios' ? 12 : 6,
                     paddingBottom: Platform.OS === 'ios' ? 9 : 6,
                     position: 'static',
