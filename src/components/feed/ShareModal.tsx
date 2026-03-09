@@ -2,8 +2,9 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { shareContent } from '@/utils/sharer';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Dimensions, Modal, Pressable, Share, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, Pressable, Share, Text, TouchableOpacity, View, ToastAndroid, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import tw from 'twrnc';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -72,12 +73,33 @@ export default function ShareModal({ visible, item, onClose }) {
         }
     };
 
+    const handleCopyLink = async () => {
+        try {
+            const re = await Clipboard.setStringAsync(item?.url);
+            
+            if (Platform.OS === 'android') {
+                ToastAndroid.show('Text copied to clipboard!',
+                    ToastAndroid.SHORT);
+            } else if (Platform.OS === 'ios') {
+                Alert.alert('Text copied to clipboard!');
+            }
+
+            } catch (error) {
+            console.error('Clipboard error:', error);
+        }
+    };
+
     const shareOptions = [
         // {
         //   icon: 'repeat',
         //   label: 'Repost',
         //   onPress: handleRepost,
         // },
+        {
+            icon: 'link-outline',
+            label: 'Copy link',
+            onPress: handleCopyLink,
+        },
         {
             icon: 'share-outline',
             label: 'Other',
