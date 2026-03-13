@@ -3,10 +3,10 @@ import { shareContent } from '@/utils/sharer';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
 import { Dimensions, Modal, Pressable, Share, Text, TouchableOpacity, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tw from 'twrnc';
-import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 60;
@@ -72,10 +72,14 @@ export default function ShareModal({ visible, item, onClose }) {
             console.log(translateY.value);
         })
         .onEnd(() => {
-            if (translateY.value < 80) {
-                translateY.value = withTiming(0);
+            if (translateY.value > 160) {
+                // Animation de fermeture fluide avant d'appeler onClose
+                translateY.value = withTiming(MAXtranslateY, { duration: 200 }, () => {
+                    // Appel onClose uniquement après l'animation
+                    onClose();
+                });
             } else {
-                translateY.value = withTiming(320);
+                translateY.value = withTiming(0, { duration: 200 });
             }
         });
 
