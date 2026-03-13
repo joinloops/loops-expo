@@ -6,6 +6,7 @@ import { Dimensions, Modal, Pressable, Share, Text, TouchableOpacity, View } fro
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 import tw from 'twrnc';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -54,7 +55,7 @@ export default function ShareModal({ visible, item, onClose }) {
 
     const translateY = useSharedValue(0);
     const context = useSharedValue({ y: 0 });
-    const MAXtranslateY = 320;
+    const closeTranslateY = 340; // I didn't find a way to get the View height, fix this if possible !
 
     const swipeStyle = useAnimatedStyle(() => {
         return {
@@ -63,29 +64,24 @@ export default function ShareModal({ visible, item, onClose }) {
     });
 
     const gesture = Gesture.Pan()
-        .onStart(() => {
-            context.value = { y: translateY.value };
-        })
         .onUpdate((event) => {
-            translateY.value = event.translationY + context.value.y;
-            translateY.value = Math.max(Math.min(translateY.value, MAXtranslateY), 0);
-            console.log(translateY.value);
+            translateY.value = Math.max(Math.min(event.translationY, closeTranslateY), 0);
         })
-        .onEnd(() => {
-            if (translateY.value > 160) {
-                // Animation de fermeture fluide avant d'appeler onClose
-                translateY.value = withTiming(MAXtranslateY, { duration: 200 }, () => {
-                    // Appel onClose uniquement après l'animation
-                    onClose();
+        .onEnd((event) => {
+            if (event.velocityY > 100) {
+                translateY.value = withTiming(closeTranslateY, { duration: 150 }, () => {
+                    // Closes after the animation, scheduleOnRN necessary or else it crashes the app
+                    scheduleOnRN(onClose);
                 });
             } else {
-                translateY.value = withTiming(0, { duration: 200 });
+                translateY.value = withTiming(0, { duration: 150 });
             }
         });
 
+    // Reset ShareModal position at each opening
     useEffect(() => {
-        translateY.value = withTiming(0);
-    }, []);
+        translateY.value = 0;
+    });
 
     if (!item) return null;
 
@@ -131,7 +127,7 @@ export default function ShareModal({ visible, item, onClose }) {
                         <View
                             style={[
                                 tw`bg-white dark:bg-gray-900 rounded-t-[20px] pt-3`,
-                                { paddingBottom: insets.bottom + 20 },
+                                { paddingBottom: insets.bottom },
                             ]}>
                             <View
                                 style={tw`w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-sm self-center mb-5`}
