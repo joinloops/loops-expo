@@ -4,10 +4,10 @@ import { videoDelete } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alert, Dimensions, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tw from 'twrnc';
+import BottomSheet from '@/components/ui/bottomSheet';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 60;
@@ -19,7 +19,6 @@ export default function OtherModal({
     onPlaybackSpeedChange,
     currentPlaybackRate = 1.0,
 }) {
-    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { colorScheme } = useTheme();
     const [showPlaybackSpeed, setShowPlaybackSpeed] = useState(false);
@@ -112,24 +111,13 @@ export default function OtherModal({
 
     if (showPlaybackSpeed) {
         return (
-            <Modal
-                visible={visible}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setShowPlaybackSpeed(false)}>
-                <View style={tw`flex-1 justify-end`}>
-                    <Pressable
-                        style={tw`absolute inset-0`}
-                        onPress={() => setShowPlaybackSpeed(false)}
-                    />
-                    <View
-                        style={[
-                            tw`bg-white dark:bg-black rounded-t-[20px] pt-3`,
-                            { paddingBottom: insets.bottom + 20 },
-                        ]}>
-                        <View
-                            style={tw`w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-sm self-center mb-5`}
-                        />
+            <BottomSheet 
+                visible={visible} 
+                onClose={() => {
+                    setShowPlaybackSpeed(false);
+                    onClose();
+                }}
+            >
                         <Text
                             style={tw`text-lg font-bold text-center mb-6 px-4 text-black dark:text-white`}>
                             Playback Speed
@@ -156,12 +144,12 @@ export default function OtherModal({
 
                         <TouchableOpacity
                             style={tw`mt-3 py-4 items-center border-t border-gray-100 dark:border-gray-800`}
-                            onPress={() => setShowPlaybackSpeed(false)}>
+                            onPress={() => {
+                                setShowPlaybackSpeed(false);
+                            }}>
                             <Text style={tw`text-base font-semibold text-[#007AFF]`}>Cancel</Text>
                         </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+                </BottomSheet>
         );
     }
 
@@ -216,18 +204,7 @@ export default function OtherModal({
     }
 
     return (
-        <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
-            <View style={tw`flex-1 justify-end`}>
-                <Pressable style={tw`absolute inset-0`} onPress={onClose} />
-
-                <View
-                    style={[
-                        tw`bg-white dark:bg-black rounded-t-[20px] pt-3`,
-                        { paddingBottom: insets.bottom + 20 },
-                    ]}>
-                    <View
-                        style={tw`w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-sm self-center mb-5`}
-                    />
+        <BottomSheet visible={visible} onClose={onClose}>
 
                     <View style={tw`flex-row justify-around px-4 mb-5`}>
                         {options.map((option, index) => (
@@ -261,8 +238,6 @@ export default function OtherModal({
                         onPress={onClose}>
                         <Text style={tw`text-base font-semibold text-[#007AFF]`}>Cancel</Text>
                     </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
+        </BottomSheet>
     );
 }
