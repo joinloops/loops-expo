@@ -15,7 +15,7 @@ const BottomSheet = ({ visible, onClose, children }) => {
     const { colorScheme } = useTheme();
 
     const translateY = useSharedValue(0);
-    const closeTranslateY = 340; // I didn't find a way to get the View height, fix this if possible !
+    const closeTranslateY = 600; // I didn't find a way to get the View height, fix this if possible !
 
     const swipeStyle = useAnimatedStyle(() => {
         return {
