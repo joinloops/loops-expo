@@ -8,6 +8,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 import tw from 'twrnc';
+import BottomSheet from '@/components/ui/bottomSheet';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 60;
@@ -50,38 +51,7 @@ type CommentReplyLikePayload = {
 };
 
 export default function ShareModal({ visible, item, onClose }) {
-    const insets = useSafeAreaInsets();
     const { colorScheme } = useTheme();
-
-    const translateY = useSharedValue(0);
-    const context = useSharedValue({ y: 0 });
-    const closeTranslateY = 340; // I didn't find a way to get the View height, fix this if possible !
-
-    const swipeStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateY: translateY.value }],
-        };
-    });
-
-    const gesture = Gesture.Pan()
-        .onUpdate((event) => {
-            translateY.value = Math.max(Math.min(event.translationY, closeTranslateY), 0);
-        })
-        .onEnd((event) => {
-            if (event.velocityY > 100) {
-                translateY.value = withTiming(closeTranslateY, { duration: 150 }, () => {
-                    // Closes after the animation, scheduleOnRN necessary or else it crashes the app
-                    scheduleOnRN(onClose);
-                });
-            } else {
-                translateY.value = withTiming(0, { duration: 150 });
-            }
-        });
-
-    // Reset ShareModal position at each opening
-    useEffect(() => {
-        translateY.value = 0;
-    });
 
     if (!item) return null;
 
@@ -119,20 +89,8 @@ export default function ShareModal({ visible, item, onClose }) {
     ];
 
     return (
-        <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-                <GestureDetector gesture={gesture}>
-                    <Animated.View style={[tw`flex-1 justify-end`, swipeStyle]}>
-                        <Pressable style={tw`absolute inset-0`} onPress={onClose} />
-                        <View
-                            style={[
-                                tw`bg-white dark:bg-gray-900 rounded-t-[20px] pt-3`,
-                                { paddingBottom: insets.bottom },
-                            ]}>
-                            <View
-                                style={tw`w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-sm self-center mb-5`}
-                            />
-                            <Text
+        <BottomSheet visible={visible} onClose={onClose}>
+            <Text
                                 style={tw`text-lg font-bold text-center mb-6 px-4 text-black dark:text-white`}>
                                 Share to
                             </Text>
@@ -166,10 +124,6 @@ export default function ShareModal({ visible, item, onClose }) {
                                     Cancel
                                 </Text>
                             </TouchableOpacity>
-                        </View>
-                    </Animated.View>
-                </GestureDetector>
-            </GestureHandlerRootView>
-        </Modal>
+        </BottomSheet>
     );
 }
