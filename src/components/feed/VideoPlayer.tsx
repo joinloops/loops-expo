@@ -282,10 +282,12 @@ export default function VideoPlayer({
                     style={styles.actionButton}
                     onPress={handleLike}
                     accessible={true}
-                    accessibilityLabel={isLiked ? `Unlike. ${likeCount} likes` : `Like. ${likeCount} likes`}
+                    accessibilityLabel={
+                        isLiked ? `Unlike. ${likeCount} likes` : `Like. ${likeCount} likes`
+                    }
                     accessibilityRole="button"
                     accessibilityState={{ selected: isLiked }}>
-                    <Ionicons name={'heart'} size={35} color={isLiked ? '#FF2D55' : 'white'} />
+                    <Ionicons name={'heart'} size={35} color={isLiked ? '#F02C56' : 'white'} />
                     <Text style={styles.actionText} accessibilityElementsHidden={true}>
                         {likeCount}
                     </Text>
@@ -323,7 +325,7 @@ export default function VideoPlayer({
                     <Ionicons
                         name="bookmark"
                         size={32}
-                        color={isBookmarked ? '#FF2D55' : 'white'}
+                        color={isBookmarked ? '#F02C56' : 'white'}
                     />
                     <Text style={styles.actionText} accessibilityElementsHidden={true}>
                         {bookmarkCount}
@@ -399,7 +401,12 @@ export default function VideoPlayer({
                     accessible={true}
                     accessibilityLabel="Original Audio"
                     accessibilityRole="text">
-                    <Ionicons name="musical-notes" size={14} color="white" importantForAccessibility="no" />
+                    <Ionicons
+                        name="musical-notes"
+                        size={14}
+                        color="white"
+                        importantForAccessibility="no"
+                    />
                     <Text style={styles.audioText}>Original Audio</Text>
                 </View>
 

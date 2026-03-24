@@ -654,7 +654,8 @@ export default function CaptionScreen() {
                 style={tw`flex-row px-5 py-4 pb-10 gap-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black`}>
                 <TouchableOpacity
                     onPress={handlePost}
-                    style={tw`flex-1 flex-row items-center justify-center bg-[#ff0050] py-4 rounded-full gap-2`}>
+                    style={tw`flex-1 flex-row items-center justify-center bg-[#F02C56] py-4 rounded-full gap-2`}
+                    activeOpacity={0.7}>
                     <Feather name="upload" size={20} color="#fff" />
                     <Text style={tw`text-[22px] font-bold text-white`}>Post</Text>
                 </TouchableOpacity>
@@ -890,7 +891,7 @@ export default function CaptionScreen() {
                                 Alt Text
                             </Text>
                             <TouchableOpacity onPress={() => setShowAltTextModal(false)}>
-                                <Text style={tw`text-base font-semibold text-[#ff0050]`}>Done</Text>
+                                <Text style={tw`text-base font-semibold text-[#F02C56]`}>Done</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -976,7 +977,7 @@ export default function CaptionScreen() {
                                     {item.name}
                                 </Text>
                                 {selectedLanguage.code === item.code && (
-                                    <Ionicons name="checkmark" size={24} color="#ff0050" />
+                                    <Ionicons name="checkmark" size={24} color="#F02C56" />
                                 )}
                             </TouchableOpacity>
                         )}

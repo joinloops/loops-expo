@@ -71,7 +71,10 @@ export default function PreviewScreen() {
         if (!mediaPermission?.granted) {
             const { granted } = await requestMediaPermission();
             if (!granted) {
-                Alert.alert('Permission Required', 'Please allow access to your camera roll to save videos.');
+                Alert.alert(
+                    'Permission Required',
+                    'Please allow access to your camera roll to save videos.',
+                );
                 return;
             }
         }
@@ -133,25 +136,28 @@ export default function PreviewScreen() {
             <View style={styles.rightControls} />
 
             <View style={styles.bottomContainer}>
-                <XStack gap={"$3"}>
-                    <TouchableOpacity 
+                <XStack gap={'$3'}>
+                    <TouchableOpacity
                         accessible={true}
-                        accessibilityLabel="Play and pause button" 
-                        onPress={togglePlayPause} 
+                        accessibilityLabel="Play and pause button"
+                        onPress={togglePlayPause}
                         style={styles.controlButton}>
                         <Feather name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         accessible={true}
-                        accessibilityLabel="Download video button" 
-                        onPress={handleDownload} 
+                        accessibilityLabel="Download video button"
+                        onPress={handleDownload}
                         style={styles.controlButton}
                         disabled={isSaving}>
-                    <Feather name={isSaving ? 'loader' : 'download'} size={28} color="#fff" />
-                      </TouchableOpacity>
+                        <Feather name={isSaving ? 'loader' : 'download'} size={28} color="#fff" />
+                    </TouchableOpacity>
                 </XStack>
 
-                <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
+                <TouchableOpacity
+                    onPress={handleNext}
+                    style={styles.nextButton}
+                    activeOpacity={0.7}>
                     <Text style={styles.nextButtonText}>Next</Text>
                 </TouchableOpacity>
             </View>
@@ -224,7 +230,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     nextButton: {
-        backgroundColor: '#ff0050',
+        backgroundColor: '#F02C56',
         paddingHorizontal: 40,
         paddingVertical: 16,
         borderRadius: 25,

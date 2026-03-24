@@ -17,7 +17,6 @@ import {
 } from 'react-native';
 import tw from 'twrnc';
 
-
 export default function DisableAccountScreen() {
     const { logOut } = useAuthStore();
     const [password, setPassword] = useState('');
@@ -55,11 +54,14 @@ export default function DisableAccountScreen() {
                         onPress: () => performLogOut(),
                     },
                 ],
-                { cancelable: false }
+                { cancelable: false },
             );
         },
         onError: (error) => {
-            const errorMessage = error.response?.data?.message || error.message || 'Failed to disable account. Please try again.';
+            const errorMessage =
+                error.response?.data?.message ||
+                error.message ||
+                'Failed to disable account. Please try again.';
             setPasswordError(errorMessage);
             Alert.alert('Error', errorMessage);
         },
@@ -67,7 +69,7 @@ export default function DisableAccountScreen() {
 
     const handleDisable = useCallback(() => {
         setPasswordError('');
-        
+
         Alert.alert(
             'Temporarily Deactivate Account?',
             'Your account will be hidden and can be reactivated anytime by logging in.',
@@ -81,7 +83,7 @@ export default function DisableAccountScreen() {
                     style: 'destructive',
                     onPress: () => mutation.mutate({ password: password }),
                 },
-            ]
+            ],
         );
     }, [mutation, password]);
 
@@ -103,7 +105,8 @@ export default function DisableAccountScreen() {
                 style={tw`flex-1`}>
                 <ScrollView style={tw`flex-1`} contentContainerStyle={tw`p-5`}>
                     <View style={tw`bg-orange-50 dark:bg-orange-950 p-4 rounded-lg mb-6`}>
-                        <Text style={tw`text-orange-800 dark:text-orange-200 font-semibold text-base mb-2`}>
+                        <Text
+                            style={tw`text-orange-800 dark:text-orange-200 font-semibold text-base mb-2`}>
                             Temporarily deactivate your account
                         </Text>
                         <Text style={tw`text-orange-700 dark:text-orange-300 text-sm`}>
@@ -117,16 +120,19 @@ export default function DisableAccountScreen() {
                         </Text>
 
                         <View style={tw`mb-4`}>
-                            <Text style={tw`text-gray-900 dark:text-white font-semibold text-base mb-1`}>
+                            <Text
+                                style={tw`text-gray-900 dark:text-white font-semibold text-base mb-1`}>
                                 Your profile will be hidden
                             </Text>
                             <Text style={tw`text-gray-600 dark:text-gray-400 text-sm`}>
-                                Others won't be able to find or view your profile, videos, or comments.
+                                Others won't be able to find or view your profile, videos, or
+                                comments.
                             </Text>
                         </View>
 
                         <View style={tw`mb-4`}>
-                            <Text style={tw`text-gray-900 dark:text-white font-semibold text-base mb-1`}>
+                            <Text
+                                style={tw`text-gray-900 dark:text-white font-semibold text-base mb-1`}>
                                 Your videos will be private
                             </Text>
                             <Text style={tw`text-gray-600 dark:text-gray-400 text-sm`}>
@@ -135,30 +141,36 @@ export default function DisableAccountScreen() {
                         </View>
 
                         <View style={tw`mb-4`}>
-                            <Text style={tw`text-gray-900 dark:text-white font-semibold text-base mb-1`}>
+                            <Text
+                                style={tw`text-gray-900 dark:text-white font-semibold text-base mb-1`}>
                                 Followers won't see new content
                             </Text>
                             <Text style={tw`text-gray-600 dark:text-gray-400 text-sm`}>
-                                Your followers will stop receiving notifications and won't see your content in their feed.
+                                Your followers will stop receiving notifications and won't see your
+                                content in their feed.
                             </Text>
                         </View>
 
                         <View style={tw`mb-0`}>
-                            <Text style={tw`text-gray-900 dark:text-white font-semibold text-base mb-1`}>
+                            <Text
+                                style={tw`text-gray-900 dark:text-white font-semibold text-base mb-1`}>
                                 Your data is preserved
                             </Text>
                             <Text style={tw`text-gray-600 dark:text-gray-400 text-sm`}>
-                                All your content, followers, and account data will be saved and restored when you reactivate.
+                                All your content, followers, and account data will be saved and
+                                restored when you reactivate.
                             </Text>
                         </View>
                     </View>
 
                     <View style={tw`bg-green-50 dark:bg-green-950 p-4 rounded-lg mb-6`}>
-                        <Text style={tw`text-green-800 dark:text-green-200 font-semibold text-base mb-1`}>
+                        <Text
+                            style={tw`text-green-800 dark:text-green-200 font-semibold text-base mb-1`}>
                             Easy to reactivate
                         </Text>
                         <Text style={tw`text-green-700 dark:text-green-300 text-sm`}>
-                            Simply log in with your email and password to reactivate your account. Everything will be restored exactly as you left it.
+                            Simply log in with your email and password to reactivate your account.
+                            Everything will be restored exactly as you left it.
                         </Text>
                     </View>
 
@@ -193,9 +205,7 @@ export default function DisableAccountScreen() {
                             </Pressable>
                         </View>
                         {passwordError ? (
-                            <Text style={tw`text-red-500 text-sm mt-2`}>
-                                {passwordError}
-                            </Text>
+                            <Text style={tw`text-red-500 text-sm mt-2`}>{passwordError}</Text>
                         ) : null}
                     </View>
 
@@ -224,14 +234,13 @@ export default function DisableAccountScreen() {
                             Changed your mind?
                         </Text>
                         <Pressable onPress={() => router.back()}>
-                            <Text style={tw`text-blue-500 text-base font-medium`}>
+                            <Text style={tw`text-[#F02C56] text-base font-medium`}>
                                 Keep My Account Active
                             </Text>
                         </Pressable>
                     </View>
 
-                    <View style={tw`mt-50`}>
-                    </View>
+                    <View style={tw`mt-50`}></View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </View>

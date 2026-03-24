@@ -20,7 +20,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Reanimated, {
@@ -48,13 +48,13 @@ const MAX_DURATION = 180;
 const { LoopsFilter } = NativeModules;
 
 const FILTERS: { name: FilterName; label: string }[] = [
-    { name: 'none',       label: 'Normal'     },
-    { name: 'warm',       label: 'Warm'       },
-    { name: 'cool',       label: 'Cool'       },
-    { name: 'bw',         label: 'B&W'        },
-    { name: 'glam',       label: 'Glam'       },
-    { name: 'dog',        label: 'Dog'        },
-    { name: 'sunglasses', label: 'Shades'     },
+    { name: 'none', label: 'Normal' },
+    { name: 'warm', label: 'Warm' },
+    { name: 'cool', label: 'Cool' },
+    { name: 'bw', label: 'B&W' },
+    { name: 'glam', label: 'Glam' },
+    { name: 'dog', label: 'Dog' },
+    { name: 'sunglasses', label: 'Shades' },
 ];
 
 const ReanimatedCamera = Reanimated.createAnimatedComponent(Camera);
@@ -65,50 +65,53 @@ export default function CameraScreen() {
     const isFocused = useIsFocused();
 
     const [cameraPosition, setCameraPosition] = useState<'front' | 'back'>('back');
-    const [flash, setFlash]                   = useState<'off' | 'on'>('off');
-    const [isRecording, setIsRecording]       = useState(false);
+    const [flash, setFlash] = useState<'off' | 'on'>('off');
+    const [isRecording, setIsRecording] = useState(false);
     const [recordingDuration, setRecordingDuration] = useState(0);
     const [isRequestingPermission, setIsRequestingPermission] = useState(false);
     const [isCameraActive, setIsCameraActive] = useState(true);
-    const [showFilters, setShowFilters] = useState(false)
+    const [showFilters, setShowFilters] = useState(false);
     const [activeFilter, setActiveFilter] = useState<FilterName>('none');
-    const filterShared      = useSharedValue<FilterName>('none');
-    const pendingAction     = useSharedValue<'none' | 'start' | 'stop'>('none');
-    const outputPathShared  = useSharedValue('');
+    const filterShared = useSharedValue<FilterName>('none');
+    const pendingAction = useSharedValue<'none' | 'start' | 'stop'>('none');
+    const outputPathShared = useSharedValue('');
 
     const isRecordingRef = useRef(false);
 
-    const { hasPermission: hasCameraPermission,     requestPermission: requestCameraPermission }     = useCameraPermission();
-    const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
+    const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } =
+        useCameraPermission();
+    const {
+        hasPermission: hasMicrophonePermission,
+        requestPermission: requestMicrophonePermission,
+    } = useMicrophonePermission();
 
     const device = useCameraDevice(cameraPosition, {
         physicalDevices: ['ultra-wide-angle-camera', 'wide-angle-camera', 'telephoto-camera'],
     });
 
-    const zoom        = useSharedValue(1);
-    const zoomOffset  = useSharedValue(1);
-    const minZoom     = device?.minZoom ?? 1;
-    const maxZoom     = Math.min(device?.maxZoom ?? 1, 20);
+    const zoom = useSharedValue(1);
+    const zoomOffset = useSharedValue(1);
+    const minZoom = device?.minZoom ?? 1;
+    const maxZoom = Math.min(device?.maxZoom ?? 1, 20);
     const [zoomText, setZoomText] = useState('1x');
 
     const recordButtonStartY = useSharedValue(0);
-    const zoomOffsetY        = useSharedValue(0);
-    const isHoldingRecord    = useSharedValue(false);
-    const isPanning          = useSharedValue(false);
+    const zoomOffsetY = useSharedValue(0);
+    const isHoldingRecord = useSharedValue(false);
+    const isPanning = useSharedValue(false);
     const zoomIndicatorOpacity = useSharedValue(0);
 
-
     const recordingProgress = useRef(new Animated.Value(0)).current;
-    const recordingTimer    = useRef<NodeJS.Timeout | null>(null);
+    const recordingTimer = useRef<NodeJS.Timeout | null>(null);
 
     const handleRequestPermission = useCallback(async () => {
         setIsRequestingPermission(true);
         try {
-            const cameraResult     = await requestCameraPermission();
+            const cameraResult = await requestCameraPermission();
             const microphoneResult = await requestMicrophonePermission();
             if (!cameraResult || !microphoneResult) {
                 const missing = [];
-                if (!cameraResult)     missing.push('Camera');
+                if (!cameraResult) missing.push('Camera');
                 if (!microphoneResult) missing.push('Microphone');
                 Alert.alert(
                     'Permissions Required',
@@ -146,7 +149,7 @@ export default function CameraScreen() {
 
     useEffect(() => {
         const interval = setInterval(() => {
-            const v    = zoom.value;
+            const v = zoom.value;
             const text = v < 1.5 ? '1x' : `${v.toFixed(1)}x`;
             setZoomText(text);
         }, 50);
@@ -215,10 +218,7 @@ export default function CameraScreen() {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const animatedProps = useAnimatedProps(
-        () => ({ zoom: clampZoom(zoom.value) }),
-        [zoom],
-    );
+    const animatedProps = useAnimatedProps(() => ({ zoom: clampZoom(zoom.value) }), [zoom]);
 
     const zoomBarFillStyle = useAnimatedStyle(() => ({
         width: `${Math.round(((zoom.value - minZoom) / (maxZoom - minZoom)) * 100)}%`,
@@ -230,7 +230,7 @@ export default function CameraScreen() {
     }));
 
     const progressWidth = recordingProgress.interpolate({
-        inputRange:  [0, MAX_DURATION],
+        inputRange: [0, MAX_DURATION],
         outputRange: ['0%', '100%'],
     });
 
@@ -240,28 +240,32 @@ export default function CameraScreen() {
         navigateToPreview(path, recordingDuration);
     });
 
-    const frameProcessor = useFrameProcessor((frame) => {
-        'worklet';
+    const frameProcessor = useFrameProcessor(
+        (frame) => {
+            'worklet';
 
-        if (filterShared.value === 'none') return;
+            if (filterShared.value === 'none') return;
 
-        const result = loopsFilter(frame, {
-            filter:     filterShared.value,
-            action:     pendingAction.value,
-            outputPath: outputPathShared.value,
-        });
+            const result = loopsFilter(frame, {
+                filter: filterShared.value,
+                action: pendingAction.value,
+                outputPath: outputPathShared.value,
+            });
 
-        if (pendingAction.value !== 'none') {
-            pendingAction.value = 'none';
-        }
+            if (pendingAction.value !== 'none') {
+                pendingAction.value = 'none';
+            }
 
-        if (result?.status === 'done' && result.path) {
-            handleRecordingDone(result.path);
-        }
-    }, [filterShared, pendingAction, outputPathShared, handleRecordingDone]);
+            if (result?.status === 'done' && result.path) {
+                handleRecordingDone(result.path);
+            }
+        },
+        [filterShared, pendingAction, outputPathShared, handleRecordingDone],
+    );
 
     const startStandardRecording = useCallback(async () => {
-        if (!camera.current || isRecording || !hasCameraPermission || !hasMicrophonePermission) return;
+        if (!camera.current || isRecording || !hasCameraPermission || !hasMicrophonePermission)
+            return;
         try {
             setIsRecording(true);
 
@@ -303,13 +307,13 @@ export default function CameraScreen() {
     }, [isRecording]);
 
     const startFilterRecording = () => {
-        const baseDir   = FileSystem.cacheDirectory;
+        const baseDir = FileSystem.cacheDirectory;
         const cleanPath = baseDir.replace('file://', '');
-        const path      = `${cleanPath}loops_${Date.now()}.mp4`;
+        const path = `${cleanPath}loops_${Date.now()}.mp4`;
 
-        outputPathShared.value  = path;
-        pendingAction.value     = 'start';
-        isRecordingRef.current  = true;
+        outputPathShared.value = path;
+        pendingAction.value = 'start';
+        isRecordingRef.current = true;
         setIsRecording(true);
 
         cancelAnimation(zoomIndicatorOpacity);
@@ -348,18 +352,21 @@ export default function CameraScreen() {
     };
 
     const toggleCamera = () => setCameraPosition((p) => (p === 'back' ? 'front' : 'back'));
-    const toggleFlash  = () => setFlash((p) => (cameraPosition === 'back' && p === 'off' ? 'on' : 'off'));
+    const toggleFlash = () =>
+        setFlash((p) => (cameraPosition === 'back' && p === 'off' ? 'on' : 'off'));
     const toggleFilters = () => {
-        if(filterShared.value != 'none' && showFilters) {
+        if (filterShared.value != 'none' && showFilters) {
             return;
         }
-        setShowFilters(!showFilters)
-    }
+        setShowFilters(!showFilters);
+    };
 
     const handleClose = async () => {
         if (isRecording) {
             if (activeFilter === 'none') {
-                try { await camera.current?.stopRecording(); } catch {}
+                try {
+                    await camera.current?.stopRecording();
+                } catch {}
             } else {
                 LoopsFilter.forceStop().catch(() => {});
             }
@@ -390,12 +397,12 @@ export default function CameraScreen() {
             }
 
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes:       ['videos'],
-                allowsEditing:    true,
-                exif:             false,
-                aspect:           [9, 16],
-                quality:          1,
-                selectionLimit:   1,
+                mediaTypes: ['videos'],
+                allowsEditing: true,
+                exif: false,
+                aspect: [9, 16],
+                quality: 1,
+                selectionLimit: 1,
                 videoMaxDuration: 180,
             });
 
@@ -467,9 +474,9 @@ export default function CameraScreen() {
     const panGesture = Gesture.Pan()
         .onStart((event) => {
             'worklet';
-            isPanning.value          = true;
+            isPanning.value = true;
             recordButtonStartY.value = event.absoluteY;
-            const yForFullZoom       = recordButtonStartY.value * 0.7;
+            const yForFullZoom = recordButtonStartY.value * 0.7;
             const offsetYForFullZoom = recordButtonStartY.value - yForFullZoom;
             zoomOffsetY.value = interpolate(
                 zoom.value,
@@ -481,7 +488,7 @@ export default function CameraScreen() {
         .onUpdate((event) => {
             'worklet';
             if (!isHoldingRecord.value) return;
-            const startY       = recordButtonStartY.value;
+            const startY = recordButtonStartY.value;
             const yForFullZoom = startY * 0.7;
             zoom.value = interpolate(
                 event.absoluteY - zoomOffsetY.value,
@@ -494,9 +501,9 @@ export default function CameraScreen() {
         })
         .onEnd(() => {
             'worklet';
-            isPanning.value          = false;
+            isPanning.value = false;
             recordButtonStartY.value = 0;
-            zoomOffsetY.value        = 0;
+            zoomOffsetY.value = 0;
             if (isHoldingRecord.value) {
                 isHoldingRecord.value = false;
                 runOnJS(stopRecording)();
@@ -512,13 +519,15 @@ export default function CameraScreen() {
 
     if (!hasAllPermissions) {
         const missing = [];
-        if (!hasCameraPermission)     missing.push('Camera');
+        if (!hasCameraPermission) missing.push('Camera');
         if (!hasMicrophonePermission) missing.push('Microphone');
 
-        const permissionText    = missing.length === 2 ? 'Camera and Microphone Access' : `${missing[0]} Access`;
-        const descriptionText   = missing.length === 2
-            ? 'This app needs access to your camera and microphone to record videos. You can manage these permissions in Settings at any time.'
-            : `This app needs access to your ${missing[0].toLowerCase()} to record videos. You can manage this permission in Settings at any time.`;
+        const permissionText =
+            missing.length === 2 ? 'Camera and Microphone Access' : `${missing[0]} Access`;
+        const descriptionText =
+            missing.length === 2
+                ? 'This app needs access to your camera and microphone to record videos. You can manage these permissions in Settings at any time.'
+                : `This app needs access to your ${missing[0].toLowerCase()} to record videos. You can manage this permission in Settings at any time.`;
 
         return (
             <View style={styles.container}>
@@ -545,7 +554,9 @@ export default function CameraScreen() {
                                 {isRequestingPermission ? 'Loading...' : 'Continue'}
                             </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.settingsButton} onPress={() => Linking.openSettings()}>
+                        <TouchableOpacity
+                            style={styles.settingsButton}
+                            onPress={() => Linking.openSettings()}>
                             <Text style={styles.settingsButtonText}>Open Settings</Text>
                         </TouchableOpacity>
                     </View>
@@ -600,9 +611,7 @@ export default function CameraScreen() {
                         />
                     )}
 
-                    {filterActive && (
-                        <LoopsFilterPreview style={StyleSheet.absoluteFill} />
-                    )}
+                    {filterActive && <LoopsFilterPreview style={StyleSheet.absoluteFill} />}
 
                     <LinearGradient
                         colors={['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.5)']}
@@ -655,11 +664,12 @@ export default function CameraScreen() {
             </View>
 
             <View style={styles.bottomContainer}>
-
                 {isRecording && (
                     <View style={styles.recordingIndicator}>
                         <View style={styles.recordingDot} />
-                        <Text style={styles.recordingTime}>{formatDuration(recordingDuration)}</Text>
+                        <Text style={styles.recordingTime}>
+                            {formatDuration(recordingDuration)}
+                        </Text>
                     </View>
                 )}
 
@@ -700,8 +710,17 @@ export default function CameraScreen() {
                     <GestureDetector gesture={recordButtonGesture}>
                         <Reanimated.View style={styles.recordButtonContainer}>
                             <View style={styles.recordButtonPressable}>
-                                <View style={[styles.recordButton, isRecording && styles.recordButtonActive]}>
-                                    <View style={[styles.recordButtonInner, isRecording && styles.recordButtonInnerActive]} />
+                                <View
+                                    style={[
+                                        styles.recordButton,
+                                        isRecording && styles.recordButtonActive,
+                                    ]}>
+                                    <View
+                                        style={[
+                                            styles.recordButtonInner,
+                                            isRecording && styles.recordButtonInnerActive,
+                                        ]}
+                                    />
                                 </View>
                                 <Text style={styles.recordHint}>
                                     {isRecording ? 'Slide up to zoom' : 'Hold to record'}
@@ -747,7 +766,7 @@ const styles = StyleSheet.create({
         lineHeight: 24,
     },
     permissionButton: {
-        backgroundColor: '#ff0050',
+        backgroundColor: '#F02C56',
         paddingHorizontal: 40,
         paddingVertical: 16,
         borderRadius: 12,
@@ -930,7 +949,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     recordButtonActive: {
-        borderColor: '#ff0050',
+        borderColor: '#F02C56',
     },
     recordButtonInner: {
         width: 52,
@@ -942,7 +961,7 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 4,
-        backgroundColor: '#ff0050',
+        backgroundColor: '#F02C56',
     },
     recordHint: {
         color: 'rgba(255,255,255,0.7)',

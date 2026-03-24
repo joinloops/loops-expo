@@ -72,12 +72,7 @@ interface Video {
 
 // Validation helpers
 const isValidAccount = (account: Account | null | undefined): account is Account => {
-    return !!(
-        account?.id &&
-        account?.username &&
-        account?.avatar &&
-        account?.name
-    );
+    return !!(account?.id && account?.username && account?.avatar && account?.name);
 };
 
 const isValidVideo = (video: Video | null | undefined): video is Video => {
@@ -90,11 +85,7 @@ const isValidVideo = (video: Video | null | undefined): video is Video => {
 };
 
 const isValidTag = (tag: Tag | null | undefined): tag is Tag => {
-    return !!(
-        tag?.id &&
-        tag?.name &&
-        typeof tag?.count === 'number'
-    );
+    return !!(tag?.id && tag?.name && typeof tag?.count === 'number');
 };
 
 export default function ExploreScreen() {
@@ -107,13 +98,21 @@ export default function ExploreScreen() {
     const queryClient = useQueryClient();
     const { colorScheme } = useTheme();
 
-    const { data: tagsData, isLoading: tagsLoading, isError: tagsError } = useQuery({
+    const {
+        data: tagsData,
+        isLoading: tagsLoading,
+        isError: tagsError,
+    } = useQuery({
         queryKey: ['explore', 'tags'],
         queryFn: getExploreTags,
         retry: 2,
     });
 
-    const { data: accountsData, isLoading: accountsLoading, isError: accountsError } = useQuery({
+    const {
+        data: accountsData,
+        isLoading: accountsLoading,
+        isError: accountsError,
+    } = useQuery({
         queryKey: ['accounts', 'suggested'],
         queryFn: getExploreAccounts,
         retry: 2,
@@ -187,9 +186,7 @@ export default function ExploreScreen() {
 
     const allVideos = useMemo(() => {
         if (!videosData?.pages) return [];
-        return videosData.pages
-            .flatMap((page) => page?.data || [])
-            .filter(isValidVideo);
+        return videosData.pages.flatMap((page) => page?.data || []).filter(isValidVideo);
     }, [videosData]);
 
     React.useEffect(() => {
@@ -209,7 +206,7 @@ export default function ExploreScreen() {
     }) => {
         const isFollowing = followingAccountId === item.id;
         const isHiding = hidingAccountId === item.id;
-        
+
         return (
             <View style={tw`mr-3 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden`}>
                 <View style={tw`w-[${ACCOUNT_CARD_WIDTH}px] p-3 items-center`}>
@@ -258,7 +255,7 @@ export default function ExploreScreen() {
 
                     <PressableHaptics onPress={onHandleFollow} disabled={isFollowing}>
                         <View
-                            style={[tw`rounded-full px-4 py-1.5`, { backgroundColor: '#f02b55' }]}>
+                            style={[tw`rounded-full px-4 py-1.5`, { backgroundColor: '#F02C56' }]}>
                             <Text style={tw`text-white font-semibold text-xs`}>
                                 {isFollowing ? 'Following...' : 'Follow'}
                             </Text>
@@ -314,7 +311,10 @@ export default function ExploreScreen() {
                         source={{ uri: item.media.thumbnail }}
                         style={[
                             tw`rounded-lg bg-gray-900`,
-                            { width: VIDEO_THUMBNAIL_WIDTH, height: (VIDEO_THUMBNAIL_WIDTH * 16) / 9 },
+                            {
+                                width: VIDEO_THUMBNAIL_WIDTH,
+                                height: (VIDEO_THUMBNAIL_WIDTH * 16) / 9,
+                            },
                         ]}
                         resizeMode="cover"
                     />
@@ -338,9 +338,7 @@ export default function ExploreScreen() {
 
     const renderEmptyState = (message: string) => (
         <View style={tw`py-10 items-center px-4`}>
-            <Text style={tw`text-gray-500 dark:text-gray-400 text-center`}>
-                {message}
-            </Text>
+            <Text style={tw`text-gray-500 dark:text-gray-400 text-center`}>{message}</Text>
         </View>
     );
 
@@ -348,7 +346,10 @@ export default function ExploreScreen() {
         return (
             <SafeAreaView edges={['top']} style={tw`flex-1 bg-white dark:bg-black`}>
                 <View style={tw`flex-1 items-center justify-center`}>
-                    <ActivityIndicator size="large" color={colorScheme === 'dark' ? '#fff' : '#000'} />
+                    <ActivityIndicator
+                        size="large"
+                        color={colorScheme === 'dark' ? '#fff' : '#000'}
+                    />
                 </View>
             </SafeAreaView>
         );
@@ -409,9 +410,10 @@ export default function ExploreScreen() {
                         </View>
                     )}
 
-                    {accountsError && (
-                        renderEmptyState('Unable to load suggested accounts. Please try again later.')
-                    )}
+                    {accountsError &&
+                        renderEmptyState(
+                            'Unable to load suggested accounts. Please try again later.',
+                        )}
 
                     {validTags.length > 0 && (
                         <View style={tw`mb-4`}>
@@ -430,9 +432,8 @@ export default function ExploreScreen() {
                         </View>
                     )}
 
-                    {tagsError && (
-                        renderEmptyState('Unable to load trending tags. Please try again later.')
-                    )}
+                    {tagsError &&
+                        renderEmptyState('Unable to load trending tags. Please try again later.')}
 
                     {videosLoading ? (
                         <View style={tw`py-10 items-center`}>
@@ -454,9 +455,9 @@ export default function ExploreScreen() {
                             </View>
                             {isFetchingNextPage && (
                                 <View style={tw`py-4 items-center`}>
-                                    <ActivityIndicator 
-                                        size="small" 
-                                        color={colorScheme === 'dark' ? '#fff' : '#000'} 
+                                    <ActivityIndicator
+                                        size="small"
+                                        color={colorScheme === 'dark' ? '#fff' : '#000'}
                                     />
                                 </View>
                             )}
