@@ -32,9 +32,9 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tw from 'twrnc';
 
@@ -142,7 +142,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     }}
                 />
             </View>
-        )
+        );
     }, [item, isDark, router, onNavigate, onClose, navigation]);
 
     const commentMutation = useMutation({
@@ -152,13 +152,11 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         onSuccess: async (res) => {
             queryClient.setQueryData(['videoComments', item?.id], (old) => {
                 if (!old) return old;
-                
+
                 return {
                     ...old,
-                    pages: old.pages.map((page, index) => 
-                        index === 0
-                            ? { ...page, data: [res.data[0], ...page.data] }
-                            : page
+                    pages: old.pages.map((page, index) =>
+                        index === 0 ? { ...page, data: [res.data[0], ...page.data] } : page,
                     ),
                 };
             });
@@ -171,12 +169,12 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         },
         onMutate: async (variables) => {
             await queryClient.cancelQueries({ queryKey: ['videoComments', item?.id] });
-            
+
             const previousComments = queryClient.getQueryData(['videoComments', item?.id]);
-            
+
             queryClient.setQueryData(['videoComments', item?.id], (old) => {
                 if (!old) return old;
-                
+
                 return {
                     ...old,
                     pages: old.pages.map((page) => ({
@@ -185,7 +183,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     })),
                 };
             });
-            
+
             return { previousComments };
         },
         onError: (err, variables, context) => {
@@ -201,20 +199,20 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         },
         onMutate: async (variables) => {
             await queryClient.cancelQueries({ queryKey: ['videoComments', item?.id] });
-            await queryClient.cancelQueries({ 
-                queryKey: ['videoReplies', item.id, variables.parentId] 
+            await queryClient.cancelQueries({
+                queryKey: ['videoReplies', item.id, variables.parentId],
             });
-            
+
             const previousComments = queryClient.getQueryData(['videoComments', item?.id]);
             const previousReplies = queryClient.getQueryData([
                 'videoReplies',
                 item.id,
                 variables.parentId,
             ]);
-            
+
             queryClient.setQueryData(['videoReplies', item.id, variables.parentId], (old) => {
                 if (!old) return old;
-                
+
                 return {
                     ...old,
                     pages: old.pages.map((page) => ({
@@ -223,10 +221,10 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     })),
                 };
             });
-            
+
             queryClient.setQueryData(['videoComments', item?.id], (old) => {
                 if (!old) return old;
-                
+
                 return {
                     ...old,
                     pages: old.pages.map((page) => ({
@@ -243,7 +241,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     })),
                 };
             });
-            
+
             return { previousComments, previousReplies };
         },
         onError: (err, variables, context) => {
@@ -659,7 +657,9 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                 </PressableHaptics>
                 <View style={tw`flex-1`}>
                     <View style={tw`flex flex-row items-center gap-2 mb-1`}>
-                        <PressableHaptics style={tw`flex-1`} onPress={() => handleProfilePress(comment.account?.id)}>
+                        <PressableHaptics
+                            style={tw`flex-1`}
+                            onPress={() => handleProfilePress(comment.account?.id)}>
                             <Text style={tw`text-sm font-bold text-black dark:text-white`}>
                                 {comment.account.username}
                             </Text>
@@ -819,7 +819,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     <View
                         style={tw`flex-row justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700`}>
                         <Text style={tw`text-lg font-bold text-black dark:text-white`}>
-                            {totalComments} { totalComments === 1 ? 'comment' : 'comments'}
+                            {totalComments} {totalComments === 1 ? 'comment' : 'comments'}
                         </Text>
                         <TouchableOpacity onPress={onClose}>
                             <Ionicons name="close" size={28} color={isDark ? '#fff' : '#000'} />

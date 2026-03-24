@@ -1,14 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { Stack } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-    ActivityIndicator,
-    FlatList,
-    Modal,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Text, TouchableOpacity, View } from 'react-native';
 import tw from 'twrnc';
 
 type License = {

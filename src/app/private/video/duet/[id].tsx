@@ -28,11 +28,7 @@ import Reanimated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import {
-    Camera,
-    useCameraDevice,
-    useCameraPermission
-} from 'react-native-vision-camera';
+import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 
 const MAX_DURATION = 60;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -100,14 +96,20 @@ export default function DuetCameraScreen() {
         return () => clearInterval(interval);
     }, []);
 
-    const clampZoom = useCallback((value: number) => {
-        'worklet';
-        return Math.max(minZoom, Math.min(value, maxZoom));
-    }, [minZoom, maxZoom]);
+    const clampZoom = useCallback(
+        (value: number) => {
+            'worklet';
+            return Math.max(minZoom, Math.min(value, maxZoom));
+        },
+        [minZoom, maxZoom],
+    );
 
-    const animatedProps = useAnimatedProps(() => ({
-        zoom: clampZoom(zoom.value),
-    }), [zoom]);
+    const animatedProps = useAnimatedProps(
+        () => ({
+            zoom: clampZoom(zoom.value),
+        }),
+        [zoom],
+    );
 
     const zoomBarFillStyle = useAnimatedStyle(() => ({
         width: `${Math.round(((zoom.value - minZoom) / (maxZoom - minZoom)) * 100)}%`,
@@ -161,7 +163,7 @@ export default function DuetCameraScreen() {
             if (isPaused) {
                 await camera.current.resumeRecording();
                 player.play();
-                
+
                 setIsRecording(true);
                 setIsPaused(false);
                 isHoldingRecord.value = true;
@@ -176,7 +178,9 @@ export default function DuetCameraScreen() {
 
                 const startTime = recordingStartTime.current;
                 recordingTimer.current = setInterval(() => {
-                    const elapsed = Math.floor((Date.now() - startTime - pausedDuration.current) / 1000);
+                    const elapsed = Math.floor(
+                        (Date.now() - startTime - pausedDuration.current) / 1000,
+                    );
                     setRecordingDuration(elapsed);
 
                     if (elapsed >= MAX_DURATION) {
@@ -229,7 +233,7 @@ export default function DuetCameraScreen() {
                             duration: recordingDuration,
                             layout: layout,
                             recordingStartTime: recordingStartTime.current,
-                        }
+                        },
                     });
                 },
                 onRecordingError: (error) => {
@@ -249,7 +253,17 @@ export default function DuetCameraScreen() {
             setIsPaused(false);
             isHoldingRecord.value = false;
         }
-    }, [isRecording, isPaused, flash, recordingDuration, router, duetVideoUri, layout, isVideoReady, player]);
+    }, [
+        isRecording,
+        isPaused,
+        flash,
+        recordingDuration,
+        router,
+        duetVideoUri,
+        layout,
+        isVideoReady,
+        player,
+    ]);
 
     const pauseRecording = useCallback(async () => {
         if (!camera.current || !isRecording) return;
@@ -257,7 +271,7 @@ export default function DuetCameraScreen() {
         try {
             await camera.current.pauseRecording();
             player.pause();
-            
+
             setIsRecording(false);
             setIsPaused(true);
             isHoldingRecord.value = false;
@@ -336,9 +350,9 @@ export default function DuetCameraScreen() {
                                 camera.current?.cancelRecording();
                             }
                             router.back();
-                        }
-                    }
-                ]
+                        },
+                    },
+                ],
             );
         } else {
             router.back();
@@ -411,7 +425,7 @@ export default function DuetCameraScreen() {
                 zoom.value,
                 [minZoom, maxZoom],
                 [0, offsetYForFullZoom],
-                Extrapolate.CLAMP
+                Extrapolate.CLAMP,
             );
         })
         .onUpdate((event) => {
@@ -426,7 +440,7 @@ export default function DuetCameraScreen() {
                 event.absoluteY - offset,
                 [yForFullZoom, startY],
                 [maxZoom, minZoom],
-                Extrapolate.CLAMP
+                Extrapolate.CLAMP,
             );
 
             zoom.value = newZoom;
@@ -482,16 +496,14 @@ export default function DuetCameraScreen() {
 
     return (
         <GestureHandlerRootView style={styles.container}>
-
             <StatusBar style="light" />
             <Stack.Screen options={{ headerShown: false }} />
             <View
                 style={[
                     styles.videoContainer,
                     layout === 'side-by-side' ? styles.videoLeft : styles.videoTop,
-                    { width: videoWidth, height: videoHeight }
-                ]}
-            >
+                    { width: videoWidth, height: videoHeight },
+                ]}>
                 <VideoView
                     style={StyleSheet.absoluteFill}
                     player={player}
@@ -511,9 +523,8 @@ export default function DuetCameraScreen() {
                     style={[
                         styles.cameraContainer,
                         layout === 'side-by-side' ? styles.cameraRight : styles.cameraBottom,
-                        { width: cameraWidth, height: cameraHeight }
-                    ]}
-                >
+                        { width: cameraWidth, height: cameraHeight },
+                    ]}>
                     {isFocused && device && (
                         <ReanimatedCamera
                             ref={camera}
@@ -537,13 +548,9 @@ export default function DuetCameraScreen() {
 
             <Reanimated.View style={[styles.zoomIndicator, zoomIndicatorStyle]}>
                 <View style={styles.zoomIndicatorContent}>
-                    <Text style={styles.zoomText}>
-                        {zoomText}
-                    </Text>
+                    <Text style={styles.zoomText}>{zoomText}</Text>
                     <View style={styles.zoomBarContainer}>
-                        <Reanimated.View
-                            style={[styles.zoomBarFill, zoomBarFillStyle]}
-                        />
+                        <Reanimated.View style={[styles.zoomBarFill, zoomBarFillStyle]} />
                     </View>
                 </View>
             </Reanimated.View>
@@ -584,8 +591,12 @@ export default function DuetCameraScreen() {
             <View style={styles.bottomContainer}>
                 {(isRecording || isPaused) && (
                     <View style={styles.recordingIndicator}>
-                        <View style={[styles.recordingDot, isPaused && styles.recordingDotPaused]} />
-                        <Text style={styles.recordingTime}>{formatDuration(recordingDuration)}</Text>
+                        <View
+                            style={[styles.recordingDot, isPaused && styles.recordingDotPaused]}
+                        />
+                        <Text style={styles.recordingTime}>
+                            {formatDuration(recordingDuration)}
+                        </Text>
                     </View>
                 )}
 
@@ -595,16 +606,19 @@ export default function DuetCameraScreen() {
                     <GestureDetector gesture={recordButtonGesture}>
                         <Reanimated.View style={styles.recordButtonContainer}>
                             <View style={styles.recordButtonPressable}>
-                                <View style={[
-                                    styles.recordButton, 
-                                    isRecording && styles.recordButtonActive,
-                                    isPaused && styles.recordButtonPaused
-                                ]}>
-                                    <View style={[
-                                        styles.recordButtonInner, 
-                                        isRecording && styles.recordButtonInnerActive,
-                                        isPaused && styles.recordButtonInnerPaused
-                                    ]} />
+                                <View
+                                    style={[
+                                        styles.recordButton,
+                                        isRecording && styles.recordButtonActive,
+                                        isPaused && styles.recordButtonPaused,
+                                    ]}>
+                                    <View
+                                        style={[
+                                            styles.recordButtonInner,
+                                            isRecording && styles.recordButtonInnerActive,
+                                            isPaused && styles.recordButtonInnerPaused,
+                                        ]}
+                                    />
                                 </View>
                                 {!isRecording && !isPaused && isVideoReady && (
                                     <Text style={styles.recordHint}>Press and hold to record</Text>
@@ -615,9 +629,7 @@ export default function DuetCameraScreen() {
                                 {isRecording && (
                                     <Text style={styles.recordHint}>Slide up to zoom</Text>
                                 )}
-                                {isPaused && (
-                                    <Text style={styles.recordHint}>Press to resume</Text>
-                                )}
+                                {isPaused && <Text style={styles.recordHint}>Press to resume</Text>}
                             </View>
                         </Reanimated.View>
                     </GestureDetector>
@@ -637,7 +649,7 @@ export default function DuetCameraScreen() {
                     styles.dividerLine,
                     layout === 'side-by-side'
                         ? { left: containerWidth / 2, width: 2, height: containerHeight }
-                        : { top: containerHeight / 2, height: 2, width: containerWidth }
+                        : { top: containerHeight / 2, height: 2, width: containerWidth },
                 ]}
             />
         </GestureHandlerRootView>

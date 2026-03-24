@@ -14,7 +14,7 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    View
+    View,
 } from 'react-native';
 import Animated, {
     FadeIn,
@@ -24,7 +24,7 @@ import Animated, {
     SlideOutLeft,
     SlideOutRight,
     useSharedValue,
-    withTiming
+    withTiming,
 } from 'react-native-reanimated';
 import tw from 'twrnc';
 
@@ -78,13 +78,13 @@ export default function SignInScreen() {
 
     const onTermsOfService = async (domain) => {
         const url = `https://${domain}/terms`;
-        await openBrowser(url)
-    }
+        await openBrowser(url);
+    };
 
     const onPrivacyPolicy = async () => {
         const url = `https://${domain}/privacy`;
-        await openBrowser(url)
-    }
+        await openBrowser(url);
+    };
 
     const handleSignInServerSelected = async () => {
         if (selectedServer === 'other') {
@@ -105,7 +105,10 @@ export default function SignInScreen() {
     };
 
     const handleSignInSubmit = async (serverUrl: string) => {
-        const cleanedUrl = serverUrl.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+        const cleanedUrl = serverUrl
+            .toLowerCase()
+            .replace(/^https?:\/\//, '')
+            .replace(/\/$/, '');
         setIsLoading(true);
 
         try {
@@ -113,7 +116,10 @@ export default function SignInScreen() {
             if (success) {
                 router.replace('/(tabs)');
             } else {
-                Alert.alert('Login Failed', 'Unable to complete login. Please check the server URL and try again.');
+                Alert.alert(
+                    'Login Failed',
+                    'Unable to complete login. Please check the server URL and try again.',
+                );
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -124,11 +130,14 @@ export default function SignInScreen() {
     };
 
     const handleRegisterSubmit = async (serverUrl: string) => {
-        const cleanedUrl = serverUrl.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+        const cleanedUrl = serverUrl
+            .toLowerCase()
+            .replace(/^https?:\/\//, '')
+            .replace(/\/$/, '');
         setIsLoading(true);
 
         try {
-            const precheck = await registerPreflightCheck(serverUrl)
+            const precheck = await registerPreflightCheck(serverUrl);
             if (!precheck) {
                 return false;
             }
@@ -136,7 +145,10 @@ export default function SignInScreen() {
             if (success) {
                 router.replace('/(tabs)');
             } else {
-                Alert.alert('Registration Failed', 'Unable to complete registration. Please try again.');
+                Alert.alert(
+                    'Registration Failed',
+                    'Unable to complete registration. Please try again.',
+                );
             }
         } catch (error) {
             console.error('Registration error:', error);
@@ -152,13 +164,16 @@ export default function SignInScreen() {
             'signin-custom-url': 'signin-server',
             'register-server': 'initial',
             'register-custom-url': 'register-server',
-            'initial': 'initial',
+            initial: 'initial',
         };
         transitionToStep(backMap[currentStep]);
     };
 
     const renderInitial = () => (
-        <Animated.View entering={FadeIn} exiting={FadeOut} style={tw`flex-1 justify-between px-6 py-12`}>
+        <Animated.View
+            entering={FadeIn}
+            exiting={FadeOut}
+            style={tw`flex-1 justify-between px-6 py-12`}>
             <LinearGradient
                 colors={['#151518ff', '#000']}
                 start={{ x: 0, y: 0 }}
@@ -178,8 +193,7 @@ export default function SignInScreen() {
                     style={({ pressed }) => [
                         tw`h-14 rounded-full justify-center items-center bg-[#FFE500]`,
                         pressed && tw`opacity-80`,
-                    ]}
-                >
+                    ]}>
                     <Text style={tw`text-black text-lg font-bold`}>Sign In</Text>
                 </Pressable>
             </View>
@@ -190,8 +204,7 @@ export default function SignInScreen() {
                     style={({ pressed }) => [
                         tw`h-14 rounded-full justify-center items-center border-2 border-[#FFE500]`,
                         pressed && tw`opacity-80`,
-                    ]}
-                >
+                    ]}>
                     <Text style={tw`text-[#FFE500] text-lg font-bold`}>Create Account</Text>
                 </Pressable>
             </View>
@@ -214,7 +227,9 @@ export default function SignInScreen() {
 
             <Animated.View entering={SlideInRight} exiting={SlideOutLeft}>
                 <Text style={tw`text-white text-3xl font-bold mb-2`}>Choose your server</Text>
-                <Text style={tw`text-gray-400 text-base mb-8`}>Select where your account is hosted</Text>
+                <Text style={tw`text-gray-400 text-base mb-8`}>
+                    Select where your account is hosted
+                </Text>
 
                 <View style={tw`flex-row flex-wrap gap-2 mb-8`}>
                     {POPULAR_SERVERS.map((srv) => {
@@ -227,9 +242,9 @@ export default function SignInScreen() {
                                     tw`px-6 py-4 rounded-2xl border-2`,
                                     tw`${active ? 'bg-transparent border-[#FFE500]' : 'bg-transparent border-gray-700'}`,
                                     pressed && tw`opacity-80`,
-                                ]}
-                            >
-                                <Text style={tw`${active ? 'text-[#FFE500]' : 'text-white'} text-base font-semibold`}>
+                                ]}>
+                                <Text
+                                    style={tw`${active ? 'text-[#FFE500]' : 'text-white'} text-base font-semibold`}>
                                     {srv.label}
                                 </Text>
                             </Pressable>
@@ -244,8 +259,7 @@ export default function SignInScreen() {
                         tw`h-14 rounded-full justify-center items-center`,
                         isLoading ? tw`bg-[#FFE500]/60` : tw`bg-[#FFE500]`,
                         pressed && !isLoading && tw`opacity-80`,
-                    ]}
-                >
+                    ]}>
                     {isLoading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
@@ -272,7 +286,9 @@ export default function SignInScreen() {
 
             <Animated.View entering={SlideInRight} exiting={SlideOutLeft}>
                 <Text style={tw`text-white text-3xl font-bold mb-2`}>Choose your server</Text>
-                <Text style={tw`text-gray-400 text-base mb-8`}>Select where to create your account</Text>
+                <Text style={tw`text-gray-400 text-base mb-8`}>
+                    Select where to create your account
+                </Text>
 
                 <View style={tw`flex-row flex-wrap gap-2 mb-8`}>
                     {POPULAR_SERVERS.map((srv) => {
@@ -285,34 +301,34 @@ export default function SignInScreen() {
                                     tw`px-6 py-4 rounded-2xl border-2`,
                                     tw`${active ? 'bg-transparent border-[#FFE500]' : 'bg-transparent border-gray-700'}`,
                                     pressed && tw`opacity-80`,
-                                ]}
-                            >
-                                <Text style={tw`${active ? 'text-[#FFE500]' : 'text-white'} text-base font-semibold`}>
+                                ]}>
+                                <Text
+                                    style={tw`${active ? 'text-[#FFE500]' : 'text-white'} text-base font-semibold`}>
                                     {srv.label}
                                 </Text>
                             </Pressable>
                         );
                     })}
                 </View>
-                { selectedServer && selectedServer != 'other' && (<XStack style={tw`mb-6`}>
-                    <StackText textColor="text-gray-300 text-xs">
-                        By creating an account, you agree to the{' '}
-                        <Text 
-                            style={tw`text-blue-400 text-xs font-bold`}
-                            onPress={() => onTermsOfService(selectedServer)}
-                        >
-                            Terms of Service
-                        </Text>
-                        {' '}and{' '}
-                        <Text 
-                            style={tw`text-blue-400 text-xs font-bold`}
-                            onPress={() => onPrivacyPolicy(selectedServer)}
-                            >
-                            Privacy Policy
-                        </Text>
-                        .
-                    </StackText>
-                </XStack>) }
+                {selectedServer && selectedServer != 'other' && (
+                    <XStack style={tw`mb-6`}>
+                        <StackText textColor="text-gray-300 text-xs">
+                            By creating an account, you agree to the{' '}
+                            <Text
+                                style={tw`text-blue-400 text-xs font-bold`}
+                                onPress={() => onTermsOfService(selectedServer)}>
+                                Terms of Service
+                            </Text>{' '}
+                            and{' '}
+                            <Text
+                                style={tw`text-blue-400 text-xs font-bold`}
+                                onPress={() => onPrivacyPolicy(selectedServer)}>
+                                Privacy Policy
+                            </Text>
+                            .
+                        </StackText>
+                    </XStack>
+                )}
 
                 <Pressable
                     onPress={handleRegisterServerSelected}
@@ -321,8 +337,7 @@ export default function SignInScreen() {
                         tw`h-14 rounded-full justify-center items-center`,
                         isLoading ? tw`bg-[#FFE500]/60` : tw`bg-[#FFE500]`,
                         pressed && !isLoading && tw`opacity-80`,
-                    ]}
-                >
+                    ]}>
                     {isLoading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
@@ -366,10 +381,14 @@ export default function SignInScreen() {
                             keyboardType="url"
                             returnKeyType="go"
                             editable={!isLoading}
-                            onSubmitEditing={() => isValidUrl(customServerUrl) && handleSignInSubmit(customServerUrl)}
+                            onSubmitEditing={() =>
+                                isValidUrl(customServerUrl) && handleSignInSubmit(customServerUrl)
+                            }
                         />
                     </View>
-                    <Text style={tw`text-gray-500 text-xs mt-2`}>Example: loops.video or your.loops.instance</Text>
+                    <Text style={tw`text-gray-500 text-xs mt-2`}>
+                        Example: loops.video or your.loops.instance
+                    </Text>
                 </View>
 
                 <Pressable
@@ -377,14 +396,23 @@ export default function SignInScreen() {
                     disabled={isLoading || !isValidUrl(customServerUrl)}
                     style={({ pressed }) => [
                         tw`h-14 rounded-full justify-center items-center`,
-                        isLoading || !isValidUrl(customServerUrl) ? tw`bg-[#FFE500]/40` : tw`bg-[#FFE500]`,
+                        isLoading || !isValidUrl(customServerUrl)
+                            ? tw`bg-[#FFE500]/40`
+                            : tw`bg-[#FFE500]`,
                         pressed && isValidUrl(customServerUrl) && !isLoading && tw`opacity-80`,
-                    ]}
-                >
+                    ]}>
                     {isLoading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={[isLoading || !isValidUrl(customServerUrl) ? tw`text-black/40` : tw`text-black`, tw`text-base font-bold`]}>Sign In</Text>
+                        <Text
+                            style={[
+                                isLoading || !isValidUrl(customServerUrl)
+                                    ? tw`text-black/40`
+                                    : tw`text-black`,
+                                tw`text-base font-bold`,
+                            ]}>
+                            Sign In
+                        </Text>
                     )}
                 </Pressable>
             </Animated.View>
@@ -424,45 +452,58 @@ export default function SignInScreen() {
                             keyboardType="url"
                             returnKeyType="go"
                             editable={!isLoading}
-                            onSubmitEditing={() => isValidUrl(customServerUrl) && handleRegisterSubmit(customServerUrl)}
+                            onSubmitEditing={() =>
+                                isValidUrl(customServerUrl) && handleRegisterSubmit(customServerUrl)
+                            }
                         />
                     </View>
-                    <Text style={tw`text-gray-500 text-xs mt-2`}>Example: loops.video or your.loops.instance</Text>
+                    <Text style={tw`text-gray-500 text-xs mt-2`}>
+                        Example: loops.video or your.loops.instance
+                    </Text>
                 </View>
 
-                { customServerUrl && isValidUrl(customServerUrl) && (<XStack style={tw`mb-6`}>
-                    <StackText textColor="text-gray-300 text-xs">
-                        By creating an account, you agree to the{' '}
-                        <Text 
-                            style={tw`text-blue-400 text-xs font-bold`}
-                            onPress={() => onTermsOfService(customServerUrl)}
-                        >
-                            Terms of Service
-                        </Text>
-                        {' '}and{' '}
-                        <Text 
-                            style={tw`text-blue-400 text-xs font-bold`}
-                            onPress={() => onPrivacyPolicy(customServerUrl)}
-                            >
-                            Privacy Policy
-                        </Text>
-                        .
-                    </StackText>
-                </XStack>) }
+                {customServerUrl && isValidUrl(customServerUrl) && (
+                    <XStack style={tw`mb-6`}>
+                        <StackText textColor="text-gray-300 text-xs">
+                            By creating an account, you agree to the{' '}
+                            <Text
+                                style={tw`text-blue-400 text-xs font-bold`}
+                                onPress={() => onTermsOfService(customServerUrl)}>
+                                Terms of Service
+                            </Text>{' '}
+                            and{' '}
+                            <Text
+                                style={tw`text-blue-400 text-xs font-bold`}
+                                onPress={() => onPrivacyPolicy(customServerUrl)}>
+                                Privacy Policy
+                            </Text>
+                            .
+                        </StackText>
+                    </XStack>
+                )}
 
                 <Pressable
                     onPress={() => handleRegisterSubmit(customServerUrl)}
                     disabled={isLoading || !isValidUrl(customServerUrl)}
                     style={({ pressed }) => [
                         tw`h-14 rounded-full justify-center items-center`,
-                        isLoading || !isValidUrl(customServerUrl) ? tw`bg-[#FFE500]/40` : tw`bg-[#FFE500]`,
+                        isLoading || !isValidUrl(customServerUrl)
+                            ? tw`bg-[#FFE500]/40`
+                            : tw`bg-[#FFE500]`,
                         pressed && isValidUrl(customServerUrl) && !isLoading && tw`opacity-80`,
-                    ]}
-                >
+                    ]}>
                     {isLoading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={[isLoading || !isValidUrl(customServerUrl) ? tw`text-black/40` : tw`text-black`, tw`text-base font-bold`]}>Create Account</Text>
+                        <Text
+                            style={[
+                                isLoading || !isValidUrl(customServerUrl)
+                                    ? tw`text-black/40`
+                                    : tw`text-black`,
+                                tw`text-base font-bold`,
+                            ]}>
+                            Create Account
+                        </Text>
                     )}
                 </Pressable>
             </Animated.View>
@@ -472,8 +513,7 @@ export default function SignInScreen() {
     return (
         <KeyboardAvoidingView
             style={tw`flex-1 bg-black`}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <StatusBar style="light" />
             {currentStep === 'initial' && renderInitial()}
             {currentStep === 'signin-server' && renderSignInServer()}

@@ -1,12 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import {
-    LayoutChangeEvent,
-    Pressable,
-    StyleSheet,
-    Text,
-    View
-} from 'react-native';
+import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import { UITextView } from 'react-native-uitextview';
 
 export default function LinkifiedCaption({
@@ -17,7 +11,7 @@ export default function LinkifiedCaption({
     numberOfLines,
     onHashtagPress,
     onMentionPress,
-    onMorePress
+    onMorePress,
 }) {
     const [containerWidth, setContainerWidth] = useState(0);
     const [fullTextWidth, setFullTextWidth] = useState<number | null>(null);
@@ -27,7 +21,7 @@ export default function LinkifiedCaption({
         if (!caption) return null;
         const links: Array<any> = [];
 
-        tags.forEach(tag => {
+        tags.forEach((tag) => {
             const regex = new RegExp(`#${tag}\\b`, 'gi');
             let match;
             while ((match = regex.exec(caption)) !== null) {
@@ -35,19 +29,19 @@ export default function LinkifiedCaption({
                     type: 'hashtag',
                     value: tag,
                     start: match.index,
-                    end: match.index + match[0].length
+                    end: match.index + match[0].length,
                 });
             }
         });
 
-        mentions.forEach(mention => {
+        mentions.forEach((mention) => {
             links.push({
                 type: 'mention',
                 value: mention.username,
                 profileId: mention.profile_id,
                 isLocal: mention.is_local,
                 start: mention.start_index,
-                end: mention.end_index
+                end: mention.end_index,
             });
         });
 
@@ -59,7 +53,7 @@ export default function LinkifiedCaption({
         links.forEach((link, index) => {
             if (link.start > lastIndex) {
                 elements.push(
-                    <Text key={`text-${index}`}>{caption.substring(lastIndex, link.start)}</Text>
+                    <Text key={`text-${index}`}>{caption.substring(lastIndex, link.start)}</Text>,
                 );
             }
 
@@ -74,10 +68,9 @@ export default function LinkifiedCaption({
                         } else {
                             onMentionPress?.(link.value, link.profileId);
                         }
-                    }}
-                >
+                    }}>
                     {linkText}
-                </Text>
+                </Text>,
             );
 
             lastIndex = link.end;
@@ -94,7 +87,7 @@ export default function LinkifiedCaption({
         if (!caption) return null;
         const links: Array<any> = [];
 
-        tags.forEach(tag => {
+        tags.forEach((tag) => {
             const regex = new RegExp(`#${tag}\\b`, 'gi');
             let match;
             while ((match = regex.exec(caption)) !== null) {
@@ -102,19 +95,19 @@ export default function LinkifiedCaption({
                     type: 'hashtag',
                     value: tag,
                     start: match.index,
-                    end: match.index + match[0].length
+                    end: match.index + match[0].length,
                 });
             }
         });
 
-        mentions.forEach(mention => {
+        mentions.forEach((mention) => {
             links.push({
                 type: 'mention',
                 value: mention.username,
                 profileId: mention.profile_id,
                 isLocal: mention.is_local,
                 start: mention.start_index,
-                end: mention.end_index
+                end: mention.end_index,
             });
         });
 
@@ -139,10 +132,9 @@ export default function LinkifiedCaption({
                         } else {
                             onMentionPress?.(link.value, link.profileId);
                         }
-                    }}
-                >
+                    }}>
                     {linkText}
-                </UITextView>
+                </UITextView>,
             );
 
             lastIndex = link.end;
@@ -175,14 +167,11 @@ export default function LinkifiedCaption({
     }, []);
 
     const canDecide =
-        numberOfLines === 1 &&
-        containerWidth > 0 &&
-        moreWidth != null &&
-        fullTextWidth != null;
+        numberOfLines === 1 && containerWidth > 0 && moreWidth != null && fullTextWidth != null;
 
     const needsMore = useMemo(() => {
         if (!canDecide) return false;
-        return fullTextWidth! > (containerWidth - (moreWidth as number));
+        return fullTextWidth! > containerWidth - (moreWidth as number);
     }, [canDecide, fullTextWidth, containerWidth, moreWidth]);
 
     if (numberOfLines === 1) {
@@ -191,8 +180,7 @@ export default function LinkifiedCaption({
                 <Text
                     style={[style, styles.measurementText]}
                     numberOfLines={1}
-                    onTextLayout={onMeasureFullText}
-                >
+                    onTextLayout={onMeasureFullText}>
                     {caption || ''}
                 </Text>
 
@@ -207,11 +195,12 @@ export default function LinkifiedCaption({
                     <Text
                         style={[
                             style,
-                            needsMore && { maxWidth: Math.max(0, containerWidth - (moreWidth || 0)) }
+                            needsMore && {
+                                maxWidth: Math.max(0, containerWidth - (moreWidth || 0)),
+                            },
                         ]}
                         numberOfLines={1}
-                        ellipsizeMode="tail"
-                    >
+                        ellipsizeMode="tail">
                         {renderCaptionForText()}
                     </Text>
 
@@ -235,53 +224,53 @@ export default function LinkifiedCaption({
 
 const styles = StyleSheet.create({
     container: {
-        position: 'relative'
+        position: 'relative',
     },
 
     measurementText: {
         position: 'absolute',
         opacity: 0,
         zIndex: -1,
-        includeFontPadding: false
+        includeFontPadding: false,
     },
     measureRow: {
         position: 'absolute',
         opacity: 0,
         zIndex: -1,
-        flexDirection: 'row'
+        flexDirection: 'row',
     },
     measureItem: {
         flexDirection: 'row',
-        alignItems: 'center'
+        alignItems: 'center',
     },
     moreIconMeasure: {
         marginLeft: 2,
-        opacity: 0.7
+        opacity: 0.7,
     },
 
     inlineRow: {
         flexDirection: 'row',
         alignItems: 'baseline',
-        flexWrap: 'nowrap'
+        flexWrap: 'nowrap',
     },
     linkText: {
-        fontWeight: '700'
+        fontWeight: '700',
     },
     moreInline: {
         flexDirection: 'row',
         alignItems: 'baseline',
-        marginLeft: 4
+        marginLeft: 4,
     },
     moreText: {
         fontSize: 14,
         fontWeight: '700',
         color: '#fff',
-        opacity: 0.7
+        opacity: 0.7,
     },
     moreIcon: {
         marginLeft: 2,
         opacity: 0.7,
         paddingTop: 2,
-        color: '#fff'
-    }
+        color: '#fff',
+    },
 });

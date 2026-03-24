@@ -30,7 +30,7 @@ export default function OnboardingStepOne() {
         pulse.value = withRepeat(
             withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
             -1,
-            true
+            true,
         );
         return () => cancelAnimation(pulse);
     }, [pulse]);
@@ -63,13 +63,14 @@ export default function OnboardingStepOne() {
                             tw`items-center justify-center pl-2`,
                             { backgroundColor: '#FFE500' },
                             pulseStyle,
-                        ]}
-                    >
+                        ]}>
                         <Ionicons name="play" size={64} color="#000" />
                     </Animated.View>
                 </Animated.View>
 
-                <Animated.View entering={FadeInUp.delay(120).duration(500)} style={tw`items-center mt-7 w-full`}>
+                <Animated.View
+                    entering={FadeInUp.delay(120).duration(500)}
+                    style={tw`items-center mt-7 w-full`}>
                     <XStack style={tw`flex-row flex-wrap justify-center max-w-xs`}>
                         <StackText fontSize="$8" fontWeight={500} textColor="text-white">
                             Watch.&nbsp;
@@ -86,8 +87,7 @@ export default function OnboardingStepOne() {
                         fontSize="$4"
                         textColor="text-white/70"
                         style={tw`mt-2 text-center max-w-xs`}
-                        lineHeight={Platform.OS === 'android' ? 20 : 'relaxed'}
-                    >
+                        lineHeight={Platform.OS === 'android' ? 20 : 'relaxed'}>
                         Join millions sharing short videos on Loops.
                     </StackText>
                 </Animated.View>
@@ -96,7 +96,10 @@ export default function OnboardingStepOne() {
             <YStack style={[tw`px-6`, { paddingBottom: Math.max(insets.bottom + 10, 18) }]}>
                 <XStack justifyContent="space-between" alignItems="center">
                     <Pagination current={0} total={2} />
-                    <PrimaryButton label="Continue" onPress={() => router.push('/onboarding/final')} />
+                    <PrimaryButton
+                        label="Continue"
+                        onPress={() => router.push('/onboarding/final')}
+                    />
                 </XStack>
             </YStack>
         </View>
@@ -113,8 +116,7 @@ function PrimaryButton({ label, onPress }: { label: string; onPress: () => void 
                 tw`rounded-full px-8 py-3 bg-[#FFE500]`,
                 Platform.OS === 'android' && tw`py-3`,
                 pressed && Platform.OS === 'ios' && tw`opacity-90`,
-            ]}
-        >
+            ]}>
             <StackText fontWeight="semibold" textColor="text-black" fontSize="$4">
                 {label}
             </StackText>
@@ -125,10 +127,7 @@ function PrimaryButton({ label, onPress }: { label: string; onPress: () => void 
 function Dot({ active }: { active: boolean }) {
     return (
         <View
-            style={tw.style(
-                'h-2 rounded-full mx-1',
-                active ? 'w-6 bg-white' : 'w-2 bg-white/35'
-            )}
+            style={tw.style('h-2 rounded-full mx-1', active ? 'w-6 bg-white' : 'w-2 bg-white/35')}
         />
     );
 }
