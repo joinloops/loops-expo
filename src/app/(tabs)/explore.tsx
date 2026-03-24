@@ -10,7 +10,7 @@ import {
     getExploreTagsFeed,
     postExploreAccountHideSuggestion,
 } from '@/utils/requests';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
@@ -374,14 +374,14 @@ export default function ExploreScreen() {
                     }}
                     scrollEventThrottle={16}>
                     <View style={tw`px-4 pt-4 pb-3 flex justify-between items-center flex-row`}>
-                        <Text style={tw`text-black text-4xl font-bold dark:text-white`}>
+                        <Text style={tw`text-black text-24px font-bold dark:text-white`}>
                             Explore
                         </Text>
                         <Pressable onPress={() => router.push('/private/search')}>
-                            <Feather
+                            <Ionicons
                                 name="search"
                                 color={colorScheme === 'dark' ? '#fff' : '#000'}
-                                size={30}
+                                size={28}
                             />
                         </Pressable>
                     </View>

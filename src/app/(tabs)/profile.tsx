@@ -226,6 +226,7 @@ export default function ProfileScreen() {
             headerStyle: tw`bg-white dark:bg-black`,
             headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
             headerTitleStyle: {
+                fontSize: 24,
                 fontWeight: 'bold',
                 color: colorScheme === 'dark' ? '#fff' : '#000',
             },
@@ -237,10 +238,10 @@ export default function ProfileScreen() {
                     accessibilityLabel="Settings"
                     accessibilityRole="button"
                     onPress={handleSettingsPress}
-                    style={tw`mr-3`}>
+                    style={tw`mr-4`}>
                     <Ionicons
                         name="menu"
-                        size={30}
+                        size={28}
                         color={colorScheme === 'dark' ? '#fff' : '#000'}
                     />
                 </PressableHaptics>
