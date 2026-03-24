@@ -12,7 +12,7 @@ export function useNotificationPolling(intervalMs: number = 900000) {
 
         const startPolling = () => {
             if (pollInterval.current) return;
-            
+
             pollInterval.current = setInterval(() => {
                 fetchBadgeCount();
             }, intervalMs);
@@ -29,7 +29,11 @@ export function useNotificationPolling(intervalMs: number = 900000) {
             const currentState = appState.current;
 
             // Handle null case - treat null as if app was in background
-            if (currentState && currentState.match(/inactive|background/) && nextAppState === 'active') {
+            if (
+                currentState &&
+                currentState.match(/inactive|background/) &&
+                nextAppState === 'active'
+            ) {
                 fetchBadgeCount();
                 startPolling();
             } else if (nextAppState.match(/inactive|background/)) {

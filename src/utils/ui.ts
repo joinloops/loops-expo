@@ -49,9 +49,9 @@ export function prettyCount(
     opts?: { precision?: number; rounding?: 'round' | 'floor' | 'ceil' },
 ): string {
     const num = typeof n === 'string' ? parseFloat(n) : n;
-    
+
     if (!Number.isFinite(num) || isNaN(num)) return '0';
-    
+
     const abs = Math.abs(num);
     const sign = num < 0 ? '-' : '';
     const precision = opts?.precision ?? 0;
@@ -101,16 +101,28 @@ export function timeAgo(input: Date | number | string, now?: Date | number): str
     if (h < 24) {
         if (s < 5) return 'now';
         if (s < 60) return `${s}s`;
-        
+
         const m = Math.floor(s / 60);
         if (m < 60) return `${m}m`;
-        
+
         return `${h}h`;
     }
 
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+    ];
+
     const month = months[d.getMonth()];
     const day = d.getDate();
     const year = d.getFullYear();
@@ -119,7 +131,7 @@ export function timeAgo(input: Date | number | string, now?: Date | number): str
     if (year === currentYear) {
         return `${month} ${day}`;
     }
-    
+
     return `${month} ${day}, ${year}`;
 }
 

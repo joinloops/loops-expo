@@ -11,7 +11,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -22,7 +22,7 @@ type DuetLayout = 'side-by-side' | 'vertical';
 export default function DuetPreviewScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    
+
     const duetId = params.duetId as string;
     const newVideoPath = params.newVideoPath as string;
     const originalVideoUri = params.originalVideoUri as string;
@@ -36,12 +36,12 @@ export default function DuetPreviewScreen() {
     const [originalVideoReady, setOriginalVideoReady] = useState(false);
     const [newVideoReady, setNewVideoReady] = useState(false);
 
-    const originalPlayer = useVideoPlayer(originalVideoUri, player => {
+    const originalPlayer = useVideoPlayer(originalVideoUri, (player) => {
         player.loop = false;
         player.volume = 0.5;
     });
 
-    const newPlayer = useVideoPlayer(newVideoUri, player => {
+    const newPlayer = useVideoPlayer(newVideoUri, (player) => {
         player.loop = false;
         player.volume = 1.0;
     });
@@ -98,8 +98,8 @@ export default function DuetPreviewScreen() {
                 originalVideoUri: originalVideoUri,
                 duration: duration.toString(),
                 layout: layout,
-            }
-        })
+            },
+        });
     };
 
     let originalVideoWidth: number;
@@ -126,14 +126,12 @@ export default function DuetPreviewScreen() {
             <StatusBar style="light" />
             <Stack.Screen options={{ headerShown: false }} />
 
-
             <View
                 style={[
                     styles.videoContainer,
                     layout === 'side-by-side' ? styles.videoLeft : styles.videoTop,
                     { width: originalVideoWidth, height: originalVideoHeight },
-                ]}
-            >
+                ]}>
                 <VideoView
                     player={originalPlayer}
                     style={StyleSheet.absoluteFill}
@@ -148,8 +146,7 @@ export default function DuetPreviewScreen() {
                     styles.videoContainer,
                     layout === 'side-by-side' ? styles.videoRight : styles.videoBottom,
                     { width: newVideoWidth, height: newVideoHeight },
-                ]}
-            >
+                ]}>
                 <VideoView
                     player={newPlayer}
                     style={StyleSheet.absoluteFill}
@@ -177,11 +174,7 @@ export default function DuetPreviewScreen() {
 
             {bothVideosReady && (
                 <TouchableOpacity style={styles.playButton} onPress={handlePlayPause}>
-                    <Ionicons
-                        name={isPlaying ? 'pause' : 'play'}
-                        size={48}
-                        color="#fff"
-                    />
+                    <Ionicons name={isPlaying ? 'pause' : 'play'} size={48} color="#fff" />
                 </TouchableOpacity>
             )}
 
@@ -196,8 +189,7 @@ export default function DuetPreviewScreen() {
                 <PressableHaptics
                     onPress={handleRetake}
                     style={styles.retakeButton}
-                    disabled={isProcessing}
-                >
+                    disabled={isProcessing}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                     <Text style={styles.retakeText}>Retake</Text>
                 </PressableHaptics>
@@ -205,8 +197,7 @@ export default function DuetPreviewScreen() {
                 <PressableHaptics
                     onPress={handlePublish}
                     style={[styles.publishButton, isProcessing && styles.publishButtonDisabled]}
-                    disabled={isProcessing || !bothVideosReady}
-                >
+                    disabled={isProcessing || !bothVideosReady}>
                     {isProcessing ? (
                         <ActivityIndicator color="#fff" />
                     ) : (

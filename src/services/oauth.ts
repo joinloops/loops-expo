@@ -51,7 +51,7 @@ export class OAuthService {
     static async registerWithWebBrowser(server: string): Promise<boolean> {
         try {
             const url = `https://${server}`;
-            
+
             const REDIRECT_URI = Linking.createURL('register-callback');
 
             const registerUrl = `${url}/auth/app/register?mobile=true&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
