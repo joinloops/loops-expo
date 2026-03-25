@@ -36,13 +36,13 @@ export interface Links {
     first: any;
     last: any;
     prev: any;
-    next: any;
+    next: string | null;
 }
 
 export interface Meta {
     path: string;
     per_page: number;
-    next_cursor: any;
+    next_cursor: string | null;
     prev_cursor: any;
 }
 
@@ -179,7 +179,7 @@ export interface AccountInfoData {
     following_count: number;
     url: string;
     remote_url: any;
-    is_blocking: any;
+    is_blocking: boolean | null;
     links: any[];
     created_at: string;
     is_admin: boolean;
@@ -267,4 +267,113 @@ export interface SecurityConfigResponse {
 
 export interface SecurityConfigData {
     two_factor_enabled: boolean;
+}
+
+export interface ReportRulesItem {
+    key: string;
+    message: string;
+}
+
+export interface AutoCompleteTagResponse {
+    data: AutoCompleteTagData[];
+}
+
+export interface AutoCompleteTagData {
+    id: number;
+    name: string;
+    slug: string;
+    count: number;
+    created_at: string;
+}
+
+export interface NotificationResponse {
+    data: NotificationData[];
+    links: Links;
+    meta: NotificationMeta;
+}
+
+export interface NotificationData {
+    id: string;
+    type: string;
+    video_pid: string;
+    video_id: string;
+    video_thumbnail: string;
+    actor: Actor;
+    url?: string;
+    read_at?: string;
+    created_at: string;
+}
+
+export interface Actor {
+    id: string;
+    name: string;
+    avatar: string;
+    username: string;
+    is_owner: boolean;
+    local: boolean;
+    bio: string;
+    post_count: number;
+    follower_count: number;
+    following_count: number;
+    url: string;
+    remote_url: any;
+    is_blocking: any;
+    links: Link[];
+    created_at: string;
+}
+
+export interface Link {
+    url: string;
+    link: string;
+    is_verified: boolean;
+}
+
+export interface NotificationMeta {
+    path: string;
+    per_page: number;
+    next_cursor: string;
+    prev_cursor: any;
+    unread_counts: UnreadCounts;
+}
+
+export interface UnreadCounts {
+    activity: number;
+    followers: number;
+    system: number;
+    starterKits: number;
+}
+
+export interface SystemNofiticationsResponse {
+    data: SystemNofiticationsData[];
+    links: Links;
+    meta: Meta;
+}
+
+export interface SystemNofiticationsData {
+    id: string;
+    type: string;
+    systemType: string;
+    systemMessage: SystemMessage;
+    read_at: string;
+    created_at: string;
+}
+
+export interface SystemMessage {
+    id: string;
+    title: string;
+    summary: string;
+    link: string;
+    published_at: string;
+}
+
+export interface NotificationReadResponse {
+    data: NotificationData;
+}
+
+export interface NotificationCountResponse {
+    data: NotificationCountData;
+}
+
+export interface NotificationCountData {
+    unread_count: number;
 }
