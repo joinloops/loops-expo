@@ -180,7 +180,7 @@ export interface AccountInfoData {
     url: string;
     remote_url: any;
     is_blocking: boolean | null;
-    links: any[];
+    links: Link[];
     created_at: string;
     is_admin: boolean;
     likes_count: number;
@@ -376,4 +376,85 @@ export interface NotificationCountResponse {
 
 export interface NotificationCountData {
     unread_count: number;
+}
+export interface SearchResponse {
+    data: SearchData;
+    links: Links;
+    meta: Meta;
+}
+
+export interface SearchData {
+    hashtags: any[];
+    users: Actor[];
+    videos: SearchVideo[];
+    starter_kits: any[];
+}
+
+export interface SearchVideo {
+    id: string;
+    hid: string;
+    account: Account;
+    caption: string;
+    url: string;
+    likes: number;
+    comments: number;
+    is_sensitive: boolean;
+    created_at: string;
+    media: Media;
+}
+
+export interface SearchMedia {
+    duration: number;
+    thumbnail: string;
+}
+
+export interface SlugResponse {
+    data: SlugData;
+}
+
+export interface SlugData {
+    title: string;
+    content: string;
+    slug: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Tag {
+    id: number;
+    name: string;
+    count: number;
+}
+
+export interface SettingsLinksResponse {
+    data: SettingsLinksData;
+}
+
+export interface SettingsLinksData {
+    id: string;
+    min_threshold: number;
+    total_allowed: number;
+    available_slots: number;
+    can_add: boolean;
+    links: any[];
+}
+
+export interface UpdatePasswordRequest {
+    current_password: string;
+    password: string;
+    password_confirmation: string;
+}
+
+export interface NotificationFollowersResponse {
+    data: NotificationFollowersData[];
+    links: Links;
+    meta: NotificationMeta;
+}
+
+export interface NotificationFollowersData {
+    id: string;
+    type: string;
+    actor: Actor;
+    read_at: string;
+    created_at: string;
 }

@@ -1,6 +1,7 @@
 import {
     AccountInfoData,
     AccountInfoResponse,
+    Actor,
     ApiResponse,
     ApiV1VideoResponse,
     AutoCompleteTagResponse,
@@ -13,14 +14,20 @@ import {
     CommentsResponse,
     EmailResponse,
     NotificationCountResponse,
+    NotificationFollowersResponse,
     NotificationReadResponse,
     NotificationResponse,
     PreferencesResponse,
     PrivacyResponse,
     PublicConfigResponse,
     ReportRulesItem,
+    SearchData,
     SecurityConfigResponse,
+    SettingsLinksResponse,
+    SlugResponse,
     SystemNofiticationsResponse,
+    Tag,
+    UpdatePasswordRequest,
     VideoFeedResponse,
     VideoResource,
 } from '@/types/requestTypes';
@@ -732,7 +739,7 @@ export async function fetchLocalFeed({
     pageParam = false,
 }: {
     pageParam?: string | false;
-} = {}): Promise<any> {
+} = {}): Promise<VideoFeedResponse> {
     const url = pageParam ? `api/v1/feed/for-you?cursor=${pageParam}` : `api/v1/feed/for-you`;
     return await _selfGet(url);
 }
@@ -741,7 +748,7 @@ export async function fetchForYouFeed({
     pageParam = false,
 }: {
     pageParam?: string | false;
-} = {}): Promise<any> {
+} = {}): Promise<VideoFeedResponse> {
     const url = pageParam
         ? `api/v0/feed/recommended?cursor=${pageParam}`
         : `api/v0/feed/recommended`;
@@ -752,7 +759,7 @@ export async function fetchFollowingFeed({
     pageParam = false,
 }: {
     pageParam?: string | false;
-} = {}): Promise<any> {
+} = {}): Promise<VideoFeedResponse> {
     const url = pageParam ? `api/v1/feed/following?cursor=${pageParam}` : `api/v1/feed/following`;
     return await _selfGet(url);
 }
@@ -763,7 +770,7 @@ export async function fetchSelfAccountVideos({
 }: {
     queryKey?: any[];
     pageParam?: string | false;
-} = {}): Promise<any> {
+} = {}): Promise<VideoFeedResponse> {
     const sort = queryKey?.[1];
 
     const params = new URLSearchParams();
@@ -930,7 +937,7 @@ export async function fetchFollowerNotifications({
     pageParam,
 }: {
     pageParam?: string | undefined;
-} = {}): Promise<any> {
+} = {}): Promise<NotificationFollowersResponse> {
     const url = pageParam
         ? `api/v1/account/notifications?type=followers&cursor=${pageParam}`
         : `api/v1/account/notifications?type=followers`;
@@ -976,7 +983,7 @@ export async function updateAccountBio(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/bio', params);
 }
 
-export async function updateAccountEmail(params: any): Promise<any> {
+export async function updateAccountEmail(params: any): Promise<ApiResponse> {
     return await _selfPost('api/v1/account/settings/email/update', params);
 }
 
@@ -992,11 +999,11 @@ export async function updateAccountPrivacy(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/privacy', params);
 }
 
-export async function updateAccountPassword(params: any): Promise<any> {
+export async function updateAccountPassword(params: UpdatePasswordRequest): Promise<ApiResponse> {
     return await _selfPost('api/v1/account/settings/update-password', params);
 }
 
-export async function getAccountLinks(): Promise<any> {
+export async function getAccountLinks(): Promise<SettingsLinksResponse> {
     return await _selfGet('api/v1/account/settings/links');
 }
 
@@ -1020,29 +1027,14 @@ export const deleteAccount = async (data) => {
 // EXPLORE
 // ============================================================================
 
-interface Tag {
-    id: number;
-    name: string;
-    count: number;
-}
-
-export async function getExploreTags(): Promise<any> {
+export async function getExploreTags(): Promise<Tag[]> {
     const res = await _selfGet('api/v1/explore/tags');
     return res.data as Tag[];
 }
 
-interface Account {
-    id: string;
-    name: string;
-    avatar: string;
-    username: string;
-    bio: string;
-    follower_count: number;
-}
-
-export async function getExploreAccounts(): Promise<any> {
+export async function getExploreAccounts(): Promise<Actor[]> {
     const res = await _selfGet('api/v1/accounts/suggested');
-    return res.data as Account[];
+    return res.data as Actor[];
 }
 
 export async function getExploreTagsFeed({
@@ -1073,15 +1065,15 @@ export async function postExploreAccountHideSuggestion(id: string) {
 // LEGAL
 // ============================================================================
 
-export async function getInstanceTerms(): Promise<any> {
+export async function getInstanceTerms(): Promise<SlugResponse> {
     return await _selfAnonGet(`api/v1/page/content?slug=terms`);
 }
 
-export async function getInstancePrivacy(): Promise<any> {
+export async function getInstancePrivacy(): Promise<SlugResponse> {
     return await _selfAnonGet(`api/v1/page/content?slug=privacy`);
 }
 
-export async function getInstanceCommunityGuidelines(): Promise<any> {
+export async function getInstanceCommunityGuidelines(): Promise<SlugResponse> {
     return await _selfAnonGet(`api/v1/page/content?slug=community-guidelines`);
 }
 
@@ -1089,7 +1081,11 @@ export async function getInstanceCommunityGuidelines(): Promise<any> {
 // SEARCH
 // ============================================================================
 
-export const searchContent = async (params): Promise<any> => {
+export const searchContent = async (params: {
+    query: string;
+    type: string;
+    limit: number;
+}): Promise<SearchData> => {
     try {
         const typeMap = {
             Top: 'all',
