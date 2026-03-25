@@ -142,8 +142,8 @@ export interface CommentPostRequest {
     parent_id?: string;
 }
 
-export interface ServiceResponse {
-    data: any[]; // Empty array
+export interface ApiResponse {
+    data: [];
     error: Error;
 }
 
@@ -152,7 +152,7 @@ export interface Error {
     message: string;
 }
 
-export interface VideoBookmarkResponse {
+export interface VideoFeedResponse {
     data: VideoResource[];
     links: Links;
     meta: Meta;
@@ -160,4 +160,111 @@ export interface VideoBookmarkResponse {
 
 export interface ApiV1VideoResponse {
     data: VideoResource;
+}
+
+export interface AccountInfoResponse {
+    data: AccountInfoData;
+}
+
+export interface AccountInfoData {
+    id: string;
+    name: string;
+    avatar: string;
+    username: string;
+    is_owner: boolean;
+    local: boolean;
+    bio: string;
+    post_count: number;
+    follower_count: number;
+    following_count: number;
+    url: string;
+    remote_url: any;
+    is_blocking: any;
+    links: any[];
+    created_at: string;
+    is_admin: boolean;
+    likes_count: number;
+}
+
+export interface PublicConfigResponse {
+    app: App;
+    media: MediaPublicConfig;
+    fyf: boolean;
+    registration: boolean;
+    federation: boolean;
+    pushNotifications: boolean;
+    starterKits: boolean;
+}
+
+export interface App {
+    name: string;
+    url: string;
+    description: string;
+    software: string;
+    version: string;
+}
+
+export interface MediaPublicConfig {
+    max_video_size: number;
+    max_video_duration: number;
+    allowed_video_formats: string[];
+}
+
+export interface PreferencesResponse {
+    data: PreferencesData;
+}
+
+export interface PreferencesData {
+    account: PreferencesAccount;
+    settings: Settings;
+}
+
+export interface PreferencesAccount {
+    username: string;
+    profile_id: string;
+}
+
+export interface Settings {
+    autoplay_videos: boolean;
+    loop_videos: boolean;
+    default_feed: string;
+    hide_for_you_feed: boolean;
+    mute_on_open: boolean;
+    auto_expand_cw: boolean;
+    appearance: string;
+}
+
+export interface EmailResponse {
+    data: EmailData;
+}
+
+export interface EmailData {
+    current_email: string;
+    email_verified: boolean;
+    email_added_date: string;
+    pending_email: any;
+}
+
+export interface BirthdateResponse {
+    data: BirthdateData;
+}
+
+export interface BirthdateData {
+    has_birthdate: boolean;
+}
+
+export interface PrivacyResponse {
+    data: PrivacyData;
+}
+
+export interface PrivacyData {
+    discoverable: boolean;
+}
+
+export interface SecurityConfigResponse {
+    data: SecurityConfigData;
+}
+
+export interface SecurityConfigData {
+    two_factor_enabled: boolean;
 }
