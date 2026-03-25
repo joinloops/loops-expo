@@ -1,3 +1,36 @@
+import {
+    AccountInfoData,
+    AccountInfoResponse,
+    Actor,
+    ApiResponse,
+    ApiV1VideoResponse,
+    AutoCompleteTagResponse,
+    BirthdateResponse,
+    CommentData,
+    CommentPostRequest,
+    CommentPostResponse,
+    CommentReplyData,
+    CommentReplyResponse,
+    CommentsResponse,
+    EmailResponse,
+    NotificationCountResponse,
+    NotificationFollowersResponse,
+    NotificationReadResponse,
+    NotificationResponse,
+    PreferencesResponse,
+    PrivacyResponse,
+    PublicConfigResponse,
+    ReportRulesItem,
+    SearchData,
+    SecurityConfigResponse,
+    SettingsLinksResponse,
+    SlugResponse,
+    SystemNofiticationsResponse,
+    Tag,
+    UpdatePasswordRequest,
+    VideoFeedResponse,
+    VideoResource,
+} from '@/types/requestTypes';
 import { Storage } from '@/utils/cache';
 import * as WebBrowser from 'expo-web-browser';
 import { Alert } from 'react-native';
@@ -337,7 +370,10 @@ export async function registerPreflightCheck(server: string): Promise<boolean> {
     return true;
 }
 
-export async function verifyCredentials(domain: string, token: string): Promise<any> {
+export async function verifyCredentials(
+    domain: string,
+    token: string,
+): Promise<AccountInfoResponse> {
     const resp = await get(`https://${domain}/api/v1/account/info/self`, token);
     return resp.json();
 }
@@ -346,7 +382,7 @@ export async function verifyCredentials(domain: string, token: string): Promise<
 // SERVER CONFIG & PREFERENCES
 // ============================================================================
 
-export async function getConfiguration(): Promise<any> {
+export async function getConfiguration(): Promise<PublicConfigResponse | { fyf: boolean }> {
     try {
         const server = Storage.getString('app.instance');
         const url = `https://${server}/api/v1/config`;
@@ -369,7 +405,7 @@ export async function getConfiguration(): Promise<any> {
     }
 }
 
-export async function getPreferences(): Promise<any> {
+export async function getPreferences(): Promise<PreferencesResponse> {
     try {
         const server = Storage.getString('app.instance');
         const token = Storage.getString('app.token');
@@ -453,12 +489,12 @@ export async function queryApi(endpoint: string, params: any = null): Promise<an
 // ACCOUNT ENDPOINTS
 // ============================================================================
 
-export async function fetchAccount(id: string): Promise<any> {
+export async function fetchAccount(id: string): Promise<AccountInfoResponse> {
     const url = `api/v1/account/info/${id}`;
     return await _selfGet(url);
 }
 
-export async function fetchSelfAccount(): Promise<any> {
+export async function fetchSelfAccount(): Promise<AccountInfoResponse> {
     const url = `api/v1/account/info/self`;
     return await _selfGet(url);
 }
@@ -469,7 +505,7 @@ export async function fetchUserVideos({
 }: {
     queryKey: any[];
     pageParam?: string | false;
-}): Promise<any> {
+}): Promise<VideoFeedResponse> {
     const [, id, sort] = queryKey;
 
     let url = `api/v1/feed/account/${id}`;
@@ -509,19 +545,19 @@ export async function fetchAccountState(id: string): Promise<any> {
     return await _selfGet(`api/v1/account/state/${id}`);
 }
 
-export async function fetchAccountEmail(): Promise<any> {
+export async function fetchAccountEmail(): Promise<EmailResponse> {
     return await _selfGet('api/v1/account/settings/email');
 }
 
-export async function fetchAccountBirthdate(): Promise<any> {
+export async function fetchAccountBirthdate(): Promise<BirthdateResponse> {
     return await _selfGet('api/v1/account/settings/birthdate');
 }
 
-export async function fetchAccountPrivacy(): Promise<any> {
+export async function fetchAccountPrivacy(): Promise<PrivacyResponse> {
     return await _selfGet('api/v1/account/settings/privacy');
 }
 
-export async function fetchAccountSecurityConfig(): Promise<any> {
+export async function fetchAccountSecurityConfig(): Promise<SecurityConfigResponse> {
     return await _selfGet('api/v1/account/settings/security-config');
 }
 
@@ -622,23 +658,23 @@ export async function fetchAccountSuggested({
     return await _selfGet(url);
 }
 
-export async function blockAccount(id): Promise<any> {
+export async function blockAccount(id: string): Promise<AccountInfoData> {
     return await _selfPost(`api/v1/account/block/${id}`);
 }
 
-export async function unblockAccount(id): Promise<any> {
+export async function unblockAccount(id: string): Promise<AccountInfoData> {
     return await _selfPost(`api/v1/account/unblock/${id}`);
 }
 
-export async function followAccount(id): Promise<any> {
+export async function followAccount(id: string): Promise<AccountInfoResponse> {
     return await _selfPost(`api/v1/account/follow/${id}`);
 }
 
-export async function unfollowAccount(id): Promise<any> {
+export async function unfollowAccount(id: string): Promise<AccountInfoResponse> {
     return await _selfPost(`api/v1/account/unfollow/${id}`);
 }
 
-export async function cancelFollowRequest(id): Promise<any> {
+export async function cancelFollowRequest(id: string): Promise<any> {
     return await _selfPost(`api/v1/account/undo-follow-request/${id}`);
 }
 
@@ -646,7 +682,7 @@ export async function cancelFollowRequest(id): Promise<any> {
 // REPORTS ENDPOINTS
 // ============================================================================
 
-export async function fetchReportRules(): Promise<any> {
+export async function fetchReportRules(): Promise<ReportRulesItem[]> {
     return await _selfAnonGet('api/v1/web/report-rules');
 }
 
@@ -673,11 +709,11 @@ export async function submitReport({
 // CAMERA & COMPOSE
 // ============================================================================
 
-export async function composeAutocompleteTags(q): Promise<any> {
+export async function composeAutocompleteTags(q: string): Promise<AutoCompleteTagResponse> {
     return await _selfGet(`api/v1/autocomplete/tags?q=${q}`);
 }
 
-export async function composeAutocompleteMentions(q): Promise<any> {
+export async function composeAutocompleteMentions(q: string): Promise<AccountInfoResponse> {
     return await _selfGet(`api/v1/autocomplete/accounts?q=${q}`);
 }
 
@@ -703,7 +739,7 @@ export async function fetchLocalFeed({
     pageParam = false,
 }: {
     pageParam?: string | false;
-} = {}): Promise<any> {
+} = {}): Promise<VideoFeedResponse> {
     const url = pageParam ? `api/v1/feed/for-you?cursor=${pageParam}` : `api/v1/feed/for-you`;
     return await _selfGet(url);
 }
@@ -712,7 +748,7 @@ export async function fetchForYouFeed({
     pageParam = false,
 }: {
     pageParam?: string | false;
-} = {}): Promise<any> {
+} = {}): Promise<VideoFeedResponse> {
     const url = pageParam
         ? `api/v0/feed/recommended?cursor=${pageParam}`
         : `api/v0/feed/recommended`;
@@ -723,7 +759,7 @@ export async function fetchFollowingFeed({
     pageParam = false,
 }: {
     pageParam?: string | false;
-} = {}): Promise<any> {
+} = {}): Promise<VideoFeedResponse> {
     const url = pageParam ? `api/v1/feed/following?cursor=${pageParam}` : `api/v1/feed/following`;
     return await _selfGet(url);
 }
@@ -734,7 +770,7 @@ export async function fetchSelfAccountVideos({
 }: {
     queryKey?: any[];
     pageParam?: string | false;
-} = {}): Promise<any> {
+} = {}): Promise<VideoFeedResponse> {
     const sort = queryKey?.[1];
 
     const params = new URLSearchParams();
@@ -755,46 +791,50 @@ export async function fetchSelfAccountVideos({
     return await _selfGet(url);
 }
 
-export async function fetchVideo(id): Promise<any> {
+export async function fetchVideo(id: string): Promise<ApiV1VideoResponse> {
     return await _selfGet(`api/v1/video/${id}`);
 }
 
-export async function updateVideoEdit(id, params): Promise<any> {
+export async function updateVideoEdit(id: string, params): Promise<VideoResource> {
     return await _selfPost(`api/v1/video/edit/${id}`, params);
 }
 
-export async function fetchVideoComments(id, pageParam = false): Promise<any> {
+export async function fetchVideoComments(id: string, pageParam = false): Promise<CommentsResponse> {
     const url = pageParam
         ? `api/v1/video/comments/${id}?cursor=${pageParam}`
         : `api/v1/video/comments/${id}`;
     return await _selfGet(url);
 }
 
-export async function fetchVideoReplies(vid, id, pageParam = false): Promise<any> {
+export async function fetchVideoReplies(
+    vid: string,
+    id: string,
+    pageParam = false,
+): Promise<CommentReplyResponse> {
     const url = pageParam
         ? `api/v1/video/comments/${vid}/replies?cr=${id}&cursor=${pageParam}`
         : `api/v1/video/comments/${vid}/replies?cr=${id}`;
     return await _selfGet(url);
 }
 
-export async function videoLike(id): Promise<any> {
+export async function videoLike(id: string): Promise<VideoResource> {
     return await _selfPost(`api/v1/video/like/${id}`);
 }
 
-export async function videoUnlike(id): Promise<any> {
+export async function videoUnlike(id: string): Promise<VideoResource> {
     return await _selfPost(`api/v1/video/unlike/${id}`);
 }
 
-export async function videoBookmark(id): Promise<any> {
+export async function videoBookmark(id: string): Promise<VideoResource> {
     return await _selfPost(`api/v1/video/bookmark/${id}`);
 }
 
-export async function videoUnbookmark(id): Promise<any> {
+export async function videoUnbookmark(id): Promise<VideoResource> {
     return await _selfPost(`api/v1/video/unbookmark/${id}`);
 }
 
-export async function commentPost({ id, commentText, parentId }): Promise<any> {
-    const params = parentId
+export async function commentPost({ id, commentText, parentId }): Promise<CommentPostResponse> {
+    const params: CommentPostRequest = parentId
         ? {
               comment: commentText,
               parent_id: parentId,
@@ -805,31 +845,39 @@ export async function commentPost({ id, commentText, parentId }): Promise<any> {
     return await _selfPost(`api/v1/video/comments/${id}`, params);
 }
 
-export async function commentLike({ videoId, commentId }): Promise<any> {
+export async function commentLike({ videoId, commentId }): Promise<CommentData> {
     return await _selfPost(`api/v1/comments/like/${videoId}/${commentId}`);
 }
 
-export async function commentUnlike({ videoId, commentId }): Promise<any> {
+export async function commentUnlike({ videoId, commentId }): Promise<CommentData> {
     return await _selfPost(`api/v1/comments/unlike/${videoId}/${commentId}`);
 }
 
-export async function commentReplyLike({ videoId, parentId, commentId }): Promise<any> {
+export async function commentReplyLike({
+    videoId,
+    parentId,
+    commentId,
+}): Promise<CommentReplyData> {
     return await _selfPost(`api/v1/comments/like/${videoId}/${parentId}/${commentId}`);
 }
 
-export async function commentReplyUnlike({ videoId, parentId, commentId }): Promise<any> {
+export async function commentReplyUnlike({
+    videoId,
+    parentId,
+    commentId,
+}): Promise<CommentReplyData> {
     return await _selfPost(`api/v1/comments/unlike/${videoId}/${parentId}/${commentId}`);
 }
 
-export async function commentDelete({ videoId, commentId }): Promise<any> {
+export async function commentDelete({ videoId, commentId }): Promise<ApiResponse> {
     return await _selfPost(`api/v1/comments/delete/${videoId}/${commentId}`);
 }
 
-export async function commentReplyDelete({ videoId, parentId, commentId }): Promise<any> {
+export async function commentReplyDelete({ videoId, parentId, commentId }): Promise<ApiResponse> {
     return await _selfPost(`api/v1/comments/delete/${videoId}/${parentId}/${commentId}`);
 }
 
-export async function videoDelete(videoId): Promise<any> {
+export async function videoDelete(videoId): Promise<ApiResponse> {
     return await _selfPost(`api/v1/video/delete/${videoId}`);
 }
 
@@ -867,7 +915,7 @@ export async function fetchNotifications({
     pageParam,
 }: {
     pageParam?: string | undefined;
-} = {}): Promise<any> {
+} = {}): Promise<NotificationResponse> {
     const url = pageParam
         ? `api/v1/account/notifications?cursor=${pageParam}`
         : `api/v1/account/notifications`;
@@ -878,7 +926,7 @@ export async function fetchActivityNotifications({
     pageParam,
 }: {
     pageParam?: string | undefined;
-} = {}): Promise<any> {
+} = {}): Promise<NotificationResponse> {
     const url = pageParam
         ? `api/v1/account/notifications?type=activity&cursor=${pageParam}`
         : `api/v1/account/notifications?type=activity`;
@@ -889,7 +937,7 @@ export async function fetchFollowerNotifications({
     pageParam,
 }: {
     pageParam?: string | undefined;
-} = {}): Promise<any> {
+} = {}): Promise<NotificationFollowersResponse> {
     const url = pageParam
         ? `api/v1/account/notifications?type=followers&cursor=${pageParam}`
         : `api/v1/account/notifications?type=followers`;
@@ -900,27 +948,27 @@ export async function fetchSystemNotifications({
     pageParam,
 }: {
     pageParam?: string | undefined;
-} = {}): Promise<any> {
+} = {}): Promise<SystemNofiticationsResponse> {
     const url = pageParam
         ? `api/v1/account/notifications?type=system&cursor=${pageParam}`
         : `api/v1/account/notifications?type=system`;
     return await _selfGet(url);
 }
 
-export async function fetchSystemNotificationItem(id): Promise<any> {
+export async function fetchSystemNotificationItem(id: string): Promise<any> {
     const url = `api/v1/account/notifications/system/${id}`;
     return await _selfGet(url);
 }
 
-export async function notificationMarkAsRead(id) {
+export async function notificationMarkAsRead(id: string): Promise<NotificationReadResponse> {
     return await _selfPost(`api/v1/account/notifications/${id}/read`);
 }
 
-export async function notificationBadgeCount() {
+export async function notificationBadgeCount(): Promise<NotificationCountResponse> {
     return await _selfGet(`api/v1/account/notifications/count`);
 }
 
-export async function notificationTypeMarkAllAsRead(type): Promise<any> {
+export async function notificationTypeMarkAllAsRead(type: string): Promise<ApiResponse> {
     const params = {
         type: type,
     };
@@ -935,7 +983,7 @@ export async function updateAccountBio(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/bio', params);
 }
 
-export async function updateAccountEmail(params: any): Promise<any> {
+export async function updateAccountEmail(params: any): Promise<ApiResponse> {
     return await _selfPost('api/v1/account/settings/email/update', params);
 }
 
@@ -951,11 +999,11 @@ export async function updateAccountPrivacy(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/privacy', params);
 }
 
-export async function updateAccountPassword(params: any): Promise<any> {
+export async function updateAccountPassword(params: UpdatePasswordRequest): Promise<ApiResponse> {
     return await _selfPost('api/v1/account/settings/update-password', params);
 }
 
-export async function getAccountLinks(): Promise<any> {
+export async function getAccountLinks(): Promise<SettingsLinksResponse> {
     return await _selfGet('api/v1/account/settings/links');
 }
 
@@ -979,29 +1027,14 @@ export const deleteAccount = async (data) => {
 // EXPLORE
 // ============================================================================
 
-interface Tag {
-    id: number;
-    name: string;
-    count: number;
-}
-
-export async function getExploreTags(): Promise<any> {
+export async function getExploreTags(): Promise<Tag[]> {
     const res = await _selfGet('api/v1/explore/tags');
     return res.data as Tag[];
 }
 
-interface Account {
-    id: string;
-    name: string;
-    avatar: string;
-    username: string;
-    bio: string;
-    follower_count: number;
-}
-
-export async function getExploreAccounts(): Promise<any> {
+export async function getExploreAccounts(): Promise<Actor[]> {
     const res = await _selfGet('api/v1/accounts/suggested');
-    return res.data as Account[];
+    return res.data as Actor[];
 }
 
 export async function getExploreTagsFeed({
@@ -1023,7 +1056,7 @@ export async function getExploreTagsFeed({
     return await _selfGet(url);
 }
 
-export async function postExploreAccountHideSuggestion(id) {
+export async function postExploreAccountHideSuggestion(id: string) {
     const params = { profile_id: id };
     return await _selfPost('api/v1/accounts/suggested/hide', params);
 }
@@ -1032,15 +1065,15 @@ export async function postExploreAccountHideSuggestion(id) {
 // LEGAL
 // ============================================================================
 
-export async function getInstanceTerms(): Promise<any> {
+export async function getInstanceTerms(): Promise<SlugResponse> {
     return await _selfAnonGet(`api/v1/page/content?slug=terms`);
 }
 
-export async function getInstancePrivacy(): Promise<any> {
+export async function getInstancePrivacy(): Promise<SlugResponse> {
     return await _selfAnonGet(`api/v1/page/content?slug=privacy`);
 }
 
-export async function getInstanceCommunityGuidelines(): Promise<any> {
+export async function getInstanceCommunityGuidelines(): Promise<SlugResponse> {
     return await _selfAnonGet(`api/v1/page/content?slug=community-guidelines`);
 }
 
@@ -1048,7 +1081,11 @@ export async function getInstanceCommunityGuidelines(): Promise<any> {
 // SEARCH
 // ============================================================================
 
-export const searchContent = async (params): Promise<any> => {
+export const searchContent = async (params: {
+    query: string;
+    type: string;
+    limit: number;
+}): Promise<SearchData> => {
     try {
         const typeMap = {
             Top: 'all',
