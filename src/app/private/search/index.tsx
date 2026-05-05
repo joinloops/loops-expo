@@ -477,7 +477,7 @@ export default function SearchScreen() {
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                         <Ionicons
                             name="chevron-back"
-                            size={26}
+                            size={24}
                             color={colorScheme === 'dark' ? 'white' : 'black'}
                         />
                     </TouchableOpacity>
@@ -523,7 +523,7 @@ export default function SearchScreen() {
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                         <Ionicons
                             name="ellipsis-horizontal"
-                            size={26}
+                            size={24}
                             color={colorScheme === 'dark' ? 'white' : 'black'}
                         />
                     </TouchableOpacity>
