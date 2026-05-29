@@ -2,13 +2,20 @@ import { XStack } from '@/components/ui/Stack';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useEventListener } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as MediaLibrary from 'expo-media-library';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { Asset, requestPermissionsAsync } from 'expo-media-library';
+import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+    Alert,
+    Dimensions,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,19 +25,13 @@ export default function PreviewScreen() {
     const { videoPath, duration, isUpload } = params;
     const [selectedSound, setSelectedSound] = useState('');
     const [isPlaying, setIsPlaying] = useState(true);
-    const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
     const [isSaving, setIsSaving] = useState(false);
+    const isFocused = useIsFocused();
 
     const player = useVideoPlayer(videoPath as string, (player) => {
         player.loop = true;
         player.play();
     });
-
-    useEffect(() => {
-        return () => {
-            player.release();
-        };
-    }, []);
 
     useEventListener(player, 'statusChange', ({ status, error }) => {
         console.log('Player status changed: ', status);
@@ -59,31 +60,34 @@ export default function PreviewScreen() {
     };
 
     const togglePlayPause = () => {
-        if (isPlaying) {
+        if (player.playing) {
             player.pause();
         } else {
             player.play();
         }
-        setIsPlaying(!isPlaying);
+        setIsPlaying(player.playing);
     };
 
     const handleDownload = async () => {
-        if (!mediaPermission?.granted) {
-            const { granted } = await requestMediaPermission();
-            if (!granted) {
+        try {
+            const { status } = await requestPermissionsAsync(true);
+            if (status !== 'granted') {
                 Alert.alert(
                     'Permission Required',
                     'Please allow access to your camera roll to save videos.',
                 );
                 return;
             }
-        }
 
-        try {
             setIsSaving(true);
-            await MediaLibrary.saveToLibraryAsync(videoPath as string);
+            const uri = (videoPath as string).startsWith('file://')
+                ? (videoPath as string)
+                : `file://${videoPath}`;
+
+            await Asset.create(uri);
             Alert.alert('Saved!', 'Video saved to your camera roll.');
         } catch (e) {
+            console.log(e);
             Alert.alert('Error', 'Failed to save video.');
         } finally {
             setIsSaving(false);
@@ -92,16 +96,17 @@ export default function PreviewScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar style="light" />
-
             <Stack.Screen options={{ headerShown: false }} />
 
-            <VideoView
-                style={styles.video}
-                player={player}
-                allowsPictureInPicture={false}
-                nativeControls={false}
-            />
+            {isFocused && (
+                <VideoView
+                    style={styles.video}
+                    player={player}
+                    allowsPictureInPicture={false}
+                    nativeControls={false}
+                    surfaceType={Platform.OS === 'android' ? 'textureView' : 'surfaceView'}
+                />
+            )}
 
             <LinearGradient
                 colors={['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.5)']}
