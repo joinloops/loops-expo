@@ -2,7 +2,7 @@ import AccountHeader from '@/components/profile/AccountHeader';
 import AccountTabs from '@/components/profile/AccountTabs';
 import VideoGrid from '@/components/profile/VideoGrid';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
-import { StackText, YStack } from '@/components/ui/Stack';
+import { StackText, XStack, YStack } from '@/components/ui/Stack';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
     fetchAccountFavorites,
@@ -174,6 +174,10 @@ export default function ProfileScreen() {
         router.push(`/notifications`);
     };
 
+    const handleStudioPress = () => {
+        router.push(`/private/studio`);
+    };
+
     const handleEndReached = () => {
         if (hasNextPage && !isFetchingNextPage) {
             switch (activeTab) {
@@ -233,17 +237,31 @@ export default function ProfileScreen() {
             headerShown: true,
             headerTitle: 'My Profile',
             headerRight: () => (
-                <PressableHaptics
-                    accessibilityLabel="Settings"
-                    accessibilityRole="button"
-                    onPress={handleSettingsPress}
-                    style={tw`mr-3`}>
-                    <Ionicons
-                        name="menu"
-                        size={30}
-                        color={colorScheme === 'dark' ? '#fff' : '#000'}
-                    />
-                </PressableHaptics>
+                <XStack gap="$3">
+                    <PressableHaptics
+                        accessibilityLabel="Studio"
+                        accessibilityRole="button"
+                        onPress={handleStudioPress}
+                        style={tw`mr-3`}>
+                        <Ionicons
+                            name="footsteps-outline"
+                            size={25}
+                            color={colorScheme === 'dark' ? '#fff' : '#000'}
+                        />
+                    </PressableHaptics>
+
+                    <PressableHaptics
+                        accessibilityLabel="Settings"
+                        accessibilityRole="button"
+                        onPress={handleSettingsPress}
+                        style={tw`mr-3`}>
+                        <Ionicons
+                            name="menu"
+                            size={30}
+                            color={colorScheme === 'dark' ? '#fff' : '#000'}
+                        />
+                    </PressableHaptics>
+                </XStack>
             ),
         }),
         [colorScheme],
