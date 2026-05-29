@@ -2,14 +2,12 @@ import { LoopsFilterPreview } from '@/components/camera/LoopsFilterPreview';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { loopsFilter, type FilterName } from '@/plugins/loopsFilter';
 import { Ionicons } from '@expo/vector-icons';
-import { useIsFocused } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as MediaLibrary from 'expo-media-library';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { requestPermissionsAsync } from 'expo-media-library';
+import { useFocusEffect, useIsFocused, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Alert,
     Animated,
@@ -383,14 +381,8 @@ export default function CameraScreen() {
     const handleUpload = async () => {
         try {
             if (Platform.OS === 'android') {
-                const { status } = await MediaLibrary.getPermissionsAsync();
-                if (status === 'undetermined') {
-                    const { status: newStatus } = await MediaLibrary.requestPermissionsAsync();
-                    if (newStatus !== 'granted') {
-                        showLibraryPermissionAlert();
-                        return;
-                    }
-                } else if (status === 'denied') {
+                const { granted } = await requestPermissionsAsync();
+                if (!granted) {
                     showLibraryPermissionAlert();
                     return;
                 }
@@ -531,7 +523,6 @@ export default function CameraScreen() {
 
         return (
             <View style={styles.container}>
-                <StatusBar style="light" />
                 <View style={styles.permissionContainer}>
                     <View style={styles.topBar}>
                         <PressableHaptics onPress={handleClose} style={styles.topButton}>
@@ -568,7 +559,6 @@ export default function CameraScreen() {
     if (!device) {
         return (
             <View style={styles.container}>
-                <StatusBar style="light" />
                 <View style={styles.permissionContainer}>
                     <View style={styles.topBar}>
                         <PressableHaptics onPress={handleClose} style={styles.topButton}>
@@ -591,8 +581,6 @@ export default function CameraScreen() {
 
     return (
         <GestureHandlerRootView style={styles.container}>
-            <StatusBar style="light" />
-
             <GestureDetector gesture={cameraGestures}>
                 <View style={StyleSheet.absoluteFill}>
                     {isFocused && device && hasCameraPermission && hasMicrophonePermission && (
@@ -647,13 +635,15 @@ export default function CameraScreen() {
                 <PressableHaptics onPress={toggleCamera} style={styles.topButton}>
                     <Ionicons name="camera-reverse" size={28} color="#fff" />
                 </PressableHaptics>
-                <PressableHaptics onPress={toggleFilters} style={styles.controlButton}>
-                    <Ionicons
-                        name={showFilters ? 'sparkles' : 'sparkles-outline'}
-                        size={24}
-                        color="#fff"
-                    />
-                </PressableHaptics>
+                {Platform.OS === 'ios' ? (
+                    <PressableHaptics onPress={toggleFilters} style={styles.controlButton}>
+                        <Ionicons
+                            name={showFilters ? 'sparkles' : 'sparkles-outline'}
+                            size={24}
+                            color="#fff"
+                        />
+                    </PressableHaptics>
+                ) : null}
                 <TouchableOpacity onPress={toggleFlash} style={styles.controlButton}>
                     <Ionicons
                         name={flash === 'off' ? 'flash-off' : 'flash'}
