@@ -7,7 +7,6 @@ import { shareContent } from '@/utils/sharer';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import React from 'react';
 import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import tw from 'twrnc';
 
@@ -170,7 +169,7 @@ export default function SettingsScreen() {
                     onPress={() => handleSignOut()}
                 />
                 <View style={tw`flex justify-center items-center mt-5 mb-20`}>
-                    <Text style={tw`text-gray-500`}>Loops v1.0.2.1</Text>
+                    <Text style={tw`text-gray-500`}>Loops v1.0.2.2</Text>
                 </View>
             </ScrollView>
         </View>
