@@ -5,14 +5,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import tw from 'twrnc';
 
@@ -52,8 +45,7 @@ interface BrowsePage {
     hashtags: BrowseHashtag[];
 }
 
-const formatCount = (n: number) =>
-    n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+const formatCount = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
 
 const KitCard = ({
     item,
@@ -64,16 +56,16 @@ const KitCard = ({
     isDark: boolean;
     onPress: () => void;
 }) => {
-    const cardBg      = isDark ? '#111111' : '#f9fafb';
-    const border      = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb';
-    const textPrimary = isDark ? '#ffffff' : '#111827';
-    const textSub     = isDark ? '#9ca3af' : '#6b7280';
-    const textMuted   = isDark ? '#6b7280' : '#9ca3af';
-    const tagBg       = isDark ? '#1f2937' : '#f3f4f6';
-    const tagText     = isDark ? '#9ca3af' : '#4b5563';
-    const divider     = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+    const cardBg = isDark ? '#111111' : '#f9fafb';
+    const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb';
+    const textPrimary = isDark ? '#ffffff' : '#000';
+    const textSub = isDark ? '#9ca3af' : '#6b7280';
+    const textMuted = isDark ? '#6b7280' : '#9ca3af';
+    const tagBg = isDark ? '#1f2937' : '#f3f4f6';
+    const tagText = isDark ? '#9ca3af' : '#4b5563';
+    const divider = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
 
-    const approvedAccounts = item.accounts.filter(a => (a as any).kit_status === 1)
+    const approvedAccounts = item.accounts.filter((a) => (a as any).kit_status === 1);
 
     return (
         <TouchableOpacity
@@ -82,8 +74,7 @@ const KitCard = ({
             style={[
                 tw`mx-4 mb-3 rounded-2xl overflow-hidden`,
                 { backgroundColor: cardBg, borderWidth: 1, borderColor: border },
-            ]}
-        >
+            ]}>
             {item.header_url ? (
                 <Image
                     source={{ uri: item.header_url }}
@@ -94,9 +85,12 @@ const KitCard = ({
                 <View
                     style={[
                         tw`items-center justify-center`,
-                        { width: '100%', height: 72, backgroundColor: isDark ? '#1a1a1a' : '#f3f4f6' },
-                    ]}
-                >
+                        {
+                            width: '100%',
+                            height: 72,
+                            backgroundColor: isDark ? '#1a1a1a' : '#f3f4f6',
+                        },
+                    ]}>
                     {item.icon_url ? (
                         <Image
                             source={{ uri: item.icon_url }}
@@ -104,7 +98,11 @@ const KitCard = ({
                             resizeMode="cover"
                         />
                     ) : (
-                        <Ionicons name="albums-outline" size={28} color={isDark ? '#374151' : '#d1d5db'} />
+                        <Ionicons
+                            name="albums-outline"
+                            size={28}
+                            color={isDark ? '#374151' : '#d1d5db'}
+                        />
                     )}
                 </View>
             )}
@@ -112,9 +110,11 @@ const KitCard = ({
             <View style={tw`p-4`}>
                 <View style={tw`flex-row items-start justify-between mb-1.5`}>
                     <Text
-                        style={[tw`text-base font-bold flex-1 mr-3 leading-snug`, { color: textPrimary }]}
-                        numberOfLines={1}
-                    >
+                        style={[
+                            tw`text-base font-bold flex-1 mr-3 leading-snug`,
+                            { color: textPrimary },
+                        ]}
+                        numberOfLines={1}>
                         {item.title}
                     </Text>
                     <View style={tw`flex-row items-center gap-1.5 mt-0.5`}>
@@ -130,15 +130,16 @@ const KitCard = ({
 
                 <Text
                     style={[tw`text-sm leading-relaxed mb-3`, { color: textSub }]}
-                    numberOfLines={2}
-                >
+                    numberOfLines={2}>
                     {item.description}
                 </Text>
 
                 {item.hashtags?.length > 0 && (
                     <View style={tw`flex-row flex-wrap gap-1.5 mb-3`}>
-                        {item.hashtags.slice(0, 4).map(tag => (
-                            <View key={tag} style={[tw`px-2 py-0.5 rounded-full`, { backgroundColor: tagBg }]}>
+                        {item.hashtags.slice(0, 4).map((tag) => (
+                            <View
+                                key={tag}
+                                style={[tw`px-2 py-0.5 rounded-full`, { backgroundColor: tagBg }]}>
                                 <Text style={[tw`text-xs font-medium`, { color: tagText }]}>
                                     #{tag}
                                 </Text>
@@ -147,7 +148,11 @@ const KitCard = ({
                     </View>
                 )}
 
-                <View style={[tw`flex-row items-center justify-between pt-3`, { borderTopWidth: 1, borderTopColor: divider }]}>
+                <View
+                    style={[
+                        tw`flex-row items-center justify-between pt-3`,
+                        { borderTopWidth: 1, borderTopColor: divider },
+                    ]}>
                     <View style={tw`flex-row items-center`}>
                         {approvedAccounts.slice(0, 3).map((a, idx) => (
                             <Image
@@ -183,49 +188,47 @@ export default function StarterKitsExploreScreen() {
 
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-    const {
-        data,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-        isLoading,
-    } = useInfiniteQuery<BrowsePage>({
-        queryKey: ['starterKitsBrowse'],
-        queryFn: async ({ pageParam }) => {
-            const res = await fetchStarterKitBrowse({ pageParam })
-            return res
-        },
-        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor ?? null,
-        initialPageParam: null,
-    });
+    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+        useInfiniteQuery<BrowsePage>({
+            queryKey: ['starterKitsBrowse'],
+            queryFn: async ({ pageParam }) => {
+                const res = await fetchStarterKitBrowse({ pageParam });
+                return res;
+            },
+            getNextPageParam: (lastPage) => lastPage.meta?.next_cursor ?? null,
+            initialPageParam: null,
+        });
 
     const hashtags: BrowseHashtag[] = data?.pages[0]?.hashtags ?? [];
 
     const kits: StarterKit[] = useMemo(() => {
-        const all = data?.pages.flatMap(page => page.data ?? []).filter(Boolean) ?? []
-        if (!selectedTag) return all
-        return all.filter(k =>
-            k.hashtags?.some(tag => tag.toLowerCase() === selectedTag.toLowerCase())
-        )
+        const all = data?.pages.flatMap((page) => page.data ?? []).filter(Boolean) ?? [];
+        if (!selectedTag) return all;
+        return all.filter((k) =>
+            k.hashtags?.some((tag) => tag.toLowerCase() === selectedTag.toLowerCase()),
+        );
     }, [data, selectedTag]);
 
-    const textPrimary       = isDark ? '#ffffff' : '#111827';
-    const textMuted         = isDark ? '#6b7280' : '#9ca3af';
-    const tagSelectedBg     = isDark ? '#374151' : '#111827';
-    const tagUnselectedBg   = isDark ? '#1a1a1a' : '#f3f4f6';
+    const textPrimary = isDark ? '#ffffff' : '#000';
+    const textMuted = isDark ? '#6b7280' : '#9ca3af';
+    const tagSelectedBg = isDark ? '#374151' : '#000';
+    const tagUnselectedBg = isDark ? '#1a1a1a' : '#f3f4f6';
     const tagUnselectedText = isDark ? '#a1a9ba' : '#4b5563';
 
     return (
         <SafeAreaView
             edges={['top']}
-            style={[tw`flex-1`, { backgroundColor: isDark ? '#0A0A0A' : '#ffffff' }]}
-        >
+            style={[tw`flex-1`, { backgroundColor: isDark ? '#0A0A0A' : '#ffffff' }]}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <View style={tw`px-4 pt-3 pb-2 flex-row items-center justify-between`}>
                 <View style={tw`flex-row items-center gap-3`}>
                     <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-                        <Feather name="chevron-left" size={24} color={isDark ? '#ffffff' : '#111827'} />
+                        <Feather
+                            name="chevron-left"
+                            size={24}
+                            color={isDark ? '#ffffff' : '#000'}
+                        />
                     </TouchableOpacity>
                     <Text style={[tw`text-2xl font-bold`, { color: textPrimary }]}>
                         Starter Kits
@@ -238,7 +241,7 @@ export default function StarterKitsExploreScreen() {
                     <FlatList
                         horizontal
                         data={hashtags}
-                        keyExtractor={item => item.id.toString()}
+                        keyExtractor={(item) => item.id.toString()}
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={tw`px-4`}
                         renderItem={({ item }) => {
@@ -248,13 +251,17 @@ export default function StarterKitsExploreScreen() {
                                     onPress={() => setSelectedTag(isSelected ? null : item.name)}
                                     style={[
                                         tw`mr-2 px-3.5 py-1.5 rounded-full`,
-                                        { backgroundColor: isSelected ? tagSelectedBg : tagUnselectedBg },
-                                    ]}
-                                >
-                                    <Text style={[
-                                        tw`text-sm font-semibold`,
-                                        { color: isSelected ? '#ffffff' : tagUnselectedText },
+                                        {
+                                            backgroundColor: isSelected
+                                                ? tagSelectedBg
+                                                : tagUnselectedBg,
+                                        },
                                     ]}>
+                                    <Text
+                                        style={[
+                                            tw`text-sm font-semibold`,
+                                            { color: isSelected ? '#ffffff' : tagUnselectedText },
+                                        ]}>
                                         #{item.name}
                                     </Text>
                                 </PressableHaptics>
@@ -281,7 +288,7 @@ export default function StarterKitsExploreScreen() {
             ) : (
                 <FlatList
                     data={kits}
-                    keyExtractor={item => item.id}
+                    keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
                         <KitCard
                             item={item}
@@ -293,7 +300,7 @@ export default function StarterKitsExploreScreen() {
                     contentContainerStyle={tw`pt-1 pb-8`}
                     onEndReachedThreshold={0.4}
                     onEndReached={() => {
-                        if (hasNextPage && !isFetchingNextPage) fetchNextPage()
+                        if (hasNextPage && !isFetchingNextPage) fetchNextPage();
                     }}
                     ListFooterComponent={
                         isFetchingNextPage ? (
