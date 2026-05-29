@@ -7,15 +7,15 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from "react-native-keyboard-controller";
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+    handleNotification: async () => ({
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+    }),
 });
 
 SplashScreen.preventAutoHideAsync();
@@ -25,27 +25,27 @@ const queryClient = new QueryClient({
 });
 
 function useNotificationObserver() {
-  useEffect(() => {
-    function redirect(notification: Notifications.Notification) {
-      const url = notification.request.content.data?.url;
-      if (typeof url === 'string') {
-        router.push(url);
-      }
-    }
+    useEffect(() => {
+        function redirect(notification: Notifications.Notification) {
+            const url = notification.request.content.data?.url;
+            if (typeof url === 'string') {
+                router.push(url);
+            }
+        }
 
-    const response = Notifications.getLastNotificationResponse();
-    if (response?.notification) {
-      redirect(response.notification);
-    }
+        const response = Notifications.getLastNotificationResponse();
+        if (response?.notification) {
+            redirect(response.notification);
+        }
 
-    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-      redirect(response.notification);
-    });
+        const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+            redirect(response.notification);
+        });
 
-    return () => {
-      subscription.remove();
-    };
-  }, []);
+        return () => {
+            subscription.remove();
+        };
+    }, []);
 }
 
 function AppContent() {
