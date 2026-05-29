@@ -124,14 +124,22 @@ export default function SystemNotificationsScreen() {
     const { refetchBadgeCount } = useNotificationStore();
     const { colorScheme } = useTheme();
 
-    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch, isLoading, isFetching } =
-        useInfiniteQuery({
-            queryKey: ['system-notifications'],
-            queryFn: fetchSystemNotifications,
-            initialPageParam: undefined,
-            refetchOnWindowFocus: false,
-            getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
-        });
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        refetch,
+        isLoading,
+        isFetching,
+        isRefetching,
+    } = useInfiniteQuery({
+        queryKey: ['system-notifications'],
+        queryFn: fetchSystemNotifications,
+        initialPageParam: undefined,
+        refetchOnWindowFocus: false,
+        getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
+    });
 
     const readMutation = useMutation({
         mutationFn: notificationMarkAsRead,
@@ -228,7 +236,7 @@ export default function SystemNotificationsScreen() {
                     <SystemNotificationItem item={item} onPress={handleOnPress} />
                 )}
                 ListEmptyComponent={
-                    isLoading || isFetching ? (
+                    isLoading ? (
                         <YStack paddingVertical="$8" alignItems="center">
                             <ActivityIndicator size="large" />
                         </YStack>
@@ -251,7 +259,7 @@ export default function SystemNotificationsScreen() {
                         fetchNextPage();
                     }
                 }}
-                refreshing={isFetching && !isFetchingNextPage}
+                refreshing={isRefetching && !isFetchingNextPage}
                 onRefresh={() => refetch()}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ flexGrow: 1, paddingTop: 8, paddingBottom: 16 }}

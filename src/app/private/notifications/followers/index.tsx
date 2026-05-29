@@ -31,6 +31,7 @@ export default function FollowerNotificationsScreen() {
         refetch,
         isLoading: videosLoading,
         isFetching,
+        isRefetching,
     } = useInfiniteQuery({
         queryKey: ['follower-notifications'],
         queryFn: fetchFollowerNotifications,
@@ -144,7 +145,7 @@ export default function FollowerNotificationsScreen() {
             if (!item.read_at) {
                 readMutation.mutate(item.id);
             }
-            if(item.kit?.path) {
+            if (item.kit?.path) {
                 router.push(`/private/kits/show/${item?.kit?.id}`);
             } else {
                 router.push(`/private/profile/${item?.actor?.id}`);
@@ -240,7 +241,7 @@ export default function FollowerNotificationsScreen() {
                     />
                 )}
                 ListEmptyComponent={
-                    videosLoading || isFetching ? (
+                    videosLoading ? (
                         <YStack paddingVertical="$8" alignItems="center">
                             <ActivityIndicator size="large" />
                         </YStack>
@@ -257,11 +258,11 @@ export default function FollowerNotificationsScreen() {
                 }
                 onEndReachedThreshold={0.4}
                 onEndReached={() => {
-                    if (hasNextPage && !isFetchingNextPage) {
+                    if (hasNextPage && !isFetchingNextPage && !isRefetching) {
                         fetchNextPage();
                     }
                 }}
-                refreshing={isFetching && !isFetchingNextPage}
+                refreshing={isRefetching && !isFetchingNextPage}
                 onRefresh={() => refetch()}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ flexGrow: 1 }}

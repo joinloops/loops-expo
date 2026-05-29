@@ -53,7 +53,7 @@ export default function StarterKitInviteScreen() {
     const bg             = isDark ? '#0A0A0A' : '#ffffff'
     const border         = isDark ? 'rgba(255,255,255,0.07)' : '#f3f4f6'
     const divider        = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6'
-    const textPrimary    = isDark ? '#ffffff' : '#111827'
+    const textPrimary    = isDark ? '#ffffff' : '#000'
     const textSub        = isDark ? '#9ca3af' : '#6b7280'
     const textMuted      = isDark ? '#6b7280' : '#9ca3af'
     const tagBg          = isDark ? '#1f2937' : '#f3f4f6'
@@ -61,8 +61,8 @@ export default function StarterKitInviteScreen() {
     const badgeBg        = isDark ? 'rgba(217,119,6,0.15)' : '#fffbeb'
     const badgeBorder    = isDark ? 'rgba(217,119,6,0.3)'  : '#fde68a'
     const badgeText      = isDark ? '#fbbf24' : '#92400e'
-    const btnPrimary     = isDark ? '#ffffff' : '#111827'
-    const btnPrimaryText = isDark ? '#111827' : '#ffffff'
+    const btnPrimary     = isDark ? '#ffffff' : '#000'
+    const btnPrimaryText = isDark ? '#000' : '#ffffff'
     const btnLight       = isDark ? '#1f2937' : '#f3f4f6'
     const btnLightText   = isDark ? '#d1d5db' : '#374151'
 
@@ -255,7 +255,7 @@ export default function StarterKitInviteScreen() {
                                 borderWidth: 1,
                                 backgroundColor: decision === 'approved'
                                     ? isDark ? 'rgba(34,197,94,0.12)' : '#f0fdf4'
-                                    : isDark ? '#111827' : '#f9fafb',
+                                    : isDark ? '#000' : '#f9fafb',
                                 borderColor: decision === 'approved'
                                     ? isDark ? 'rgba(34,197,94,0.2)' : '#bbf7d0'
                                     : isDark ? '#1f2937' : '#e5e7eb',

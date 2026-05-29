@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, View } from 'react-native';
 import tw from 'twrnc';
 
 interface CategoryCardProps {
@@ -339,10 +339,7 @@ export default function NotificationScreen() {
     ];
 
     const SimpleMenuExample = () => {
-        return Platform.OS === 'android' ? (
-            <View
-                style={{ alignItems: 'center', justifyContent: 'center', marginRight: 10 }}></View>
-        ) : null;
+        return <></>;
     };
 
     const suggestedAccounts = useMemo(() => {

@@ -7,7 +7,7 @@ import { useNotificationStore } from '@/utils/notificationStore';
 import {
     fetchStarterKitNotifications,
     notificationMarkAsRead,
-    notificationTypeMarkAllAsRead
+    notificationTypeMarkAllAsRead,
 } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,6 +31,7 @@ export default function StarterKitNotificationsScreen() {
         refetch,
         isLoading: videosLoading,
         isFetching,
+        isRefetching,
     } = useInfiniteQuery({
         queryKey: ['starterKit-notifications'],
         queryFn: fetchStarterKitNotifications,
@@ -122,7 +123,10 @@ export default function StarterKitNotificationsScreen() {
                 queryClient.setQueryData(['main-notifications'], context.previousMainData);
             }
             if (context?.previousActivityData) {
-                queryClient.setQueryData(['starterKit-notifications'], context.previousActivityData);
+                queryClient.setQueryData(
+                    ['starterKit-notifications'],
+                    context.previousActivityData,
+                );
             }
             console.error('Failed to mark all as read:', err);
         },
@@ -143,9 +147,9 @@ export default function StarterKitNotificationsScreen() {
         if (!item.read_at) {
             readMutation.mutate(item.id);
         }
-        if(item.type === 'starterKit.awaitingApproval') {
+        if (item.type === 'starterKit.awaitingApproval') {
             router.push(`/private/notifications/starterKits/review/${item?.kit?.id}`);
-        } else if(item.kit?.path) {
+        } else if (item.kit?.path) {
             router.push(`/private/kits/show/${item?.kit?.id}`);
         } else {
             router.push(`/private/profile/${item?.actor?.id}`);
@@ -240,7 +244,7 @@ export default function StarterKitNotificationsScreen() {
                     />
                 )}
                 ListEmptyComponent={
-                    videosLoading || isFetching ? (
+                    videosLoading ? (
                         <YStack paddingVertical="$8" alignItems="center">
                             <ActivityIndicator size="large" />
                         </YStack>
@@ -261,7 +265,7 @@ export default function StarterKitNotificationsScreen() {
                         fetchNextPage();
                     }
                 }}
-                refreshing={isFetching && !isFetchingNextPage}
+                refreshing={isRefetching && !isFetchingNextPage}
                 onRefresh={() => refetch()}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ flexGrow: 1 }}

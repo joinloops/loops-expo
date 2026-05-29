@@ -8,6 +8,8 @@ import {
     getExploreAccounts,
     postExploreAccountHideSuggestion,
 } from '@/utils/requests';
+import { Button, Host, Menu } from '@expo/ui/swift-ui';
+import { font, foregroundStyle, labelStyle } from '@expo/ui/swift-ui/modifiers';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
@@ -194,7 +196,6 @@ export default function NotificationScreen() {
     const [followingAccountId, setFollowingAccountId] = useState<string | null>(null);
     const [hidingAccountId, setHidingAccountId] = useState<string | null>(null);
     const { colorScheme } = useTheme();
-    const [isExpanded, setIsExpanded] = useState(false);
 
     const { data, isLoading, isFetching } = useQuery({
         queryKey: ['main-notifications'],
@@ -339,9 +340,28 @@ export default function NotificationScreen() {
     ];
 
     const SimpleMenuExample = () => {
-        return Platform.OS === 'android' ? (
-            <View
-                style={{ alignItems: 'center', justifyContent: 'center', marginRight: 10 }}></View>
+        return Platform.OS === 'ios' ? (
+            <View style={{ alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                <Host matchContents>
+                    <Menu
+                        label="Icon Only Button"
+                        systemImage="line.3.horizontal"
+                        modifiers={[
+                            labelStyle('iconOnly'),
+                            foregroundStyle(colorScheme === 'dark' ? '#FFFFFF' : '#000000'),
+                            font({ size: 30 }),
+                        ]}>
+                        <Button
+                            label="Starter Kits"
+                            onPress={() => router.push('/private/notifications/starterKits')}
+                        />
+                        <Button
+                            label="System Notifications"
+                            onPress={() => router.push('/private/notifications/system')}
+                        />
+                    </Menu>
+                </Host>
+            </View>
         ) : null;
     };
 

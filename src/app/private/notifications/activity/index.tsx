@@ -31,6 +31,7 @@ export default function ActivityNotificationsScreen() {
         refetch,
         isLoading: videosLoading,
         isFetching,
+        isRefetching,
     } = useInfiniteQuery({
         queryKey: ['activity-notifications'],
         queryFn: fetchActivityNotifications,
@@ -237,7 +238,7 @@ export default function ActivityNotificationsScreen() {
                     />
                 )}
                 ListEmptyComponent={
-                    videosLoading || isFetching ? (
+                    videosLoading ? (
                         <YStack paddingVertical="$8" alignItems="center">
                             <ActivityIndicator size="large" />
                         </YStack>
@@ -254,11 +255,11 @@ export default function ActivityNotificationsScreen() {
                 }
                 onEndReachedThreshold={0.4}
                 onEndReached={() => {
-                    if (hasNextPage && !isFetchingNextPage) {
+                    if (hasNextPage && !isFetchingNextPage && !isRefetching) {
                         fetchNextPage();
                     }
                 }}
-                refreshing={isFetching && !isFetchingNextPage}
+                refreshing={isRefetching && !isFetchingNextPage}
                 onRefresh={() => refetch()}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ flexGrow: 1 }}
