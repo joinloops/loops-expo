@@ -6,7 +6,7 @@ import { prettyCount } from '@/utils/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -416,7 +416,7 @@ export default function SearchScreen() {
                             {data.users.map((user) => (
                                 <View key={user.id}>{renderUserCard({ item: user })}</View>
                             ))}
-                            <View style={tw`h-3 bg-gray-50 dark:bg-gray-900 mt-2 mb-3`} />
+                            <View style={tw`h-3 bg-gray-50 dark:bg-black pb-3`} />
                         </>
                     )}
 
@@ -426,10 +426,10 @@ export default function SearchScreen() {
                                 style={tw`px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300`}>
                                 Hashtags
                             </Text>
-                            {data.hashtags.map((hashtag) => (
+                            {data.hashtags.slice(0, 5).map((hashtag) => (
                                 <View key={hashtag.id}>{renderHashtagCard({ item: hashtag })}</View>
                             ))}
-                            <View style={tw`h-3 bg-gray-50 dark:bg-gray-900 mt-2 mb-3`} />
+                            <View style={tw`h-3 bg-gray-50 dark:bg-black pb-3`} />
                         </>
                     )}
 
@@ -538,7 +538,7 @@ export default function SearchScreen() {
                         contentContainerStyle={tw`px-4`}
                         renderItem={({ item: tab }) => (
                             <TouchableOpacity
-                                style={tw`mr-6 pb-3 ${activeTab === tab ? 'border-b-2 border-black dark:border-white' : ''}`}
+                                style={tw`mr-6 py-3 ${activeTab === tab ? 'border-b-2 border-black dark:border-white' : ''}`}
                                 onPress={() => handleTabChange(tab)}>
                                 <Text
                                     style={tw`text-base px-3 ${
