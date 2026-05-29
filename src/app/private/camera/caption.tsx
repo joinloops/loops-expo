@@ -9,9 +9,9 @@ import {
 import { prettyCount } from '@/utils/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -194,8 +194,12 @@ export default function CaptionScreen() {
 
     const inputRef = useRef<TextInput>(null);
     const altTextInputRef = useRef<TextInput>(null);
+    const isFocused = useIsFocused();
 
-    const player = useVideoPlayer(videoPath as string, (player) => {});
+    const videoUri = (videoPath as string)?.startsWith('file://')
+        ? (videoPath as string)
+        : `file://${videoPath}`;
+    const player = useVideoPlayer(videoUri, () => {});
 
     const { data: hashtagSuggestions = [] } = useQuery({
         queryKey: ['autoComplete_hashtags', autocompleteQuery],
@@ -443,12 +447,17 @@ export default function CaptionScreen() {
                     </View>
 
                     <View style={tw`w-20 h-[150px] bg-black rounded-lg overflow-hidden relative`}>
-                        <VideoView
-                            style={tw`flex-1 w-full h-full bg-black`}
-                            player={player}
-                            allowsPictureInPicture={false}
-                            nativeControls={false}
-                        />
+                        {isFocused && (
+                            <VideoView
+                                style={tw`flex-1 w-full h-full bg-black`}
+                                player={player}
+                                allowsPictureInPicture={false}
+                                nativeControls={false}
+                                surfaceType={
+                                    Platform.OS === 'android' ? 'textureView' : 'surfaceView'
+                                }
+                            />
+                        )}
                     </View>
                 </View>
 
@@ -651,7 +660,7 @@ export default function CaptionScreen() {
             </ScrollView>
 
             <View
-                style={tw`flex-row px-5 py-4 pb-10 gap-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black`}>
+                style={tw`flex-row px-5 py-4 pb-10 mb-3 gap-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black`}>
                 <TouchableOpacity
                     onPress={handlePost}
                     style={tw`flex-1 flex-row items-center justify-center bg-[#F02C56] py-4 rounded-full gap-2`}
