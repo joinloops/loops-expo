@@ -1,10 +1,10 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { fetchAccountBirthdate, updateAccountBirthdate } from '@/utils/requests';
+import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import tw from 'twrnc';
 
