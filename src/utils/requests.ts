@@ -10,7 +10,7 @@ import { Alert } from 'react-native';
 let _authFailureTriggered = false;
 
 function guardAuthResponse(resp: Response): void {
-    if (resp.status === 401 || resp.status === 403) {
+    if (resp.status === 403) {
         if (!_authFailureTriggered) {
             _authFailureTriggered = true;
             triggerAuthFailure(
@@ -216,9 +216,17 @@ export async function postJson(
         headers,
     });
 
-    guardAuthResponse(resp);
+    const body = await resp.json().catch(() => ({}));
 
-    return resp.json();
+    if (!resp.ok) {
+        const err: any = new Error(body?.message || `Request failed (${resp.status})`);
+        err.status = resp.status;
+        err.data = body;
+        err.errors = body?.errors;
+        throw err;
+    }
+
+    return body;
 }
 
 export async function getJSON(
@@ -248,8 +256,6 @@ export async function getJSON(
         redirect: 'follow',
         headers: reqHeaders,
     });
-
-    guardAuthResponse(resp);
 
     return resp.json();
 }
@@ -1195,4 +1201,145 @@ export const searchContent = async (params): Promise<any> => {
         console.error('Search error:', error);
         throw error;
     }
+};
+
+// ============================================================================
+// GIF KEYBOARD
+// ============================================================================
+
+export type KlipyMediaType = 'gifs' | 'stickers' | 'memes' | 'clips';
+
+export interface KlipyMediaFormat {
+    url: string;
+    width: number;
+    height: number;
+    size: number;
+}
+
+export interface KlipyItem {
+    id: number | string;
+    slug: string;
+    title: string;
+    type: string;
+    preview: KlipyMediaFormat;
+    full: KlipyMediaFormat;
+    mp4: KlipyMediaFormat;
+    webm: KlipyMediaFormat;
+    blur_preview?: string;
+    width: number;
+    height: number;
+    is_ad: boolean;
+}
+
+export interface KlipyResponse {
+    items: KlipyItem[];
+    page: number;
+    per_page: number;
+    has_next: boolean;
+    meta: {
+        item_min_width: number;
+        ad_max_resize_percent: number;
+    };
+}
+
+export async function fetchKlipyTrending(
+    type: KlipyMediaType,
+    page: number = 1,
+): Promise<KlipyResponse> {
+    const res = await _selfGet(`api/v1/klipy/${type}/trending`, {
+        page: page,
+    });
+    return res;
+}
+
+export async function fetchKlipySearch(
+    type: KlipyMediaType,
+    query: string,
+    page: number = 1,
+): Promise<KlipyResponse> {
+    const res = await _selfGet(`api/v1/klipy/${type}/search`, {
+        q: query,
+        page: page,
+    });
+    return res;
+}
+
+export async function commentPostMedia(payload: {
+    videoId: string;
+    parentId?: string | null;
+    comment?: string | null;
+    type: KlipyMediaType;
+    item: KlipyItem;
+}) {
+    console.log(payload);
+    const { videoId, parentId, comment, type, item } = payload;
+
+    const res = await _selfPost(`api/v1/video/comments/${videoId}/media`, {
+        parent_id: parentId ?? undefined,
+        comment: comment ?? undefined,
+        type,
+        item: {
+            id: item.id,
+            slug: item.slug,
+            title: item.title,
+            width: item.width,
+            height: item.height,
+            full: { url: item.full.url },
+            mp4: { url: item.mp4.url },
+            webm: { url: item.webm.url },
+            preview: { url: item.preview.url },
+        },
+    });
+    return res;
+}
+
+// ============================================================================
+// STUDIO
+// ============================================================================
+
+export const fetchAnalytics = async (
+    metric: 'views' | 'likes' | 'comments' | 'shares' | 'followers',
+    range: number,
+) => {
+    const res = await _selfGet(`api/v1/studio/analytics/${metric}`, {
+        range,
+    });
+    return res;
+};
+
+export const fetchStudioPosts = async ({
+    cursor,
+    search,
+    limit = 20,
+    filter,
+}: {
+    cursor: string | null;
+    search?: string;
+    limit?: number;
+    filter?: string;
+}) => {
+    const res = await _selfGet('api/v1/studio/posts', {
+        cursor,
+        limit,
+        search: search || '',
+        sort_field: 'created_at',
+        sort_direction: 'desc',
+        filter,
+    });
+    return res;
+};
+
+export const fetchProfileLinks = async () => {
+    const res = await _selfGet('api/v1/account/settings/links');
+    return res;
+};
+
+export const fetchProfileLinkAnalytics = async () => {
+    const res = await _selfGet('api/v1/studio/analytics/links');
+    return res;
+};
+
+export const fetchStudioSummary = async () => {
+    const res = await _selfGet('api/v1/studio/analytics/summary');
+    return res;
 };

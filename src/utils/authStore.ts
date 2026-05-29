@@ -61,8 +61,24 @@ export const useAuthStore = create(
                     const success = await OAuthService.login(server, scopes);
 
                     if (success) {
+                        try {
+                            const prefs = await getPreferences();
+                            if (prefs?.settings) {
+                                set((state) => ({
+                                    ...state,
+                                    hideForYouFeed: prefs.settings.hide_for_you_feed,
+                                    defaultFeed: prefs.settings.default_feed,
+                                    autoplayVideos: prefs.settings.autoplay_videos,
+                                    loopVideos: prefs.settings.loop_videos,
+                                    muteOnOpen: prefs.settings.mute_on_open,
+                                    autoExpandCw: prefs.settings.auto_expand_cw,
+                                    appearance: prefs.settings.appearance,
+                                }));
+                            }
+                        } catch (e) {
+                            console.error('prefs sync failed:', e);
+                        }
                         get().syncAuthState();
-                        await get().syncPreferencesFromServer();
                         await useNotificationStore.getState().refetchBadgeCount();
                         resetAuthFailureFlag();
                     }
@@ -98,8 +114,8 @@ export const useAuthStore = create(
 
                     await OAuthService.storeAppleAuthCredentials(data.token, data.user, server);
                     get().syncAuthState();
-                    await get().syncPreferencesFromServer();
                     await useNotificationStore.getState().refetchBadgeCount();
+                    await get().syncPreferencesFromServer();
                     resetAuthFailureFlag();
 
                     return true;
@@ -167,14 +183,13 @@ export const useAuthStore = create(
                     if (prefs && prefs.settings) {
                         set((state) => ({
                             ...state,
-                            hideForYouFeed:
-                                prefs.settings.hide_for_you_feed ?? state.hideForYouFeed,
-                            defaultFeed: prefs.settings.default_feed ?? state.defaultFeed,
-                            autoplayVideos: prefs.settings.autoplay_videos ?? state.autoplayVideos,
-                            loopVideos: prefs.settings.loop_videos ?? state.loopVideos,
-                            muteOnOpen: prefs.settings.mute_on_open ?? state.muteOnOpen,
-                            autoExpandCw: prefs.settings.auto_expand_cw ?? state.autoExpandCw,
-                            appearance: prefs.settings.appearance ?? state.appearance,
+                            hideForYouFeed: prefs.settings.hide_for_you_feed,
+                            defaultFeed: prefs.settings.default_feed,
+                            autoplayVideos: prefs.settings.autoplay_videos,
+                            loopVideos: prefs.settings.loop_videos,
+                            muteOnOpen: prefs.settings.mute_on_open,
+                            autoExpandCw: prefs.settings.auto_expand_cw,
+                            appearance: prefs.settings.appearance,
                         }));
                     }
                 } catch (error) {
