@@ -6,8 +6,8 @@ import { router, SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from "react-native-keyboard-controller";
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -100,7 +100,7 @@ export default function RootLayout() {
     }
 
     return (
-        <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
                 <ThemeProvider>
                     <QueryClientProvider client={queryClient}>
@@ -108,6 +108,6 @@ export default function RootLayout() {
                     </QueryClientProvider>
                 </ThemeProvider>
             </KeyboardProvider>
-        </SafeAreaProvider>
+        </GestureHandlerRootView>
     );
 }
