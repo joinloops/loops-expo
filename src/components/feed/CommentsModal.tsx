@@ -1,26 +1,31 @@
 import Avatar from '@/components/Avatar';
+import KlipyKeyboard from '@/components/feed/KlipyKeyboard';
 import LinkifiedCaption from '@/components/feed/LinkifiedCaption';
 import { ReportModal } from '@/components/ReportModal';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useFeatureFlag } from '@/hooks/useServerConfig';
 import { useAuthStore } from '@/utils/authStore';
 import {
     commentDelete,
     commentLike,
     commentPost,
+    commentPostMedia,
     commentReplyDelete,
     commentReplyLike,
     commentReplyUnlike,
     commentUnlike,
     fetchVideoComments,
     fetchVideoReplies,
+    type KlipyItem,
+    type KlipyMediaType,
 } from '@/utils/requests';
 import { shareContent } from '@/utils/sharer';
 import { timeAgo } from '@/utils/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -32,11 +37,12 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tw from 'twrnc';
+import KlipyMedia from './KlipyMedia';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 60;
@@ -93,6 +99,8 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
     const canComment = item?.permissions?.can_comment !== false;
     const { colorScheme } = useTheme();
     const isDark = colorScheme === 'dark';
+    const [showKlipy, setShowKlipy] = useState(false);
+    const hasKlipy = useFeatureFlag('hasKlipy');
 
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
         queryKey: ['videoComments', item?.id],
@@ -142,7 +150,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     }}
                 />
             </View>
-        )
+        );
     }, [item, isDark, router, onNavigate, onClose, navigation]);
 
     const commentMutation = useMutation({
@@ -152,18 +160,49 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         onSuccess: async (res) => {
             queryClient.setQueryData(['videoComments', item?.id], (old) => {
                 if (!old) return old;
-                
+
                 return {
                     ...old,
-                    pages: old.pages.map((page, index) => 
-                        index === 0
-                            ? { ...page, data: [res.data[0], ...page.data] }
-                            : page
+                    pages: old.pages.map((page, index) =>
+                        index === 0 ? { ...page, data: [res.data[0], ...page.data] } : page,
                     ),
                 };
             });
         },
     });
+
+    const klipyMutation = useMutation({
+        mutationFn: async (payload) => {
+            return await commentPostMedia(payload);
+        },
+        onSuccess: (res) => {
+            queryClient.setQueryData(['videoComments', item?.id], (old: any) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    pages: old.pages.map((page: any, index: number) =>
+                        index === 0 ? { ...page, data: [res.data[0], ...page.data] } : page,
+                    ),
+                };
+            });
+        },
+    });
+
+    const handleKlipySelect = (
+        klipyItem: KlipyItem,
+        klipyType: KlipyMediaType,
+        media: { url: string; mime: string; width: number; height: number },
+    ) => {
+        klipyMutation.mutate({
+            item: klipyItem,
+            type: klipyType,
+            comment: null,
+            videoId: item?.id,
+            parentId: null,
+        });
+        setShowKlipy(false);
+        setReplyingTo(null);
+    };
 
     const commentDeleteMutation = useMutation({
         mutationFn: async (data: CommentDeletePayload) => {
@@ -171,12 +210,12 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         },
         onMutate: async (variables) => {
             await queryClient.cancelQueries({ queryKey: ['videoComments', item?.id] });
-            
+
             const previousComments = queryClient.getQueryData(['videoComments', item?.id]);
-            
+
             queryClient.setQueryData(['videoComments', item?.id], (old) => {
                 if (!old) return old;
-                
+
                 return {
                     ...old,
                     pages: old.pages.map((page) => ({
@@ -185,7 +224,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     })),
                 };
             });
-            
+
             return { previousComments };
         },
         onError: (err, variables, context) => {
@@ -201,20 +240,20 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
         },
         onMutate: async (variables) => {
             await queryClient.cancelQueries({ queryKey: ['videoComments', item?.id] });
-            await queryClient.cancelQueries({ 
-                queryKey: ['videoReplies', item.id, variables.parentId] 
+            await queryClient.cancelQueries({
+                queryKey: ['videoReplies', item.id, variables.parentId],
             });
-            
+
             const previousComments = queryClient.getQueryData(['videoComments', item?.id]);
             const previousReplies = queryClient.getQueryData([
                 'videoReplies',
                 item.id,
                 variables.parentId,
             ]);
-            
+
             queryClient.setQueryData(['videoReplies', item.id, variables.parentId], (old) => {
                 if (!old) return old;
-                
+
                 return {
                     ...old,
                     pages: old.pages.map((page) => ({
@@ -223,10 +262,10 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     })),
                 };
             });
-            
+
             queryClient.setQueryData(['videoComments', item?.id], (old) => {
                 if (!old) return old;
-                
+
                 return {
                     ...old,
                     pages: old.pages.map((page) => ({
@@ -243,7 +282,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     })),
                 };
             });
-            
+
             return { previousComments, previousReplies };
         },
         onError: (err, variables, context) => {
@@ -659,7 +698,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                 </PressableHaptics>
                 <View style={tw`flex-1`}>
                     <View style={tw`flex flex-row items-center gap-2 mb-1`}>
-                        <PressableHaptics style={tw`flex-1`} onPress={() => handleProfilePress(comment.account?.id)}>
+                        <PressableHaptics onPress={() => handleProfilePress(comment.account?.id)}>
                             <Text style={tw`text-sm font-bold text-black dark:text-white`}>
                                 {comment.account.username}
                             </Text>
@@ -675,7 +714,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                         caption={comment.caption}
                         tags={comment.tags || []}
                         mentions={comment.mentions || []}
-                        style={tw`text-[15px] text-black dark:text-white leading-5 mb-2`}
+                        style={tw`text-[15px] text-black dark:text-white leading-5`}
                         onHashtagPress={(tag) => {
                             onNavigate?.();
                             onClose();
@@ -687,7 +726,10 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                             router.push(`/private/search?query=${username}`);
                         }}
                     />
-                    <View style={tw`flex-row gap-4`}>
+                    {comment.media?.[0]?.provider === 'klipy' && (
+                        <KlipyMedia media={comment.media[0]} maxWidth={SCREEN_WIDTH - 110} />
+                    )}
+                    <View style={tw`flex-row mt-2 gap-4`}>
                         {comment.replies > 0 && (
                             <PressableHaptics onPress={() => toggleReplies(comment.id)}>
                                 <Text style={tw`text-[13px] font-semibold text-[#007AFF]`}>
@@ -819,7 +861,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     <View
                         style={tw`flex-row justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700`}>
                         <Text style={tw`text-lg font-bold text-black dark:text-white`}>
-                            {totalComments} { totalComments === 1 ? 'comment' : 'comments'}
+                            {totalComments} {totalComments === 1 ? 'comment' : 'comments'}
                         </Text>
                         <TouchableOpacity onPress={onClose}>
                             <Ionicons name="close" size={28} color={isDark ? '#fff' : '#000'} />
@@ -888,6 +930,14 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                             multiline
                             maxLength={500}
                         />
+                        {hasKlipy && (
+                            <TouchableOpacity
+                                style={tw`px-2 py-1 border rounded-xl dark:border-gray-500`}
+                                onPress={() => setShowKlipy(true)}
+                                hitSlop={6}>
+                                <Text style={tw.style('dark:text-white')}>GIF</Text>
+                            </TouchableOpacity>
+                        )}
                         <TouchableOpacity
                             style={tw`p-2`}
                             onPress={handleSendComment}
@@ -899,6 +949,12 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                             />
                         </TouchableOpacity>
                     </View>
+
+                    <KlipyKeyboard
+                        visible={showKlipy}
+                        onClose={() => setShowKlipy(false)}
+                        onSelect={handleKlipySelect}
+                    />
                 </View>
             </KeyboardAvoidingView>
         </Modal>
