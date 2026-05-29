@@ -6,11 +6,10 @@ import {
 } from '@/components/settings/Stack';
 import { useTheme } from '@/contexts/ThemeContext';
 import { fetchAccountSecurityConfig, openLocalLink } from '@/utils/requests';
-import { useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import * as MediaLibrary from 'expo-media-library';
-import { Stack, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, ScrollView, View } from 'react-native';
 import { Camera } from 'react-native-vision-camera';
 import tw from 'twrnc';

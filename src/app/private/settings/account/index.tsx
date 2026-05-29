@@ -74,7 +74,7 @@ export default function AccountScreen() {
                     label="Deactivate account"
                     onPress={() => router.push('/private/settings/account/deactivate')}
                 />
-                    <Divider />
+                <Divider />
                 <SettingsItem
                     icon="trash-outline"
                     label="Delete account"

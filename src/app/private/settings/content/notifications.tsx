@@ -1,6 +1,10 @@
 import { Divider, SectionHeader, SettingsToggleItem } from '@/components/settings/Stack';
 import { useTheme } from '@/contexts/ThemeContext';
-import { disablePushNotifications, enablePushNotifications, fetchPushNotifyStatus } from '@/utils/requests';
+import {
+    disablePushNotifications,
+    enablePushNotifications,
+    fetchPushNotifyStatus,
+} from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
@@ -27,19 +31,19 @@ async function registerForPushNotifications() {
         }
 
         try {
-        const projectId =
-            Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-        if (!projectId) {
-            throw new Error('Project ID not found');
-        }
-        token = (
-            await Notifications.getExpoPushTokenAsync({
-            projectId,
-            })
-        ).data;
-        console.log(token);
+            const projectId =
+                Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+            if (!projectId) {
+                throw new Error('Project ID not found');
+            }
+            token = (
+                await Notifications.getExpoPushTokenAsync({
+                    projectId,
+                })
+            ).data;
+            console.log(token);
         } catch (e) {
-        token = `${e}`;
+            token = `${e}`;
         }
     } else {
         alert('Must use physical device for Push Notifications');

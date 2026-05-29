@@ -100,7 +100,13 @@ export default function FeedsSettingsScreen() {
         { value: 'following', label: 'Following', description: 'Posts from accounts you follow' },
         { value: 'local', label: 'Local', description: 'Posts from your instance' },
         ...(forYouEnabled
-            ? [{ value: 'forYou', label: 'For You', description: 'Personalized feed recommendations' }]
+            ? [
+                  {
+                      value: 'forYou',
+                      label: 'For You',
+                      description: 'Personalized feed recommendations',
+                  },
+              ]
             : []),
     ];
 
@@ -143,7 +149,6 @@ export default function FeedsSettingsScreen() {
 
                 <View style={tw`h-3`} />
 
-                
                 <View style={tw`flex-row items-center py-4 px-5 bg-white dark:bg-black`}>
                     <XStack flex={1}>
                         <YStack flex={1}>

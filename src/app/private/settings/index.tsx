@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function SettingsScreen() {
@@ -22,7 +22,6 @@ export default function SettingsScreen() {
         queryClient.clear();
         notificationStore.resetBadgeCount();
         logOut();
-        router.replace('/');
     };
 
     const handleSignOut = () => {
@@ -122,12 +121,16 @@ export default function SettingsScreen() {
                     label="Feeds"
                     onPress={() => router.push('/private/settings/content/feeds')}
                 />
-                <Divider />
-                <SettingsItem
-                    icon="notifications-outline"
-                    label="Push Notifications"
-                    onPress={() => router.push('/private/settings/content/notifications')}
-                />
+                {Platform.OS === 'ios' ? (
+                    <>
+                        <Divider />
+                        <SettingsItem
+                            icon="notifications-outline"
+                            label="Push Notifications"
+                            onPress={() => router.push('/private/settings/content/notifications')}
+                        />
+                    </>
+                ) : null}
                 <Divider />
                 {/* <SettingsItem icon="play-circle-outline" label="Playback" onPress={() => router.push('/private/settings/content/playback')} />
                 <Divider /> */}
@@ -167,7 +170,7 @@ export default function SettingsScreen() {
                     onPress={() => handleSignOut()}
                 />
                 <View style={tw`flex justify-center items-center mt-5 mb-20`}>
-                    <Text style={tw`text-gray-500`}>Loops v1.0.1.2</Text>
+                    <Text style={tw`text-gray-500`}>Loops v1.0.2.1</Text>
                 </View>
             </ScrollView>
         </View>
