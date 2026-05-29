@@ -2,26 +2,22 @@ import CommentsModal from '@/components/feed/CommentsModal';
 import OtherModal from '@/components/feed/OtherModal';
 import ShareModal from '@/components/feed/ShareModal';
 import VideoPlayer from '@/components/feed/VideoPlayer';
-import { fetchUserVideoCursor, videoBookmark, videoLike, videoUnbookmark, videoUnlike } from '@/utils/requests';
-import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    FlatList,
-    StyleSheet,
-    TouchableOpacity,
-    View
-} from 'react-native';
+    fetchUserVideoCursor,
+    videoBookmark,
+    videoLike,
+    videoUnbookmark,
+    videoUnlike,
+} from '@/utils/requests';
+import { Ionicons } from '@expo/vector-icons';
+import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-
-export default function ProfileFeed({navigation}) {
+export default function ProfileFeed({ navigation }) {
     const params = useLocalSearchParams();
     const profileId = params.profileId;
     const id = params.id;
@@ -35,6 +31,7 @@ export default function ProfileFeed({navigation}) {
     const [showOther, setShowOther] = useState(false);
     const [videoPlaybackRates, setVideoPlaybackRates] = useState({});
     const [screenFocused, setScreenFocused] = useState(true);
+    const [feedHeight, setFeedHeight] = useState(0);
     const flatListRef = useRef(null);
     const router = useRouter();
 
@@ -48,21 +45,21 @@ export default function ProfileFeed({navigation}) {
             return () => {
                 setScreenFocused(false);
             };
-        }, [])
+        }, []),
     );
 
-    const {
-        data,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-        isLoading,
-    } = useInfiniteQuery({
+    const onContainerLayout = useCallback((e) => {
+        const h = e.nativeEvent.layout.height;
+        setFeedHeight((prev) => (h > 0 && Math.abs(h - prev) > 1 ? h : prev));
+    }, []);
+
+    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
         queryKey: ['profileVideoFeed', profileId, id],
-        queryFn: ({ pageParam }) => fetchUserVideoCursor({ 
-            queryKey: ['profileVideoFeed', profileId, id],
-            pageParam 
-        }),
+        queryFn: ({ pageParam }) =>
+            fetchUserVideoCursor({
+                queryKey: ['profileVideoFeed', profileId, id],
+                pageParam,
+            }),
         getNextPageParam: (lastPage) => lastPage.meta?.next_cursor,
         initialPageParam: null,
         enabled: !!profileId && !!id,
@@ -70,7 +67,7 @@ export default function ProfileFeed({navigation}) {
 
     const videoLikeMutation = useMutation({
         mutationFn: async (data) => {
-            const dir = data.type
+            const dir = data.type;
 
             if (dir == 'like') {
                 return await videoLike(data.id);
@@ -79,16 +76,13 @@ export default function ProfileFeed({navigation}) {
                 return await videoUnlike(data.id);
             }
         },
-        onSuccess: (res) => {
-        },
-        onError: (error) => {
-        },
+        onSuccess: (res) => {},
+        onError: (error) => {},
     });
-
 
     const videoBookmarkMutation = useMutation({
         mutationFn: async (data) => {
-            const dir = data.type
+            const dir = data.type;
 
             if (dir == 'bookmark') {
                 return await videoBookmark(data.id);
@@ -97,13 +91,11 @@ export default function ProfileFeed({navigation}) {
                 return await videoUnbookmark(data.id);
             }
         },
-        onSuccess: (res) => {
-        },
-        onError: (error) => {
-        },
+        onSuccess: (res) => {},
+        onError: (error) => {},
     });
 
-    const videos = data?.pages?.flatMap(page => page.data) || [];
+    const videos = data?.pages?.flatMap((page) => page.data) || [];
 
     const onViewableItemsChanged = useCallback(({ viewableItems }) => {
         if (viewableItems.length > 0) {
@@ -112,14 +104,14 @@ export default function ProfileFeed({navigation}) {
     }, []);
 
     const handleLike = (videoId, liked) => {
-        const dir = liked ? 'like' : 'unlike'
-        videoLikeMutation.mutate({ type: dir, id: videoId })
+        const dir = liked ? 'like' : 'unlike';
+        videoLikeMutation.mutate({ type: dir, id: videoId });
     };
 
     const handleBookmark = (videoId, bookmarked) => {
-        const dir = bookmarked ? 'bookmark' : 'unbookmark'
-        videoBookmarkMutation.mutate({ type: dir, id: videoId })
-    }
+        const dir = bookmarked ? 'bookmark' : 'unbookmark';
+        videoBookmarkMutation.mutate({ type: dir, id: videoId });
+    };
 
     const handleComment = (video) => {
         setSelectedVideo(video);
@@ -135,13 +127,12 @@ export default function ProfileFeed({navigation}) {
         setSelectedVideo(video);
         setShowOther(true);
     };
-    
 
     const handlePlaybackSpeedChange = (speed) => {
         if (selectedVideo) {
-            setVideoPlaybackRates(prev => ({
+            setVideoPlaybackRates((prev) => ({
                 ...prev,
-                [selectedVideo.id]: speed
+                [selectedVideo.id]: speed,
             }));
         }
     };
@@ -152,27 +143,42 @@ export default function ProfileFeed({navigation}) {
         setShowOther(false);
     };
 
-    const renderItem = useCallback(({ item, index }) => (
-        <VideoPlayer
-            key={item.id}
-            item={item}
-            isActive={index === currentIndex}
-            onLike={handleLike}
-            onComment={handleComment}
-            onShare={handleShare}
-            onOther={handleOther}
-            onBookmark={handleBookmark}
-            bottomInset={insets.bottom}
-            commentsOpen={showComments && selectedVideo?.id === item.id}
-            shareOpen={showShare && selectedVideo?.id === item.id}
-            otherOpen={showOther && selectedVideo?.id === item.id}
-            screenFocused={screenFocused}
-            videoPlaybackRates={videoPlaybackRates}
-            navigation={navigation}
-            onNavigate={handleNavigate}
-            tabBarHeight={0}
-        />
-    ), [currentIndex, insets.bottom, showComments, showShare, showOther, selectedVideo, screenFocused, videoPlaybackRates, navigation]);
+    const renderItem = useCallback(
+        ({ item, index }) => (
+            <VideoPlayer
+                key={item.id}
+                item={item}
+                isActive={index === currentIndex}
+                itemHeight={feedHeight}
+                onLike={handleLike}
+                onComment={handleComment}
+                onShare={handleShare}
+                onOther={handleOther}
+                onBookmark={handleBookmark}
+                bottomInset={insets.bottom}
+                commentsOpen={showComments && selectedVideo?.id === item.id}
+                shareOpen={showShare && selectedVideo?.id === item.id}
+                otherOpen={showOther && selectedVideo?.id === item.id}
+                screenFocused={screenFocused}
+                videoPlaybackRates={videoPlaybackRates}
+                navigation={navigation}
+                onNavigate={handleNavigate}
+                tabBarHeight={60}
+            />
+        ),
+        [
+            currentIndex,
+            feedHeight,
+            insets.bottom,
+            showComments,
+            showShare,
+            showOther,
+            selectedVideo,
+            screenFocused,
+            videoPlaybackRates,
+            navigation,
+        ],
+    );
 
     const handleEndReached = () => {
         if (hasNextPage && !isFetchingNextPage) {
@@ -180,67 +186,56 @@ export default function ProfileFeed({navigation}) {
         }
     };
 
-    const getItemLayout = useCallback((data, index) => ({
-        length: SCREEN_HEIGHT,
-        offset: SCREEN_HEIGHT * index,
-        index,
-    }), []);
-
-    if (isLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Stack.Screen options={{headerShown: false}} />
-                <ActivityIndicator size="large" color="#fff" />
-            </View>
-        );
-    }
-
     return (
-        <View style={styles.container}>
-            <StatusBar style="auto" />
-
-            <Stack.Screen options={{headerShown: false}} />
+        <View style={styles.container} onLayout={onContainerLayout}>
+            <StatusBar style="light" />
+            <Stack.Screen options={{ headerShown: false }} />
 
             <View style={[styles.header, { top: insets.top + 10 }]}>
-                <View style={styles.tabContainer}>
-                    {/* TODO */}
-                </View>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => router.back()}
-                >
+                <View style={styles.tabContainer} />
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                     <Ionicons name="arrow-back" size={28} color="white" />
                 </TouchableOpacity>
             </View>
 
-            <FlatList
-                ref={flatListRef}
-                data={videos}
-                renderItem={renderItem}
-                keyExtractor={(item, index) => `${item.id}-${index}`}
-                pagingEnabled
-                showsVerticalScrollIndicator={false}
-                snapToInterval={SCREEN_HEIGHT}
-                snapToAlignment="start"
-                decelerationRate="fast"
-                viewabilityConfig={viewabilityConfig.current}
-                onViewableItemsChanged={onViewableItemsChanged}
-                onEndReached={handleEndReached}
-                onEndReachedThreshold={0.5}
-                getItemLayout={getItemLayout}
-                removeClippedSubviews={true}
-                maxToRenderPerBatch={1}
-                windowSize={3}
-                initialNumToRender={1}
-                updateCellsBatchingPeriod={100}
-                ListFooterComponent={
-                    isFetchingNextPage ? (
-                        <View style={styles.footer}>
-                            <ActivityIndicator size="large" color="#fff" />
-                        </View>
-                    ) : null
-                }
-            />
+            {isLoading || feedHeight === 0 ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#fff" />
+                </View>
+            ) : (
+                <FlatList
+                    ref={flatListRef}
+                    data={videos}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => `${item.id}-${index}`}
+                    pagingEnabled
+                    showsVerticalScrollIndicator={false}
+                    snapToInterval={feedHeight}
+                    snapToAlignment="start"
+                    decelerationRate="fast"
+                    viewabilityConfig={viewabilityConfig.current}
+                    onViewableItemsChanged={onViewableItemsChanged}
+                    onEndReached={handleEndReached}
+                    onEndReachedThreshold={0.5}
+                    getItemLayout={(data, index) => ({
+                        length: feedHeight,
+                        offset: feedHeight * index,
+                        index,
+                    })}
+                    removeClippedSubviews={false}
+                    maxToRenderPerBatch={1}
+                    windowSize={3}
+                    initialNumToRender={1}
+                    updateCellsBatchingPeriod={100}
+                    ListFooterComponent={
+                        isFetchingNextPage ? (
+                            <View style={[styles.footer, { height: feedHeight }]}>
+                                <ActivityIndicator size="large" color="#fff" />
+                            </View>
+                        ) : null
+                    }
+                />
+            )}
 
             <CommentsModal
                 visible={showComments}
@@ -261,7 +256,9 @@ export default function ProfileFeed({navigation}) {
                 item={selectedVideo}
                 onClose={() => setShowOther(false)}
                 onPlaybackSpeedChange={handlePlaybackSpeedChange}
-                currentPlaybackRate={selectedVideo ? (videoPlaybackRates[selectedVideo.id] || 1.0) : 1.0}
+                currentPlaybackRate={
+                    selectedVideo ? videoPlaybackRates[selectedVideo.id] || 1.0 : 1.0
+                }
             />
         </View>
     );
@@ -297,8 +294,7 @@ const styles = StyleSheet.create({
         left: 16,
     },
     footer: {
-        height: SCREEN_HEIGHT,
         justifyContent: 'center',
         alignItems: 'center',
-    }
+    },
 });

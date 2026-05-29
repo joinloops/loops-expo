@@ -18,6 +18,7 @@ import { shareContent } from '@/utils/sharer';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { memo, useCallback, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
@@ -33,7 +34,7 @@ import tw from 'twrnc';
 
 const EmptyVideos = memo(({ activeTab }) => (
     <YStack paddingY="$8" alignItems="center" justifyContent="center">
-        <StackText fontSize="$4" color="#86878B">
+        <StackText fontSize="$4" style={tw`dark:text-gray-400`}>
             {activeTab === 'videos' && 'No videos yet'}
             {activeTab === 'favorites' && 'No favorites yet'}
             {activeTab === 'reblogs' && 'No reblogs yet'}
@@ -218,6 +219,14 @@ export default function ProfileScreen() {
         }
     }, [user]);
 
+    const handleOpenInBrowser = async () => {
+        if (!user) return;
+
+        await WebBrowser.openBrowserAsync(user.remote_url ?? user.url, {
+            presentationStyle: 'pageSheet',
+        });
+    };
+
     const handleOnUnblockPress = useCallback(() => {
         if (!user || !userState?.blocking || blockMutation.isPending) return;
 
@@ -388,6 +397,17 @@ export default function ProfileScreen() {
                         style={tw`bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-t-3xl`}
                         onPress={(e) => e.stopPropagation()}>
                         <View style={tw`py-4`}>
+                            <Pressable
+                                style={tw`px-6 py-4 flex-row items-center`}
+                                onPress={handleOpenInBrowser}>
+                                <Text
+                                    style={tw`text-base text-gray-900 dark:text-gray-300 font-medium`}>
+                                    Open in browser
+                                </Text>
+                            </Pressable>
+
+                            <View style={tw`h-px bg-gray-200 dark:bg-gray-800 mx-6`} />
+
                             <Pressable
                                 style={tw`px-6 py-4 flex-row items-center`}
                                 onPress={handleAccountShare}>
