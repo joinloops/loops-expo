@@ -138,7 +138,13 @@ export default function AccountHeader(props) {
                             )}
                             {!state?.blocking && (
                                 <Button
-                                    title={state?.following ? 'Following' : 'Follow'}
+                                    title={
+                                        state?.following && state?.followed_by
+                                            ? 'Friends'
+                                            : state?.following
+                                              ? 'Following'
+                                              : 'Follow'
+                                    }
                                     theme={state?.following ? 'primary' : 'primary'}
                                     loading={!state}
                                     style={tw`px-10`}

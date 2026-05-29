@@ -30,7 +30,7 @@ export default function VideoGrid({ video, onPress }) {
                     pointerEvents="none"
                 />
 
-                { video.pinned && (
+                {video.pinned && (
                     <YStack
                         position="absolute"
                         top={8}
@@ -41,8 +41,8 @@ export default function VideoGrid({ video, onPress }) {
                         backgroundColor="#fb2c36"
                         paddingY={1}
                         paddingX={2}
-                        style={{ borderRadius: 4}}>
-                        <StackText fontSize={10} fontWeight={600} style={{color: '#fff'}}>
+                        style={{ borderRadius: 4 }}>
+                        <StackText fontSize={10} fontWeight={600} style={{ color: '#fff' }}>
                             Pinned
                         </StackText>
                     </YStack>
@@ -56,7 +56,7 @@ export default function VideoGrid({ video, onPress }) {
                     alignItems="center"
                     gap={1}>
                     <Ionicons name="heart-outline" size={12} color="white" />
-                    <StackText fontSize={10} fontWeight="600" style={{color: '#fff'}}>
+                    <StackText fontSize={10} fontWeight="600" style={{ color: '#fff' }}>
                         {prettyCount(video.likes || 0)}
                     </StackText>
                 </YStack>
@@ -69,7 +69,7 @@ export default function VideoGrid({ video, onPress }) {
                     alignItems="center"
                     gap={1}>
                     <Ionicons name="chatbubbles-outline" size={12} color="white" />
-                    <StackText fontSize={10} fontWeight="600" style={{color: '#fff'}}>
+                    <StackText fontSize={10} fontWeight="600" style={{ color: '#fff' }}>
                         {prettyCount(video.comments || 0)}
                     </StackText>
                 </YStack>
@@ -86,4 +86,4 @@ const styles = StyleSheet.create({
         bottom: 0,
         height: '100%',
     },
-})
+});
