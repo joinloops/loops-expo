@@ -175,6 +175,7 @@ export default function EditScreen() {
     const [allowDuets, setAllowDuets] = useState(true);
     const [allowStitches, setAllowStitches] = useState(true);
     const [isSensitive, setIsSensitive] = useState(false);
+    const [isPinned, setIsPinned] = useState(false);
     const [isAd, setIsAd] = useState(false);
     const [isAi, setIsAi] = useState(false);
 
@@ -245,6 +246,9 @@ export default function EditScreen() {
             const adValue = video.meta?.contains_ad ?? false;
             setIsAd(adValue);
             setIsAdLocked(adValue);
+
+            const isPinnedVal = video.pinned ?? false;
+            setIsPinned(isPinnedVal);
         }
     }, [video, router]);
 
@@ -287,7 +291,7 @@ export default function EditScreen() {
             can_comment: allowComments,
             can_duet: allowDuets,
             can_stitch: allowStitches,
-            is_pinned: false,
+            is_pinned: isPinned,
             alt_text: altText,
             is_sensitive: isSensitive,
             contains_ai: isAi,
@@ -380,6 +384,7 @@ export default function EditScreen() {
     if (isLoading) {
         return (
             <View style={tw`flex-1 justify-center items-center bg-white dark:bg-gray-900`}>
+                <Stack.Screen options={{ headerShown: false }} />
                 <ActivityIndicator size="large" color="#ff0050" />
             </View>
         );
@@ -673,6 +678,32 @@ export default function EditScreen() {
                     </View>
 
                     <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
+                        <XStack>
+                            <Text
+                                style={tw`px-5 pt-5 pb-2.5 text-gray-600 dark:text-gray-400 text-base font-semibold`}>
+                                Content Settings
+                            </Text>
+                        </XStack>
+
+                        <View style={tw`flex-row items-center justify-between px-5 py-4`}>
+                            <View style={tw`flex-row items-center max-w-[70%] gap-3 flex-1`}>
+                                <View style={tw`pr-2.5`}>
+                                    <Ionicons
+                                        name="pin-outline"
+                                        size={20}
+                                        color={colorScheme === 'dark' ? '#9ca3af' : '#999'}
+                                    />
+                                </View>
+                                <YStack>
+                                    <Text
+                                        style={tw`text-[15px] font-semibold text-gray-900 dark:text-gray-100`}>
+                                        Pin to Profile
+                                    </Text>
+                                </YStack>
+                            </View>
+                            <Switch value={isPinned} onValueChange={setIsPinned} />
+                        </View>
+
                         <XStack>
                             <Text
                                 style={tw`px-5 pt-5 pb-2.5 text-gray-600 dark:text-gray-400 text-base font-semibold`}>
@@ -972,7 +1003,6 @@ export default function EditScreen() {
                 </SafeAreaView>
             </Modal>
 
-            {/* Visibility Modal */}
             <Modal
                 visible={showVisibilityModal}
                 animationType="slide"
