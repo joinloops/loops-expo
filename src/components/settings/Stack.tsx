@@ -1,7 +1,6 @@
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
 import { Switch, Text, View } from 'react-native';
 import tw from 'twrnc';
 import { XStack, YStack } from '../ui/Stack';
@@ -66,23 +65,18 @@ export const SettingsToggleItemDescription = ({
 
     return (
         <View style={tw`flex-row items-center py-4 px-5 bg-white dark:bg-black`}>
-            <XStack flex={1}>
-                <YStack flex={1}>
-                    <XStack style={tw`mt-1`}>
-                        {icon && (
-                            <Ionicons name={icon} size={24} color={iconColor} style={tw`mr-4`} />
-                        )}
-                        <YStack>
-                            <Text
-                                style={tw`flex-1 text-base font-medium text-gray-900 dark:text-white`}>
-                                {label}
-                            </Text>
-                            <Text style={tw`flex-1 mt-3 text-sm text-gray-500 dark:text-gray-400`}>
-                                {description}
-                            </Text>
-                        </YStack>
-                    </XStack>
-                </YStack>
+            <XStack flex={1} style={tw`items-center`}>
+                <XStack style={tw`flex-1 items-center mt-1`}>
+                    {icon && <Ionicons name={icon} size={24} color={iconColor} style={tw`mr-4`} />}
+                    <YStack style={tw`flex-1`}>
+                        <Text style={tw`text-base font-medium text-gray-900 dark:text-white`}>
+                            {label}
+                        </Text>
+                        <Text style={tw`mt-3 text-sm text-gray-500 dark:text-gray-400`}>
+                            {description}
+                        </Text>
+                    </YStack>
+                </XStack>
                 <Switch value={value} onValueChange={onValueChange} ios_backgroundColor="#ccc" />
             </XStack>
         </View>
