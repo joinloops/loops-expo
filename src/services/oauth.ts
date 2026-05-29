@@ -3,6 +3,9 @@ import { get, loginPreflightCheck, postForm } from '@/utils/requests';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Alert, Platform } from 'react-native';
+import { queryClient } from '../lib/queryClient';
+import { fetchServerConfig, serverConfigQueryKey } from '../services/config';
+import { useConfigStore } from '../stores/configStore';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -289,6 +292,11 @@ export class OAuthService {
 
             console.log('OAuth login successful for user:', user.username);
 
+            await queryClient.prefetchQuery({
+                queryKey: serverConfigQueryKey,
+                queryFn: fetchServerConfig,
+            });
+
             return true;
         } catch (error) {
             console.error('OAuth callback error:', error);
@@ -406,6 +414,9 @@ export class OAuthService {
      * Logs out the user by clearing all stored credentials
      */
     static logout(): void {
+        queryClient.removeQueries({ queryKey: serverConfigQueryKey });
+        useConfigStore.getState().setConfig(null);
+
         Storage.remove('app.client_id');
         Storage.remove('app.client_secret');
         Storage.remove('app.instance');
