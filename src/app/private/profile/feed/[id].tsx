@@ -163,7 +163,7 @@ export default function ProfileFeed({ navigation }) {
                 videoPlaybackRates={videoPlaybackRates}
                 navigation={navigation}
                 onNavigate={handleNavigate}
-                tabBarHeight={60}
+                tabBarHeight={20}
             />
         ),
         [
