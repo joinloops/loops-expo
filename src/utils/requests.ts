@@ -1,5 +1,6 @@
 import { triggerAuthFailure } from '@/utils/authEvents';
 import { Storage } from '@/utils/cache';
+import { File, UploadType } from 'expo-file-system';
 import * as WebBrowser from 'expo-web-browser';
 import { Alert } from 'react-native';
 
@@ -9,21 +10,37 @@ import { Alert } from 'react-native';
 
 let _authFailureTriggered = false;
 
+type UploadFilePart = { uri: string; name?: string; type?: string };
+
+function isFilePart(value: any): value is UploadFilePart {
+    return (
+        !!value &&
+        typeof value === 'object' &&
+        typeof value.uri === 'string' &&
+        value.uri.length > 0
+    );
+}
+
+export type UploadProgress = { bytesSent: number; totalBytes: number };
+export type UploadExtras = {
+    onProgress?: (progress: UploadProgress) => void;
+    signal?: AbortSignal;
+};
+
 function guardAuthResponse(resp: Response): void {
+    // 403 -> account suspended / token revoked
     if (resp.status === 403) {
         if (!_authFailureTriggered) {
             _authFailureTriggered = true;
-            triggerAuthFailure(
-                resp.status === 403 ? 'Your account has been suspended.' : undefined,
-            );
+            triggerAuthFailure('Your account has been suspended.');
         }
         throw new Error('auth_revoked');
     }
 
-    const redirectedToLogin = resp.url && resp.url.includes('/login');
-    const isHtml =
-        resp.headers?.get?.('content-type')?.includes('text/html') ||
-        resp.headers?.map?.['content-type']?.includes('text/html');
+    const redirectedToLogin = !!resp.url && resp.url.includes('/login');
+
+    const contentType = resp.headers?.get('content-type') ?? '';
+    const isHtml = contentType.includes('text/html');
 
     if (redirectedToLogin || isHtml) {
         if (!_authFailureTriggered) {
@@ -89,10 +106,22 @@ export function objectToForm(obj: { [key: string | number]: any }): FormData {
 
 export function arrayToForm(obj: any): FormData {
     const form = new FormData();
-
     Object.keys(obj).forEach((key) => form.append(key, obj[key]));
 
     return form;
+}
+
+function isMultipartContentType(ct?: string): boolean {
+    return !!ct && ct.toLowerCase().includes('multipart/form-data');
+}
+
+function buildFormHeaders(token?: string, contentType?: string): { [key: string]: string } {
+    const headers: { [key: string]: string } = { Accept: 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (contentType && !isMultipartContentType(contentType)) {
+        headers['Content-Type'] = contentType;
+    }
+    return headers;
 }
 
 export async function get(url: string, token?: string, data?: any) {
@@ -121,16 +150,10 @@ export async function postForm(
     token?: string,
     contentType?: string,
 ) {
-    let headers: { [key: string]: string } = {};
-
-    headers['Accept'] = 'application/json';
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    if (contentType) headers['Content-Type'] = contentType;
-
     const resp = await fetch(url, {
         method: 'POST',
         body: data ? objectToForm(data) : undefined,
-        headers,
+        headers: buildFormHeaders(token, contentType),
     });
 
     guardAuthResponse(resp);
@@ -144,16 +167,10 @@ export async function postFormArray(
     token?: string,
     contentType?: string,
 ) {
-    let headers: { [key: string]: string } = {};
-
-    headers['Accept'] = 'application/json';
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    if (contentType) headers['Content-Type'] = contentType;
-
     const resp = await fetch(url, {
         method: 'POST',
         body: data ? arrayToForm(data) : undefined,
-        headers,
+        headers: buildFormHeaders(token, contentType),
     });
 
     guardAuthResponse(resp);
@@ -178,16 +195,10 @@ export async function postFormFile(
     token?: string,
     contentType?: string,
 ): Promise<Response> {
-    let headers: { [key: string]: string } = {};
-
-    headers['Accept'] = 'application/json';
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    if (contentType) headers['Content-Type'] = contentType;
-
     const resp = await fetch(url, {
         method: 'POST',
         body: data ? arrayToForm(data) : undefined,
-        headers,
+        headers: buildFormHeaders(token, contentType),
     });
 
     guardAuthResponse(resp);
@@ -213,6 +224,72 @@ export async function postJson(
     const resp = await fetch(url, {
         method: 'POST',
         body: JSON.stringify(data),
+        headers,
+    });
+
+    const body = await resp.json().catch(() => ({}));
+
+    if (!resp.ok) {
+        const err: any = new Error(body?.message || `Request failed (${resp.status})`);
+        err.status = resp.status;
+        err.data = body;
+        err.errors = body?.errors;
+        throw err;
+    }
+
+    return body;
+}
+
+export async function putJson(
+    url: string,
+    data?: any,
+    token?: string,
+    customHeaders?: { [key: string]: string },
+): Promise<any> {
+    let headers: { [key: string]: string } = customHeaders ? customHeaders : {};
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    headers['Accept'] = 'application/json';
+    headers['Content-Type'] = 'application/json';
+
+    const resp = await fetch(url, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers,
+    });
+
+    const body = await resp.json().catch(() => ({}));
+
+    if (!resp.ok) {
+        const err: any = new Error(body?.message || `Request failed (${resp.status})`);
+        err.status = resp.status;
+        err.data = body;
+        err.errors = body?.errors;
+        throw err;
+    }
+
+    return body;
+}
+
+export async function deleteJson(
+    url: string,
+    token?: string,
+    customHeaders?: { [key: string]: string },
+): Promise<any> {
+    let headers: { [key: string]: string } = customHeaders ? customHeaders : {};
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    headers['Accept'] = 'application/json';
+    headers['Content-Type'] = 'application/json';
+
+    const resp = await fetch(url, {
+        method: 'DELETE',
         headers,
     });
 
@@ -283,18 +360,77 @@ export function getJsonWithTimeout(
         reqHeaders = { ...reqHeaders, ...customHeaders };
     }
 
-    return Promise.race([
-        fetch(completeURL, {
-            method: 'GET',
-            redirect: 'follow',
-            headers: reqHeaders,
-        }),
-        new Promise<Response>((_, reject) => {
-            setTimeout(() => {
-                reject(new Error(`Request for ${url} timed out after ${timeout} milliseconds`));
-            }, timeout);
-        }),
-    ]);
+    // expo/fetch supports AbortSignal, so we actually cancel the in-flight
+    // request on timeout instead of just losing a Promise.race (which left the
+    // socket open). Return type and timeout error message are unchanged.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+
+    return fetch(completeURL, {
+        method: 'GET',
+        redirect: 'follow',
+        headers: reqHeaders,
+        signal: controller.signal,
+    })
+        .catch((err) => {
+            if (controller.signal.aborted) {
+                throw new Error(`Request for ${url} timed out after ${timeout} milliseconds`);
+            }
+            throw err;
+        })
+        .finally(() => clearTimeout(timer));
+}
+
+async function uploadFileMultipart(
+    url: string,
+    params: { [key: string]: any },
+    token?: string,
+    extras?: UploadExtras,
+): Promise<Response> {
+    let fileFieldName: string | undefined;
+    let filePart: UploadFilePart | undefined;
+    const parameters: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(params ?? {})) {
+        if (value === undefined || value === null) continue;
+        if (!filePart && isFilePart(value)) {
+            fileFieldName = key;
+            filePart = value;
+        } else {
+            parameters[key] = String(value);
+        }
+    }
+
+    if (!filePart) {
+        throw new Error('uploadFileMultipart: no file ({ uri }) present in params');
+    }
+
+    const file = new File(filePart.uri);
+
+    const result = await file.upload(url, {
+        uploadType: UploadType.MULTIPART,
+        httpMethod: 'POST',
+        fieldName: fileFieldName ?? 'file',
+        mimeType: filePart.type || undefined,
+        parameters,
+        headers: {
+            Accept: 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        onProgress: extras?.onProgress,
+        signal: extras?.signal,
+    });
+
+    const nullBody = result.status === 204 || result.status === 205 || result.status === 304;
+
+    const response = new Response(nullBody ? null : result.body, {
+        status: result.status,
+        headers: result.headers,
+    });
+
+    guardAuthResponse(response);
+
+    return response;
 }
 
 // ============================================================================
@@ -327,6 +463,27 @@ export async function _selfPost(
     const token = Storage.getString('app.token');
     const url = `https://${instance}/${path}`;
     return postJson(url, params, token, customHeaders || undefined);
+}
+
+export async function _selfPut(
+    path: string,
+    params?: any,
+    customHeaders?: { [key: string]: string } | false,
+): Promise<any> {
+    const instance = Storage.getString('app.instance');
+    const token = Storage.getString('app.token');
+    const url = `https://${instance}/${path}`;
+    return putJson(url, params, token, customHeaders || undefined);
+}
+
+export async function _selfDelete(
+    path: string,
+    customHeaders?: { [key: string]: string } | false,
+): Promise<any> {
+    const instance = Storage.getString('app.instance');
+    const token = Storage.getString('app.token');
+    const url = `https://${instance}/${path}`;
+    return deleteJson(url, token, customHeaders || undefined);
 }
 
 export async function _selfPostForm(path: string, params?: any): Promise<Response> {
@@ -706,6 +863,27 @@ export async function cancelFollowRequest(id): Promise<any> {
     return await _selfPost(`api/v1/account/undo-follow-request/${id}`);
 }
 
+export async function fetchAccountPlaylists(id) {
+    return await _selfGet(`api/v1/account/playlists/${id}`);
+}
+
+export async function fetchPlaylistVideos(id) {
+    return await _selfGet(`api/v1/playlists/${id}/videos`);
+}
+
+export async function fetchPlaylistDetails(id) {
+    const res = await _selfGet(`api/v1/playlists/${id}`);
+    return res?.data;
+}
+
+export async function updatePlaylist(id, params) {
+    return await _selfPut(`api/v1/studio/playlists/${id}`, params);
+}
+
+export async function deletePlaylist(id) {
+    return await _selfDelete(`api/v1/studio/playlists/${id}`);
+}
+
 // ============================================================================
 // REPORTS ENDPOINTS
 // ============================================================================
@@ -746,7 +924,6 @@ export async function fetchStarterKitBrowse({ pageParam = false }): Promise<any>
         ? `api/v1/starter-kits/browse?cursor=${pageParam}`
         : `api/v1/starter-kits/browse`;
     const res = await _selfGet(url);
-    console.log(res);
     return res;
 }
 
@@ -794,18 +971,18 @@ export async function composeAutocompleteMentions(q): Promise<any> {
     return await _selfGet(`api/v1/autocomplete/accounts?q=${q}`);
 }
 
-export async function uploadVideo(params) {
+export async function uploadVideo(params: any, extras?: UploadExtras): Promise<Response> {
     const instance = Storage.getString('app.instance');
     const token = Storage.getString('app.token');
     const url = `https://${instance}/api/v1/studio/upload`;
-    return await postFormArray(url, params, token, 'multipart/form-data');
+    return uploadFileMultipart(url, params, token, extras);
 }
 
-export async function uploadDuet(params) {
+export async function uploadDuet(params: any, extras?: UploadExtras): Promise<Response> {
     const instance = Storage.getString('app.instance');
     const token = Storage.getString('app.token');
     const url = `https://${instance}/api/v1/studio/duet/upload`;
-    return await postFormArray(url, params, token, 'multipart/form-data');
+    return uploadFileMultipart(url, params, token, extras);
 }
 
 // ============================================================================
@@ -989,13 +1166,14 @@ export async function fetchNotifications({
 
 export async function fetchActivityNotifications({
     pageParam,
+    type = 'activity',
 }: {
     pageParam?: string | undefined;
+    type?: string;
 } = {}): Promise<any> {
-    const url = pageParam
-        ? `api/v1/account/notifications?type=activity&cursor=${pageParam}`
-        : `api/v1/account/notifications?type=activity`;
-    return await _selfGet(url);
+    const params = new URLSearchParams({ type });
+    if (pageParam) params.append('cursor', pageParam);
+    return await _selfGet(`api/v1/account/notifications?${params.toString()}`);
 }
 
 export async function fetchFollowerNotifications({
@@ -1067,8 +1245,11 @@ export async function updateAccountBirthdate(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/birthdate', params);
 }
 
-export async function updateAccountAvatar(params: any): Promise<Response> {
-    return await _selfPostForm('api/v1/account/settings/update-avatar', params);
+export async function updateAccountAvatar(params: any, extras?: UploadExtras): Promise<Response> {
+    const instance = Storage.getString('app.instance');
+    const token = Storage.getString('app.token');
+    const url = `https://${instance}/api/v1/account/settings/update-avatar`;
+    return uploadFileMultipart(url, params, token, extras);
 }
 
 export async function updateAccountPrivacy(params: any): Promise<any> {
@@ -1271,7 +1452,6 @@ export async function commentPostMedia(payload: {
     type: KlipyMediaType;
     item: KlipyItem;
 }) {
-    console.log(payload);
     const { videoId, parentId, comment, type, item } = payload;
 
     const res = await _selfPost(`api/v1/video/comments/${videoId}/media`, {
@@ -1341,5 +1521,26 @@ export const fetchProfileLinkAnalytics = async () => {
 
 export const fetchStudioSummary = async () => {
     const res = await _selfGet('api/v1/studio/analytics/summary');
+    return res;
+};
+
+export const fetchPlaylistLimits = async () => {
+    const res = await _selfGet('api/v1/studio/playlists/limits');
+    return res.data;
+};
+
+export const createPlaylist = async (params) => {
+    const res = await _selfPost('api/v1/studio/playlists', params);
+    return res.data;
+};
+
+export const fetchPlaylists = async ({ cursor, search, sortField, sortDirection }) => {
+    const res = await _selfGet('api/v1/studio/playlists', {
+        cursor,
+        search: search || '',
+        sort_field: sortField,
+        sort_direction: sortDirection,
+        limit: 10,
+    });
     return res;
 };

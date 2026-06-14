@@ -1,5 +1,5 @@
 import { useTheme } from '@/contexts/ThemeContext';
-import { fetchStudioSummary } from '@/utils/requests';
+import { fetchPlaylistLimits, fetchStudioSummary } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
@@ -317,6 +317,11 @@ export default function StudioScreen() {
         queryFn: () => fetchStudioSummary(7),
     });
 
+    const { data: playlistLimits } = useQuery({
+        queryKey: ['studio', 'playlistLimits'],
+        queryFn: () => fetchPlaylistLimits()
+    })
+
     const followers = data?.followers.total ?? 0;
     const followerLabel = followers === 1 ? 'Net follower' : 'Net followers';
 
@@ -421,6 +426,31 @@ export default function StudioScreen() {
                                     <Text
                                         style={tw`ml-1 text-base text-gray-700 dark:text-gray-300`}>
                                         {isPending ? '—' : (data?.latest_post?.comments ?? 0)}
+                                    </Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={18} color={subtleIcon} />
+                            </View>
+                        </TouchableOpacity>
+                    )}
+
+                    {!playlistLimits?.feature_unavailable && (
+                        <TouchableOpacity
+                            disabled={!playlistLimits?.can_create}
+                            onPress={() => router.push('/private/studio/playlists')}
+                            style={tw`flex-row items-center justify-between bg-gray-100 dark:bg-zinc-900 rounded-2xl px-4 py-4 mt-3`}>
+                            <Text style={tw`text-base font-bold text-black dark:text-white`}>
+                                Playlists
+                            </Text>
+
+                            <View style={tw`flex-row items-center`}>
+                                <View style={tw`flex-row items-center mr-4`}>
+                                    <Text
+                                        style={tw`ml-1 text-base font-bold text-gray-700 dark:text-gray-300`}>
+                                        {  playlistLimits?.max_limit - playlistLimits?.slots_available}
+                                    </Text>
+                                    <Text
+                                        style={tw`ml-1 text-base text-gray-400 dark:text-gray-500`}>
+                                        / {playlistLimits?.max_limit}
                                     </Text>
                                 </View>
                                 <Ionicons name="chevron-forward" size={18} color={subtleIcon} />
