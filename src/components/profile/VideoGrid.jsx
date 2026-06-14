@@ -14,15 +14,21 @@ export default function VideoGrid({ video, onPress }) {
                 padding: 1,
             }}>
             <View style={{ flex: 1, position: 'relative' }}>
-                <Image
-                    source={{ uri: video.media.thumbnail }}
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: '#F1F1F2',
-                    }}
-                    resizeMode="cover"
-                />
+                {video.is_sensitive ? (
+                    <View style={styles.sensitiveCover}>
+                        <Ionicons name="eye-off-outline" size={28} color="#fff" />
+                    </View>
+                ) : (
+                    <Image
+                        source={{ uri: video.media.thumbnail }}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: '#F1F1F2',
+                        }}
+                        resizeMode="cover"
+                    />
+                )}
 
                 <LinearGradient
                     colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
@@ -85,5 +91,12 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         height: '100%',
+    },
+    sensitiveCover: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#000',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

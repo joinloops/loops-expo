@@ -9,6 +9,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import tw from 'twrnc';
+import ExpandableBio from './ExpandableBio';
 
 export default function AccountHeader(props) {
     const { colorScheme } = useTheme();
@@ -143,7 +144,9 @@ export default function AccountHeader(props) {
                                             ? 'Friends'
                                             : state?.following
                                               ? 'Following'
-                                              : 'Follow'
+                                              : state?.followed_by
+                                                ? 'Follow back'
+                                                : 'Follow'
                                     }
                                     theme={state?.following ? 'primary' : 'primary'}
                                     loading={!state}
@@ -170,20 +173,7 @@ export default function AccountHeader(props) {
                 )}
             </XStack>
 
-            {props.user?.bio && props.user?.bio?.length && (
-                <View
-                    accessible={true}
-                    accessibilityLabel={`Profile biography: ${props.user?.bio}`}
-                    style={{ paddingHorizontal: 20 }}>
-                    <StackText
-                        fontSize="$2"
-                        textAlign="center"
-                        fontWeight="500"
-                        textColor="text-[#161823] dark:text-gray-300">
-                        {props.user?.bio}
-                    </StackText>
-                </View>
-            )}
+            {props.user?.bio && props.user?.bio?.length && <ExpandableBio bio={props.user?.bio} />}
 
             {isOwner && props.user?.bio?.length === 0 && (
                 <Button
