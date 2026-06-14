@@ -1,5 +1,6 @@
 import AccountHeader from '@/components/profile/AccountHeader';
 import AccountTabs from '@/components/profile/AccountTabs';
+import ProfilePlaylists from '@/components/profile/ProfilePlaylists';
 import VideoGrid from '@/components/profile/VideoGrid';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { StackText, XStack, YStack } from '@/components/ui/Stack';
@@ -7,6 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import {
     fetchAccountFavorites,
     fetchAccountLikes,
+    fetchAccountPlaylists,
     fetchSelfAccount,
     fetchSelfAccountVideos,
 } from '@/utils/requests';
@@ -53,6 +55,17 @@ export default function ProfileScreen() {
         refetchOnWindowFocus: true,
         getNextPageParam: (lastPage) => lastPage?.meta?.next_cursor ?? undefined,
         enabled: activeTab === 'videos',
+    });
+
+
+    const { data: playlists, isLoading: playlistsLoading } = useQuery({
+        queryKey: ['accountPlaylists', user?.id?.toString()],
+        queryFn: async () => {
+            const res = await fetchAccountPlaylists(user?.id.toString());
+            return res.data;
+        },
+        enabled: !!user?.has_playlists && !!user,
+        staleTime: 5 * 60 * 1000,
     });
 
     const {
@@ -177,6 +190,13 @@ export default function ProfileScreen() {
     const handleStudioPress = () => {
         router.push(`/private/studio`);
     };
+
+    const handlePlaylistPress = useCallback(
+        (playlist) => {
+            router.push(`/private/video/playlist/${playlist.id}?playlistName=${playlist.name}`);
+        },
+        [router],
+    );
 
     const handleEndReached = () => {
         if (hasNextPage && !isFetchingNextPage) {
@@ -303,6 +323,14 @@ export default function ProfileScreen() {
                             sortBy={sortBy}
                             onSortChange={setSortBy}
                         />
+
+                        {activeTab === 'videos' && user?.has_playlists ? (
+                            <ProfilePlaylists
+                                playlists={playlists}
+                                isLoading={playlistsLoading}
+                                onPlaylistPress={handlePlaylistPress}
+                            />
+                        ) : null}
                     </>
                 }
                 renderItem={renderItem}

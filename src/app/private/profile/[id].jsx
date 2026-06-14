@@ -1,5 +1,6 @@
 import AccountHeader from '@/components/profile/AccountHeader';
 import AccountTabs from '@/components/profile/AccountTabs';
+import ProfilePlaylists from '@/components/profile/ProfilePlaylists';
 import VideoGrid from '@/components/profile/VideoGrid';
 import { ReportModal } from '@/components/ReportModal';
 import { StackText, YStack } from '@/components/ui/Stack';
@@ -8,6 +9,7 @@ import {
     blockAccount,
     cancelFollowRequest,
     fetchAccount,
+    fetchAccountPlaylists,
     fetchAccountState,
     fetchUserVideos,
     followAccount,
@@ -86,6 +88,16 @@ export default function ProfileScreen() {
         },
         enabled: !!user && !!id,
         staleTime: 2 * 60 * 1000,
+    });
+
+    const { data: playlists, isLoading: playlistsLoading } = useQuery({
+        queryKey: ['accountPlaylists', id?.toString()],
+        queryFn: async () => {
+            const res = await fetchAccountPlaylists(id.toString());
+            return res.data;
+        },
+        enabled: !!user?.has_playlists && !!id,
+        staleTime: 5 * 60 * 1000,
     });
 
     const {
@@ -205,6 +217,13 @@ export default function ProfileScreen() {
         setShowReportModal(false);
         router.push('/private/settings/legal/community');
     }, [router]);
+
+    const handlePlaylistPress = useCallback(
+        (playlist) => {
+            router.push(`/private/video/playlist/${playlist.id}?playlistName=${playlist.name}`);
+        },
+        [router],
+    );
 
     const handleAccountShare = useCallback(async () => {
         if (!user) return;
@@ -370,6 +389,14 @@ export default function ProfileScreen() {
                             sortBy={sortBy}
                             onSortChange={setSortBy}
                         />
+
+                        {activeTab === 'videos' && user?.has_playlists ? (
+                            <ProfilePlaylists
+                                playlists={playlists}
+                                isLoading={playlistsLoading}
+                                onPlaylistPress={handlePlaylistPress}
+                            />
+                        ) : null}
                     </>
                 }
                 ListEmptyComponent={renderEmpty}
