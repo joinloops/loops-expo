@@ -1,7 +1,6 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { shareContent } from '@/utils/sharer';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
 import { Dimensions, Modal, Pressable, Share, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tw from 'twrnc';
@@ -60,7 +59,7 @@ export default function ShareModal({ visible, item, onClose }) {
     const handleNativeShare = async () => {
         try {
             const result = await shareContent({
-                message: `Check out this video by @${item.account.username}!`,
+                message: `Check out this video on Loops!`,
                 url: item?.url,
             });
 
