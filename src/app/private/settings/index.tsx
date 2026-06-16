@@ -7,7 +7,7 @@ import { shareContent } from '@/utils/sharer';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import tw from 'twrnc';
 
 export default function SettingsScreen() {
@@ -120,16 +120,12 @@ export default function SettingsScreen() {
                     label="Feeds"
                     onPress={() => router.push('/private/settings/content/feeds')}
                 />
-                {Platform.OS === 'ios' ? (
-                    <>
-                        <Divider />
-                        <SettingsItem
-                            icon="notifications-outline"
-                            label="Push Notifications"
-                            onPress={() => router.push('/private/settings/content/notifications')}
-                        />
-                    </>
-                ) : null}
+                <Divider />
+                <SettingsItem
+                    icon="notifications-outline"
+                    label="Push Notifications"
+                    onPress={() => router.push('/private/settings/content/notifications')}
+                />
                 <Divider />
                 {/* <SettingsItem icon="play-circle-outline" label="Playback" onPress={() => router.push('/private/settings/content/playback')} />
                 <Divider /> */}

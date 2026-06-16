@@ -11,7 +11,6 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Stack } from 'expo-router';
-import React from 'react';
 import { ActivityIndicator, Platform, ScrollView, Text, View } from 'react-native';
 import tw from 'twrnc';
 
@@ -66,7 +65,6 @@ export default function PushNotificationsSettingsScreen() {
     const enableMutation = useMutation({
         mutationFn: async () => {
             const token = await registerForPushNotifications();
-            // Call your enable endpoint, passing the token + platform
             return enablePushNotifications({
                 token,
                 platform: Platform.OS,
