@@ -1,6 +1,5 @@
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import React from 'react';
 import { Image as RNImage, View } from 'react-native';
 import tw from 'twrnc';
 
@@ -75,6 +74,7 @@ function KlipyVideo({ url }: { url: string }) {
             player={player}
             style={tw`w-full h-full`}
             contentFit="cover"
+            loop={true}
             nativeControls={false}
         />
     );

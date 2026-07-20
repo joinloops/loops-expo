@@ -4,6 +4,14 @@ import { File, UploadType } from 'expo-file-system';
 import * as WebBrowser from 'expo-web-browser';
 import { Alert } from 'react-native';
 
+import type {
+    DmConversation,
+    DmCursorPage,
+    DmMessage,
+    DmSendMediaPayload,
+    DmSendPayload,
+} from '@/types/dm';
+
 // ============================================================================
 // UTILITY HELPERS
 // ============================================================================
@@ -1544,3 +1552,91 @@ export const fetchPlaylists = async ({ cursor, search, sortField, sortDirection 
     });
     return res;
 };
+
+// ============================================================================
+// DIRECT MESSAGES
+// ============================================================================
+
+export async function fetchDmConversations({
+    queryKey,
+    pageParam = false,
+}: {
+    queryKey: any[];
+    pageParam?: string | false;
+}): Promise<DmCursorPage<DmConversation>> {
+    const [, , filter] = queryKey;
+
+    const params = new URLSearchParams();
+
+    params.append('filter', filter || 'primary');
+
+    if (pageParam) {
+        params.append('cursor', pageParam);
+    }
+
+    return await _selfGet(`api/v1/dm/conversations?${params.toString()}`);
+}
+
+export async function fetchDmConversation(id: string): Promise<any> {
+    return await _selfGet(`api/v1/dm/conversations/${id}`);
+}
+
+export async function dmMarkConversationRead(id: string): Promise<any> {
+    return await _selfPost(`api/v1/dm/conversations/${id}/read`);
+}
+
+export async function dmAcceptConversation(id: string): Promise<any> {
+    return await _selfPost(`api/v1/dm/conversations/${id}/accept`);
+}
+
+export async function dmDeclineConversation(id: string): Promise<any> {
+    return await _selfPost(`api/v1/dm/conversations/${id}/decline`);
+}
+
+export async function dmMuteConversation(id: string): Promise<any> {
+    return await _selfPost(`api/v1/dm/conversations/${id}/mute`);
+}
+
+export async function dmUnmuteConversation(id: string): Promise<any> {
+    return await _selfPost(`api/v1/dm/conversations/${id}/unmute`);
+}
+
+export async function dmHideConversation(id: string): Promise<any> {
+    return await _selfPost(`api/v1/dm/conversations/${id}/hide`);
+}
+
+export async function dmUnhideConversation(id: string): Promise<any> {
+    return await _selfPost(`api/v1/dm/conversations/${id}/unhide`);
+}
+
+export async function dmDeleteConversation(id: string): Promise<any> {
+    return await _selfDelete(`api/v1/dm/conversations/${id}`);
+}
+
+export async function fetchDmMessages({
+    queryKey,
+    pageParam = false,
+}: {
+    queryKey: any[];
+    pageParam?: string | false;
+}): Promise<DmCursorPage<DmMessage>> {
+    const [, , conversationId] = queryKey;
+
+    const url = pageParam
+        ? `api/v1/dm/conversations/${conversationId}/messages?cursor=${pageParam}`
+        : `api/v1/dm/conversations/${conversationId}/messages`;
+
+    return await _selfGet(url);
+}
+
+export async function dmSendMessage(payload: DmSendPayload): Promise<any> {
+    return await _selfPost('api/v1/dm/messages', payload);
+}
+
+export async function dmSendMediaMessage(payload: DmSendMediaPayload): Promise<any> {
+    return await _selfPost('api/v1/dm/messages/media', payload);
+}
+
+export async function dmDeleteMessage(id: string): Promise<any> {
+    return await _selfDelete(`api/v1/dm/messages/${id}`);
+}
