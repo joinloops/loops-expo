@@ -300,8 +300,8 @@ export default function MessagesScreen() {
         <View style={tw`flex-1 bg-white dark:bg-black`}>
             <Stack.Screen
                 options={{
-                    headerTitle: 'Direct messages',
-                    title: 'Direct messages',
+                    headerTitle: 'Direct Messages',
+                    title: 'Direct Messages',
                     headerStyle: tw`bg-white dark:bg-black`,
                     headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerTitleStyle: {
@@ -312,6 +312,18 @@ export default function MessagesScreen() {
                     headerBackTitle: 'Back',
                     headerShadowVisible: false,
                     headerShown: true,
+                    headerLeft: () => (
+                        <Pressable
+                            onPress={() => router.back()}
+                            hitSlop={8}
+                            style={({ pressed }) => [pressed && tw`opacity-50`]}>
+                            <Ionicons
+                                name="chevron-back"
+                                size={26}
+                                color={colorScheme === 'dark' ? '#fff' : '#000'}
+                            />
+                        </Pressable>
+                    ),
                     headerRight: () => (
                         <Pressable
                             onPress={() => router.push('/private/messages/new' as any)}

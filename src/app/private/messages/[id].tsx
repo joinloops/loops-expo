@@ -1,6 +1,15 @@
+import {
+    conversationDisplayName,
+    conversationMemberCount,
+    conversationParticipants,
+    isGroupConversation,
+} from '@/components/dm/dmGroupHelpers';
 import { dmDisplayName, dmHandle } from '@/components/dm/dmHelpers';
+import { GroupInfoSheet } from '@/components/dm/GroupInfoSheet';
+import { ImageViewer } from '@/components/dm/ImageViewer';
 import { MessageBubble } from '@/components/dm/MessageBubble';
 import KlipyKeyboard from '@/components/feed/KlipyKeyboard';
+import { BottomSheetModal } from '@/components/ui/BottomSheetModal';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { StackText, YStack } from '@/components/ui/Stack';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -8,9 +17,11 @@ import { useFeatureFlag } from '@/hooks/useServerConfig';
 import type {
     DmConversation,
     DmCursorPage,
+    DmMediaEntity,
     DmMediaType,
     DmMessage,
     DmOptimisticMessage,
+    DmParticipant,
     DmSendMediaPayload,
 } from '@/types/dm';
 import { useAuthStore } from '@/utils/authStore';
@@ -19,6 +30,7 @@ import {
     dmDeclineConversation,
     dmDeleteMessage,
     dmHideConversation,
+    dmLeaveGroup,
     dmMarkConversationRead,
     dmMuteConversation,
     dmSendMediaMessage,
@@ -42,15 +54,16 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
-    KeyboardAvoidingView,
+    Keyboard,
     Modal,
-    Platform,
     Pressable,
     ScrollView,
     TextInput,
     TouchableOpacity,
     View,
+    useWindowDimensions
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import tw from 'twrnc';
 
@@ -112,14 +125,18 @@ export default function ConversationScreen() {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const { id } = useLocalSearchParams<{ id: string }>();
+    const { width: screenWidth } = useWindowDimensions();
 
     const [draft, setDraft] = useState('');
     const [outbox, setOutbox] = useState<DmOptimisticMessage[]>([]);
     const [menuVisible, setMenuVisible] = useState(false);
+    const [groupInfoVisible, setGroupInfoVisible] = useState(false);
     const [reportTarget, setReportTarget] = useState<DmOptimisticMessage | null>(null);
     const [showKlipy, setShowKlipy] = useState(false);
     const hasKlipy = useFeatureFlag('hasKlipy');
-
+    const titleMaxWidth = Math.max(120, screenWidth - 170);
+    const [viewerMedia, setViewerMedia] = useState<DmMediaEntity | null>(null);
+    const [keyboardUp, setKeyboardUp] = useState(false);
     const selfId = user?.id ? String(user.id) : null;
 
     const { data: conversationRaw } = useQuery({
@@ -129,7 +146,14 @@ export default function ConversationScreen() {
     });
     const conversation = (conversationRaw?.data ?? conversationRaw) as DmConversation | undefined;
     const participant = conversation?.participant;
+    const isGroup = isGroupConversation(conversation);
     const isRequest = !!conversation?.pending_acceptance;
+
+    const participantById = useMemo(() => {
+        const map = new Map<string, DmParticipant>();
+        conversationParticipants(conversation).forEach((p) => map.set(String(p.id), p));
+        return map;
+    }, [conversation]);
 
     const messagesQuery = useInfiniteQuery({
         queryKey: ['dm', 'messages', id],
@@ -175,6 +199,15 @@ export default function ConversationScreen() {
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, newestServerId]);
+
+    useEffect(() => {
+        const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardUp(true));
+        const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardUp(false));
+        return () => {
+            show.remove();
+            hide.remove();
+        };
+    }, []);
 
     const insertMessage = (message: DmMessage) => {
         queryClient.setQueryData(['dm', 'messages', id], (old: DmMessagesData) => {
@@ -285,6 +318,11 @@ export default function ConversationScreen() {
                 conversation_id: id as string,
             },
         });
+    };
+
+    const handlePressMedia = (message: DmOptimisticMessage, index: number) => {
+        const image = message.media?.[index];
+        if (image) setViewerMedia(image);
     };
 
     const handleSend = () => {
@@ -410,6 +448,24 @@ export default function ConversationScreen() {
         },
     });
 
+    const leaveMutation = useMutation({
+        mutationFn: async () => dmLeaveGroup(id as string),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dm', 'conversations'] });
+            goBack();
+        },
+        onError: () => {
+            Alert.alert('Something went wrong', "Couldn't leave the group. Please try again.");
+        },
+    });
+
+    const confirmLeave = () => {
+        Alert.alert('Leave group?', "You'll stop receiving messages from this conversation.", [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Leave', style: 'destructive', onPress: () => leaveMutation.mutate() },
+        ]);
+    };
+
     const reportRulesQuery = useQuery({
         queryKey: ['report-rules'],
         queryFn: fetchReportRules,
@@ -421,7 +477,7 @@ export default function ConversationScreen() {
 
     const reportMutation = useMutation({
         mutationFn: async (vars: { messageId: string; key: string }) =>
-            submitReport({ id: vars.messageId, key: vars.key, type: 'dm_message' }),
+            submitReport({ id: conversation.id, key: vars.key, type: 'conversation' }),
         onSuccess: () => {
             setReportTarget(null);
             Alert.alert('Report submitted', 'Thanks for helping keep Loops safe.');
@@ -470,7 +526,7 @@ export default function ConversationScreen() {
             openBrowser(video.url);
             return;
         }
-        router.push(`/private/video/${video.id}` as any);
+        router.push(`/private/profile/feed/${video.id}?profileId=${video.account.id}` as any);
     };
 
     const openProfile = () => {
@@ -478,13 +534,25 @@ export default function ConversationScreen() {
         router.push(`/private/profile/${participant.id}` as any);
     };
 
+    const openHeader = () => {
+        if (isGroup) {
+            setGroupInfoVisible(true);
+        } else {
+            openProfile();
+        }
+    };
+
     const renderItem = ({ item, index }: { item: DmOptimisticMessage; index: number }) => {
         const older = listData[index + 1];
         const newer = listData[index - 1];
         const isSelf = !!selfId && String(item.sender_id) === selfId;
+        const sender = participantById.get(String(item.sender_id)) ?? participant ?? null;
 
         const showAvatar =
             !isSelf && (!newer || String(newer.sender_id) !== String(item.sender_id));
+
+        const showName =
+            isGroup && !isSelf && (!older || String(older.sender_id) !== String(item.sender_id));
 
         const gapMs = newer
             ? new Date(newer.created_at).getTime() - new Date(item.created_at).getTime()
@@ -498,19 +566,28 @@ export default function ConversationScreen() {
             <MessageBubble
                 message={item}
                 isSelf={isSelf}
+                isNewest={index === 0}
                 participant={participant}
+                sender={sender}
                 showAvatar={showAvatar}
+                showName={showName}
                 showMeta={showMeta}
                 dayLabel={showDay ? dayLabel(item.created_at) : null}
                 onLongPress={handleLongPressMessage}
                 onPressLoop={handlePressLoop}
+                onPressMedia={handlePressMedia}
                 onPressRetry={handleRetry}
             />
         );
     };
 
-    const participantName = participant ? dmDisplayName(participant) : 'Message';
+    const headerName = isGroup
+        ? conversationDisplayName(conversation)
+        : participant
+            ? dmDisplayName(participant)
+            : 'Message';
     const participantHandle = dmHandle(participant);
+    const memberCount = conversationMemberCount(conversation);
 
     const goBack = () => {
         if (router.canGoBack()) {
@@ -522,12 +599,24 @@ export default function ConversationScreen() {
 
     const menuItems = conversation
         ? [
+            ...(isGroup
+                ? [
+                    {
+                        key: 'members',
+                        icon: 'people-outline' as const,
+                        label: 'Members',
+                        destructive: false,
+                        onPress: () => setGroupInfoVisible(true),
+                    },
+                ]
+                : []),
             {
                 key: 'mute',
                 icon: conversation.muted
                     ? ('notifications-outline' as const)
                     : ('notifications-off-outline' as const),
                 label: conversation.muted ? 'Unmute' : 'Mute',
+                destructive: false,
                 onPress: () => muteMutation.mutate(),
             },
             {
@@ -536,8 +625,20 @@ export default function ConversationScreen() {
                     ? ('eye-outline' as const)
                     : ('eye-off-outline' as const),
                 label: conversation.hidden ? 'Unhide' : 'Hide',
+                destructive: false,
                 onPress: () => hideMutation.mutate(),
             },
+            ...(isGroup
+                ? [
+                    {
+                        key: 'leave',
+                        icon: 'exit-outline' as const,
+                        label: 'Leave group',
+                        destructive: true,
+                        onPress: confirmLeave,
+                    },
+                ]
+                : []),
         ]
         : [];
 
@@ -545,22 +646,39 @@ export default function ConversationScreen() {
         <View style={tw`flex-1 bg-white dark:bg-black`}>
             <Stack.Screen
                 options={{
+                    headerTitleAlign: 'center',
                     headerTitle: () => (
-                        <Pressable onPress={openProfile} style={tw`items-center`}>
+                        <Pressable
+                            onPress={openHeader}
+                            style={[tw`items-center`, { maxWidth: titleMaxWidth }]}>
                             <StackText
                                 fontSize="$4"
                                 fontWeight="bold"
                                 textColor="text-black dark:text-white"
-                                numberOfLines={1}>
-                                {participantName}
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                                style={tw`text-center`}>
+                                {headerName}
                             </StackText>
-                            {!!participantHandle && (
+                            {isGroup ? (
                                 <StackText
                                     fontSize="$1"
                                     textColor="text-gray-500"
-                                    numberOfLines={1}>
-                                    {participantHandle}
+                                    numberOfLines={1}
+                                    style={tw`text-center`}>
+                                    {memberCount} members
                                 </StackText>
+                            ) : (
+                                !!participantHandle && (
+                                    <StackText
+                                        fontSize="$1"
+                                        textColor="text-gray-500"
+                                        numberOfLines={1}
+                                        ellipsizeMode="middle"
+                                        style={tw`text-center`}>
+                                        {participantHandle}
+                                    </StackText>
+                                )
                             )}
                         </Pressable>
                     ),
@@ -598,7 +716,7 @@ export default function ConversationScreen() {
 
             <KeyboardAvoidingView
                 style={tw`flex-1`}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior='padding'
                 keyboardVerticalOffset={headerHeight}>
                 {messagesQuery.isLoading ? (
                     <YStack flex={1} alignItems="center" justifyContent="center">
@@ -632,7 +750,6 @@ export default function ConversationScreen() {
                             <View
                                 style={[
                                     tw`items-center px-10 pt-16`,
-                                    { transform: [{ scaleY: -1 }] },
                                 ]}>
                                 <Ionicons name="chatbubbles-outline" size={44} color="#999" />
                                 <StackText
@@ -640,12 +757,12 @@ export default function ConversationScreen() {
                                     fontWeight="semibold"
                                     textColor="text-black dark:text-white"
                                     style={tw`mt-4 text-center`}>
-                                    {participantName}
+                                    {headerName}
                                 </StackText>
                                 <StackText
                                     fontSize="$3"
                                     textColor="text-gray-600 dark:text-gray-500"
-                                    style={tw`mt-1 text-center`}>
+                                    style={tw`mt-1`}>
                                     Say hi 👋
                                 </StackText>
                             </View>
@@ -653,138 +770,135 @@ export default function ConversationScreen() {
                     />
                 )}
 
-                {isRequest ? (
-                    <View
-                        style={[
-                            tw`border-t border-gray-100 dark:border-gray-800 px-4 pt-4`,
-                            { paddingBottom: insets.bottom + 12 },
-                        ]}>
-                        <StackText
-                            fontSize="$4"
-                            fontWeight="semibold"
-                            textColor="text-black dark:text-white"
-                            style={tw`text-center`}>
-                            Accept message request from {participantName}?
-                        </StackText>
-                        <StackText
-                            fontSize="$2"
-                            textColor="text-gray-600 dark:text-gray-500"
-                            style={tw`text-center mt-1`}>
-                            They won't know you've seen it until you accept.
-                        </StackText>
+                {
+                    isRequest ? (
+                        <View
+                            style={[
+                                tw`border-t border-gray-100 dark:border-gray-800 px-4 pt-4`,
+                                { paddingBottom: keyboardUp ? 8 : insets.bottom + 8 },
+                            ]}>
+                            <StackText
+                                fontSize="$4"
+                                fontWeight="semibold"
+                                textColor="text-black dark:text-white"
+                                style={tw`text-center`}>
+                                {isGroup
+                                    ? 'Join this group conversation?'
+                                    : `Accept message request from ${headerName}?`}
+                            </StackText>
+                            <StackText
+                                fontSize="$2"
+                                textColor="text-gray-600 dark:text-gray-500"
+                                style={tw`text-center mt-1`}>
+                                They won't know you've seen it until you accept.
+                            </StackText>
 
-                        <View style={tw`flex-row gap-3 mt-4`}>
-                            <PressableHaptics
-                                onPress={() => declineMutation.mutate()}
-                                disabled={acceptMutation.isPending || declineMutation.isPending}
-                                style={({ pressed }) => [
-                                    tw`flex-1 rounded-xl py-3 items-center bg-gray-100 dark:bg-gray-800`,
-                                    pressed && tw`opacity-70`,
-                                ]}>
-                                {declineMutation.isPending ? (
-                                    <ActivityIndicator size="small" color="#666" />
-                                ) : (
+                            <View style={tw`flex-row gap-3 mt-4`}>
+                                <PressableHaptics
+                                    onPress={() => declineMutation.mutate()}
+                                    disabled={acceptMutation.isPending || declineMutation.isPending}
+                                    style={({ pressed }) => [
+                                        tw`flex-1 rounded-xl py-3 items-center bg-gray-100 dark:bg-gray-800`,
+                                        pressed && tw`opacity-70`,
+                                    ]}>
+                                    {declineMutation.isPending ? (
+                                        <ActivityIndicator size="small" color="#666" />
+                                    ) : (
+                                        <StackText
+                                            fontSize="$4"
+                                            fontWeight="semibold"
+                                            textColor="text-black dark:text-white">
+                                            {isGroup ? 'Leave' : 'Decline'}
+                                        </StackText>
+                                    )}
+                                </PressableHaptics>
+
+                                <PressableHaptics
+                                    onPress={() => acceptMutation.mutate()}
+                                    disabled={acceptMutation.isPending || declineMutation.isPending}
+                                    style={({ pressed }) => [
+                                        tw`flex-1 rounded-xl py-3 items-center`,
+                                        { backgroundColor: ACCENT },
+                                        pressed && tw`opacity-70`,
+                                    ]}>
+                                    {acceptMutation.isPending ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <StackText
+                                            fontSize="$4"
+                                            fontWeight="semibold"
+                                            textColor="text-white">
+                                            Accept
+                                        </StackText>
+                                    )}
+                                </PressableHaptics>
+                            </View>
+                        </View>
+                    ) : (
+                        <View
+                            style={[
+                                tw`flex-row items-end px-3 pt-2 border-t border-gray-100 dark:border-gray-800`,
+                                { paddingBottom: keyboardUp ? 8 : insets.bottom + 8 },
+                            ]}>
+                            <TextInput
+                                style={[
+                                    tw`flex-1 rounded-3xl px-4 py-2.5 mr-2 bg-gray-100 dark:bg-gray-800 text-black dark:text-white`,
+                                    { maxHeight: 110, fontSize: 16 },
+                                ]}
+                                placeholder="Send a message..."
+                                placeholderTextColor="#999"
+                                multiline
+                                value={draft}
+                                onChangeText={setDraft}
+                            />
+                            {hasKlipy && (
+                                <PressableHaptics
+                                    onPress={() => setShowKlipy(true)}
+                                    hitSlop={6}
+                                    style={({ pressed }) => [
+                                        tw`px-2 py-1.5 mr-2 mb-0.5 border rounded-xl border-gray-300 dark:border-gray-500`,
+                                        pressed && tw`opacity-50`,
+                                    ]}>
                                     <StackText
-                                        fontSize="$4"
+                                        fontSize="$3"
                                         fontWeight="semibold"
                                         textColor="text-black dark:text-white">
-                                        Decline
+                                        GIF
                                     </StackText>
-                                )}
-                            </PressableHaptics>
-
+                                </PressableHaptics>
+                            )}
                             <PressableHaptics
-                                onPress={() => acceptMutation.mutate()}
-                                disabled={acceptMutation.isPending || declineMutation.isPending}
+                                onPress={handleSend}
+                                disabled={!draft.trim()}
                                 style={({ pressed }) => [
-                                    tw`flex-1 rounded-xl py-3 items-center`,
-                                    { backgroundColor: ACCENT },
+                                    tw`w-10 h-10 rounded-full items-center justify-center`,
+                                    {
+                                        backgroundColor: draft.trim()
+                                            ? ACCENT
+                                            : colorScheme === 'dark'
+                                                ? '#374151'
+                                                : '#D1D5DB',
+                                    },
                                     pressed && tw`opacity-70`,
                                 ]}>
-                                {acceptMutation.isPending ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <StackText
-                                        fontSize="$4"
-                                        fontWeight="semibold"
-                                        textColor="text-white">
-                                        Accept
-                                    </StackText>
-                                )}
+                                <Ionicons name="paper-plane" size={18} color="#fff" />
                             </PressableHaptics>
                         </View>
-                    </View>
-                ) : (
-                    <View
-                        style={[
-                            tw`flex-row items-end px-3 pt-2 border-t border-gray-100 dark:border-gray-800`,
-                            { paddingBottom: insets.bottom + 8 },
-                        ]}>
-                        <TextInput
-                            style={[
-                                tw`flex-1 rounded-3xl px-4 py-2.5 mr-2 bg-gray-100 dark:bg-gray-800 text-black dark:text-white`,
-                                { maxHeight: 110, fontSize: 16 },
-                            ]}
-                            placeholder="Send a message..."
-                            placeholderTextColor="#999"
-                            multiline
-                            value={draft}
-                            onChangeText={setDraft}
-                        />
-                        {hasKlipy && (
-                            <PressableHaptics
-                                onPress={() => setShowKlipy(true)}
-                                hitSlop={6}
-                                style={({ pressed }) => [
-                                    tw`px-2 py-1.5 mr-2 mb-0.5 border rounded-xl border-gray-300 dark:border-gray-500`,
-                                    pressed && tw`opacity-50`,
-                                ]}>
-                                <StackText
-                                    fontSize="$3"
-                                    fontWeight="semibold"
-                                    textColor="text-black dark:text-white">
-                                    GIF
-                                </StackText>
-                            </PressableHaptics>
-                        )}
-                        <PressableHaptics
-                            onPress={handleSend}
-                            disabled={!draft.trim()}
-                            style={({ pressed }) => [
-                                tw`w-10 h-10 rounded-full items-center justify-center`,
-                                {
-                                    backgroundColor: draft.trim()
-                                        ? ACCENT
-                                        : colorScheme === 'dark'
-                                            ? '#374151'
-                                            : '#D1D5DB',
-                                },
-                                pressed && tw`opacity-70`,
-                            ]}>
-                            <Ionicons name="paper-plane" size={18} color="#fff" />
-                        </PressableHaptics>
-                    </View>
-                )}
-            </KeyboardAvoidingView>
+                    )
+                }
+            </KeyboardAvoidingView >
 
-            <Modal
+            <BottomSheetModal
                 visible={menuVisible}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setMenuVisible(false)}>
-                <View style={tw`flex-1 justify-end`}>
-                    <Pressable
-                        style={tw`absolute inset-0`}
-                        onPress={() => setMenuVisible(false)}
-                    />
+                onClose={() => setMenuVisible(false)}
+                containerStyle={{ maxHeight: '85%' }}
+                cancelSpacing={false}>
+                <View style={tw`flex justify-end`}>
                     <View
                         style={[
                             tw`bg-white dark:bg-gray-900 rounded-t-[20px] pt-3`,
                             { paddingBottom: insets.bottom + 20 },
                         ]}>
-                        <View
-                            style={tw`w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-sm self-center mb-3`}
-                        />
 
                         {menuItems.map((item) => (
                             <TouchableOpacity
@@ -797,37 +911,42 @@ export default function ConversationScreen() {
                                 <Ionicons
                                     name={item.icon}
                                     size={22}
-                                    color={colorScheme === 'dark' ? '#fff' : '#000'}
+                                    color={
+                                        item.destructive
+                                            ? '#EF4444'
+                                            : colorScheme === 'dark'
+                                                ? '#fff'
+                                                : '#000'
+                                    }
                                 />
                                 <StackText
                                     fontSize="$4"
                                     fontWeight="semibold"
-                                    textColor="text-black dark:text-white"
+                                    textColor={
+                                        item.destructive
+                                            ? 'text-red-500'
+                                            : 'text-black dark:text-white'
+                                    }
                                     style={tw`ml-3`}>
                                     {item.label}
                                 </StackText>
                             </TouchableOpacity>
                         ))}
-
-                        <TouchableOpacity
-                            style={tw`mt-2 py-4 items-center border-t border-gray-100 dark:border-gray-800`}
-                            onPress={() => setMenuVisible(false)}>
-                            <StackText
-                                fontSize="$4"
-                                fontWeight="semibold"
-                                textColor="text-[#007AFF]">
-                                Cancel
-                            </StackText>
-                        </TouchableOpacity>
                     </View>
                 </View>
-            </Modal>
+            </BottomSheetModal>
 
             <Modal
                 visible={!!reportTarget}
-                animationType="slide"
-                transparent={true}
+                animationType="fade"
+                transparent
+                statusBarTranslucent
+                navigationBarTranslucent
                 onRequestClose={() => setReportTarget(null)}>
+                <Pressable
+                    style={tw`absolute inset-0 bg-black/50`}
+                    onPress={() => setReportTarget(null)}
+                />
                 <View style={tw`flex-1 justify-end`}>
                     <Pressable
                         style={tw`absolute inset-0`}
@@ -878,7 +997,7 @@ export default function ConversationScreen() {
                                             fontSize="$4"
                                             textColor="text-black dark:text-white"
                                             style={tw`flex-1 mr-3`}>
-                                            {rule.title ?? rule.name ?? rule.text ?? String(rule.key)}
+                                            {rule.message ?? String(rule.key)}
                                         </StackText>
                                         <Ionicons
                                             name="chevron-forward"
@@ -904,11 +1023,35 @@ export default function ConversationScreen() {
                 </View>
             </Modal>
 
+            {
+                isGroup && conversation && (
+                    <GroupInfoSheet
+                        visible={groupInfoVisible}
+                        conversation={conversation}
+                        onClose={() => setGroupInfoVisible(false)}
+                        onLeft={() => {
+                            setGroupInfoVisible(false);
+                            goBack();
+                        }}
+                        onOpenProfile={(profileId) => {
+                            setGroupInfoVisible(false);
+                            router.push(`/private/profile/${profileId}` as any);
+                        }}
+                    />
+                )
+            }
+
             <KlipyKeyboard
                 visible={showKlipy}
                 onClose={() => setShowKlipy(false)}
                 onSelect={handleKlipySelect}
             />
-        </View>
+
+            <ImageViewer
+                visible={!!viewerMedia}
+                media={viewerMedia}
+                onClose={() => setViewerMedia(null)}
+            />
+        </View >
     );
 }
