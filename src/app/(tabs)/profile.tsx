@@ -315,6 +315,7 @@ export default function ProfileScreen() {
                             showActions={true}
                             loading={userLoading}
                             onEditBio={handleEditBio}
+                            onMessagePress={() => router.push(`/private/dm/thread/${user.id}`)}
                         />
                         <AccountTabs
                             activeTab={activeTab}

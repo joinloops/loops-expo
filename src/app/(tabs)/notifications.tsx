@@ -1,18 +1,23 @@
+import { ConversationRow } from '@/components/dm/ConversationRow';
+import { BottomSheetModal } from '@/components/ui/BottomSheetModal';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { StackText, YStack } from '@/components/ui/Stack';
 import { useTheme } from '@/contexts/ThemeContext';
+import type { DmConversation, DmCursorPage } from '@/types/dm';
 import { useAuthStore } from '@/utils/authStore';
 import {
+    dmMarkConversationRead,
+    fetchDmConversations,
     fetchNotifications,
     followAccount,
     getExploreAccounts,
     postExploreAccountHideSuggestion,
 } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, View } from 'react-native';
 import tw from 'twrnc';
 
 interface CategoryCardProps {
@@ -78,6 +83,43 @@ const CategoryCard = ({
                 <Ionicons name="chevron-forward" size={20} color="#C4C4C4" />
             )}
         </Pressable>
+    );
+};
+
+interface SheetRowProps {
+    icon: keyof typeof Ionicons.glyphMap;
+    iconColor: string;
+    iconBgColor: string;
+    label: string;
+    onPress: () => void;
+}
+
+const SheetRow = ({ icon, iconColor, iconBgColor, label, onPress }: SheetRowProps) => {
+    return (
+        <PressableHaptics
+            onPress={onPress}
+            style={({ pressed }) => [
+                tw`flex-row items-center px-5 py-3.5`,
+                pressed && tw`bg-gray-50 dark:bg-gray-800`,
+            ]}>
+            <View
+                style={[
+                    tw`w-10 h-10 rounded-full items-center justify-center mr-3`,
+                    { backgroundColor: iconBgColor },
+                ]}>
+                <Ionicons name={icon} size={20} color={iconColor} />
+            </View>
+
+            <StackText
+                fontSize="$4"
+                fontWeight="semibold"
+                textColor="text-black dark:text-gray-200"
+                style={tw`flex-1`}>
+                {label}
+            </StackText>
+
+            <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
+        </PressableHaptics>
     );
 };
 
@@ -193,8 +235,10 @@ export default function NotificationScreen() {
     const queryClient = useQueryClient();
     const [followingAccountId, setFollowingAccountId] = useState<string | null>(null);
     const [hidingAccountId, setHidingAccountId] = useState<string | null>(null);
+    const [menuVisible, setMenuVisible] = useState(false);
     const { colorScheme } = useTheme();
-    const [isExpanded, setIsExpanded] = useState(false);
+
+    const selfId = user?.id ? String(user.id) : null;
 
     const { data, isLoading, isFetching } = useQuery({
         queryKey: ['main-notifications'],
@@ -207,6 +251,26 @@ export default function NotificationScreen() {
     const { data: accountsData, isLoading: accountsLoading } = useQuery({
         queryKey: ['accounts', 'suggested'],
         queryFn: getExploreAccounts,
+    });
+
+    const { data: dmData, isLoading: dmLoading } = useInfiniteQuery({
+        queryKey: ['dm', 'conversations', 'primary'],
+        queryFn: fetchDmConversations,
+        initialPageParam: false as string | false,
+        getNextPageParam: (lastPage: DmCursorPage<DmConversation>) =>
+            lastPage?.meta?.next_cursor ?? undefined,
+        refetchOnWindowFocus: true,
+        refetchOnMount: 'always',
+    });
+
+    const { data: dmRequestsData } = useInfiniteQuery({
+        queryKey: ['dm', 'conversations', 'requests'],
+        queryFn: fetchDmConversations,
+        initialPageParam: false as string | false,
+        getNextPageParam: (lastPage: DmCursorPage<DmConversation>) =>
+            lastPage?.meta?.next_cursor ?? undefined,
+        refetchOnWindowFocus: true,
+        refetchOnMount: 'always',
     });
 
     const followMutation = useMutation({
@@ -283,6 +347,39 @@ export default function NotificationScreen() {
         };
     }, [notifications]);
 
+    const recentConversations = useMemo(() => {
+        return dmData?.pages?.[0]?.data?.slice(0, 8) ?? [];
+    }, [dmData]);
+
+    const dmRequestsCount = dmRequestsData?.pages?.[0]?.data?.length ?? 0;
+
+    const handleOpenConversation = (conversation: DmConversation) => {
+        if (conversation.unread) {
+            queryClient.setQueryData(['dm', 'conversations', 'primary'], (old: any) => {
+                if (!old?.pages) return old;
+                return {
+                    ...old,
+                    pages: old.pages.map((page: any) => ({
+                        ...page,
+                        data: page.data.map((c: DmConversation) =>
+                            c.id === conversation.id ? { ...c, unread: false } : c,
+                        ),
+                    })),
+                };
+            });
+            dmMarkConversationRead(conversation.id).catch(() => { });
+        }
+        router.push(`/private/messages/${conversation.id}` as any);
+    };
+
+    const handleMenuNavigate = useCallback(
+        (route: string) => {
+            setMenuVisible(false);
+            setTimeout(() => router.push(route as any), 220);
+        },
+        [router],
+    );
+
     const categories = [
         {
             id: 'followers',
@@ -310,40 +407,33 @@ export default function NotificationScreen() {
         },
         ...(unreadCounts.system > 0
             ? [
-                  {
-                      id: 'system',
-                      icon: 'megaphone' as const,
-                      iconColor: '#FFFFFF',
-                      iconBgColor: '#FFA800',
-                      title: 'System notifications',
-                      subtitle: 'Tap to view your system notifications.',
-                      count: unreadCounts.system,
-                      route: '/private/notifications/system',
-                  },
-              ]
+                {
+                    id: 'system',
+                    icon: 'megaphone' as const,
+                    iconColor: '#FFFFFF',
+                    iconBgColor: '#FFA800',
+                    title: 'System notifications',
+                    subtitle: 'Tap to view your system notifications.',
+                    count: unreadCounts.system,
+                    route: '/private/notifications/system',
+                },
+            ]
             : []),
         ...(unreadCounts.starterKits > 0
             ? [
-                  {
-                      id: 'starterKits',
-                      icon: 'sparkles' as const,
-                      iconColor: '#FFFFFF',
-                      iconBgColor: '#8B5CF6',
-                      title: 'Starter Kits',
-                      subtitle: 'You have pending starter kit updates.',
-                      count: unreadCounts.starterKits,
-                      route: '/private/notifications/starterKits',
-                  },
-              ]
+                {
+                    id: 'starterKits',
+                    icon: 'sparkles' as const,
+                    iconColor: '#FFFFFF',
+                    iconBgColor: '#8B5CF6',
+                    title: 'Starter Kits',
+                    subtitle: 'You have pending starter kit updates.',
+                    count: unreadCounts.starterKits,
+                    route: '/private/notifications/starterKits',
+                },
+            ]
             : []),
     ];
-
-    const SimpleMenuExample = () => {
-        return Platform.OS === 'android' ? (
-            <View
-                style={{ alignItems: 'center', justifyContent: 'center', marginRight: 10 }}></View>
-        ) : null;
-    };
 
     const suggestedAccounts = useMemo(() => {
         return accountsData || [];
@@ -370,7 +460,32 @@ export default function NotificationScreen() {
                     headerShadowVisible: false,
                     headerBackTitleVisible: false,
                     headerShown: true,
-                    headerRight: () => <SimpleMenuExample />,
+                    headerRight: () => (
+                        <View style={tw`flex-row items-center`}>
+                            <Pressable
+                                onPress={() => router.push('/private/messages' as any)}
+                                hitSlop={8}
+                                style={({ pressed }) => [tw`mr-4`, pressed && tw`opacity-50`]}>
+                                <Ionicons
+                                    name="paper-plane-outline"
+                                    size={24}
+                                    color={colorScheme === 'dark' ? '#fff' : '#000'}
+                                />
+                            </Pressable>
+                            <Pressable
+                                onPress={() => setMenuVisible(true)}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="More options"
+                                style={({ pressed }) => [tw`mr-3`, pressed && tw`opacity-50`]}>
+                                <Ionicons
+                                    name="menu-outline"
+                                    size={28}
+                                    color={colorScheme === 'dark' ? '#fff' : '#000'}
+                                />
+                            </Pressable>
+                        </View>
+                    ),
                 }}
             />
 
@@ -392,6 +507,77 @@ export default function NotificationScreen() {
                             onPress={() => router.push(category.route as any)}
                         />
                     ))}
+
+                    {dmRequestsCount > 0 && (
+                        <CategoryCard
+                            icon="chatbubble-ellipses"
+                            iconColor="#FFFFFF"
+                            iconBgColor="#64748B"
+                            title="Message requests"
+                            subtitle={
+                                dmRequestsCount === 1
+                                    ? 'Someone wants to send you messages.'
+                                    : 'People want to send you messages.'
+                            }
+                            count={dmRequestsCount}
+                            onPress={() =>
+                                router.push({
+                                    pathname: '/private/messages',
+                                    params: { tab: 'requests' },
+                                } as any)
+                            }
+                        />
+                    )}
+
+                    {(dmLoading || recentConversations.length > 0) && (
+                        <View style={tw`mt-4`}>
+                            <View style={tw`px-4 py-2`}>
+                                <StackText
+                                    fontSize="$5"
+                                    fontWeight="semibold"
+                                    textColor="text-black dark:text-gray-400">
+                                    Messages
+                                </StackText>
+                            </View>
+
+                            {dmLoading ? (
+                                <View style={tw`py-6 items-center`}>
+                                    <ActivityIndicator />
+                                </View>
+                            ) : (
+                                <>
+                                    {recentConversations.map((conversation: DmConversation) => (
+                                        <ConversationRow
+                                            key={conversation.id}
+                                            conversation={conversation}
+                                            selfId={selfId}
+                                            onPress={handleOpenConversation}
+                                        />
+                                    ))}
+
+                                    <PressableHaptics
+                                        onPress={() => router.push('/private/messages' as any)}
+                                        style={({ pressed }) => [
+                                            tw`flex-row items-center justify-center py-4`,
+                                            pressed && tw`opacity-60`,
+                                        ]}>
+                                        <StackText
+                                            fontSize="$3"
+                                            fontWeight="semibold"
+                                            textColor="text-gray-600 dark:text-gray-400">
+                                            See all messages
+                                        </StackText>
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={16}
+                                            color="#999"
+                                            style={tw`ml-1`}
+                                        />
+                                    </PressableHaptics>
+                                </>
+                            )}
+                        </View>
+                    )}
 
                     {suggestedAccounts.length > 0 && (
                         <View style={tw`my-6`}>
@@ -419,6 +605,23 @@ export default function NotificationScreen() {
                     )}
                 </ScrollView>
             )}
+
+            <BottomSheetModal visible={menuVisible} onClose={() => setMenuVisible(false)}>
+                <SheetRow
+                    icon="sparkles"
+                    iconColor="#FFFFFF"
+                    iconBgColor="#8B5CF6"
+                    label="Starter Kits"
+                    onPress={() => handleMenuNavigate('/private/notifications/starterKits')}
+                />
+                <SheetRow
+                    icon="megaphone"
+                    iconColor="#FFFFFF"
+                    iconBgColor="#FFA800"
+                    label="System notifications"
+                    onPress={() => handleMenuNavigate('/private/notifications/system')}
+                />
+            </BottomSheetModal>
         </View>
     );
 }

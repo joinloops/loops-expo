@@ -36,6 +36,7 @@ import Reanimated, {
 import {
     Camera,
     useCameraDevice,
+    useCameraFormat,
     useCameraPermission,
     useFrameProcessor,
     useMicrophonePermission,
@@ -75,6 +76,7 @@ export default function CameraScreen() {
     const outputPathShared = useSharedValue('');
 
     const isRecordingRef = useRef(false);
+    const recordingDurationRef = useRef(0);
 
     const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } =
         useCameraPermission();
@@ -86,6 +88,11 @@ export default function CameraScreen() {
     const device = useCameraDevice(cameraPosition, {
         physicalDevices: ['ultra-wide-angle-camera', 'wide-angle-camera', 'telephoto-camera'],
     });
+
+    const format = useCameraFormat(device, [
+        { videoResolution: { width: 1080, height: 1920 } },
+        { fps: 30 },
+    ]);
 
     const zoom = useSharedValue(1);
     const zoomOffset = useSharedValue(1);
@@ -262,9 +269,10 @@ export default function CameraScreen() {
     );
 
     const startStandardRecording = useCallback(async () => {
-        if (!camera.current || isRecording || !hasCameraPermission || !hasMicrophonePermission)
+        if (!camera.current || isRecordingRef.current || !hasCameraPermission || !hasMicrophonePermission)
             return;
         try {
+            isRecordingRef.current = true;
             setIsRecording(true);
 
             cancelAnimation(zoomIndicatorOpacity);
@@ -273,15 +281,18 @@ export default function CameraScreen() {
             camera.current.startRecording({
                 flash,
                 onRecordingFinished: (video) => {
+                    isRecordingRef.current = false;
                     navigateToPreview(video.path, recordingDuration);
                 },
                 onRecordingError: (error) => {
+                    isRecordingRef.current = false;
                     console.error('Recording error:', error);
                     Alert.alert('Recording Error', error.message);
                     setIsRecording(false);
                 },
             });
         } catch (error: any) {
+            isRecordingRef.current = false;
             console.error('Failed to start recording:', error);
             Alert.alert('Error', 'Failed to start recording');
             setIsRecording(false);
@@ -289,7 +300,9 @@ export default function CameraScreen() {
     }, [isRecording, flash, recordingDuration, hasCameraPermission, hasMicrophonePermission]);
 
     const stopStandardRecording = useCallback(async () => {
-        if (!camera.current || !isRecording) return;
+        if (!camera.current) return;
+        if (!isRecordingRef.current) return;
+        isRecordingRef.current = false;
         try {
             await camera.current.stopRecording();
             setIsRecording(false);
@@ -302,7 +315,7 @@ export default function CameraScreen() {
         } catch (error) {
             console.error('Failed to stop recording:', error);
         }
-    }, [isRecording]);
+    }, []);
 
     const startFilterRecording = () => {
         const baseDir = FileSystem.cacheDirectory;
@@ -588,6 +601,7 @@ export default function CameraScreen() {
                             ref={camera}
                             style={StyleSheet.absoluteFill}
                             device={device}
+                            format={format}
                             isActive={isFocused && isCameraActive}
                             video={true}
                             audio={true}
@@ -635,7 +649,7 @@ export default function CameraScreen() {
                 <PressableHaptics onPress={toggleCamera} style={styles.topButton}>
                     <Ionicons name="camera-reverse" size={28} color="#fff" />
                 </PressableHaptics>
-                {Platform.OS === 'ios' ? (
+                {/* {Platform.OS === 'ios' ? (
                     <PressableHaptics onPress={toggleFilters} style={styles.controlButton}>
                         <Ionicons
                             name={showFilters ? 'sparkles' : 'sparkles-outline'}
@@ -643,7 +657,7 @@ export default function CameraScreen() {
                             color="#fff"
                         />
                     </PressableHaptics>
-                ) : null}
+                ) : null} */}
                 <TouchableOpacity onPress={toggleFlash} style={styles.controlButton}>
                     <Ionicons
                         name={flash === 'off' ? 'flash-off' : 'flash'}

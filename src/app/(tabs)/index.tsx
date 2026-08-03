@@ -1,7 +1,9 @@
+import DownloadToast from '@/components/DownloadToast';
 import CommentsModal from '@/components/feed/CommentsModal';
-import OtherModal from '@/components/feed/OtherModal';
+import FeedEmptyState from '@/components/feed/FeedEmptyState';
 import ShareModal from '@/components/feed/ShareModal';
 import VideoPlayer from '@/components/feed/VideoPlayer';
+import { useVideoDownload } from '@/hooks/useVideoDownload';
 import { useAuthStore } from '@/utils/authStore';
 import {
     fetchFollowingFeed,
@@ -15,13 +17,12 @@ import {
     videoUnlike,
 } from '@/utils/requests';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
-    Dimensions,
+    AppState,
     FlatList,
     RefreshControl,
     StyleSheet,
@@ -31,8 +32,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const TAB_BAR_HEIGHT = 60;
+const TAB_BAR_HEIGHT = 20;
 
 const fetchVideos = async ({ pageParam = null, tab }) => {
     if (tab === 'local') {
@@ -46,9 +46,11 @@ const fetchVideos = async ({ pageParam = null, tab }) => {
 
 export default function LoopsFeed({ navigation }) {
     const insets = useSafeAreaInsets();
+    const [feedHeight, setFeedHeight] = useState(0);
     const hideForYouFeed = useAuthStore((state) => state.hideForYouFeed);
     const defaultFeed = useAuthStore((state) => state.defaultFeed);
-    const [activeTab, setActiveTab] = useState(defaultFeed);
+    const [tabOverride, setTabOverride] = useState(null);
+    const activeTab = tabOverride ?? defaultFeed;
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [showComments, setShowComments] = useState(false);
@@ -60,19 +62,32 @@ export default function LoopsFeed({ navigation }) {
     const router = useRouter();
     const currentVideoRef = useRef(null);
     const watchStartTimeRef = useRef(null);
+    const containerRef = useRef(null);
 
     const viewabilityConfig = useRef({
         itemVisiblePercentThreshold: 50,
     });
 
-    useFocusEffect(
-        useCallback(() => {
-            setScreenFocused(true);
-            return () => {
-                setScreenFocused(false);
-            };
-        }, []),
+    const applyHeight = useCallback((h) => {
+        if (h > 0) {
+            setFeedHeight((prev) => (Math.abs(h - prev) > 1 ? h : prev));
+        }
+    }, []);
+
+    const onContainerLayout = useCallback(
+        (e) => applyHeight(e.nativeEvent.layout.height),
+        [applyHeight],
     );
+
+    const remeasure = useCallback(() => {
+        const node = containerRef.current;
+        if (!node) return;
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                node.measure?.((_x, _y, _w, h) => applyHeight(h));
+            });
+        });
+    }, [applyHeight]);
 
     const { data: appConfig, isLoading: isConfigLoading } = useQuery({
         queryKey: ['appConfig'],
@@ -84,7 +99,7 @@ export default function LoopsFeed({ navigation }) {
     useEffect(() => {
         if (!isConfigLoading && appConfig) {
             if (!forYouEnabled && activeTab === 'forYou') {
-                setActiveTab('local');
+                setTabOverride('local');
             }
         }
     }, [isConfigLoading, appConfig, forYouEnabled, activeTab]);
@@ -126,8 +141,8 @@ export default function LoopsFeed({ navigation }) {
                 return await videoUnlike(data.id);
             }
         },
-        onSuccess: (res) => {},
-        onError: (error) => {},
+        onSuccess: (res) => { },
+        onError: (error) => { },
     });
 
     const videoBookmarkMutation = useMutation({
@@ -141,19 +156,12 @@ export default function LoopsFeed({ navigation }) {
                 return await videoUnbookmark(data.id);
             }
         },
-        onSuccess: (res) => {},
-        onError: (error) => {},
+        onSuccess: (res) => { },
+        onError: (error) => { },
     });
 
     const videos = data?.pages?.flatMap((page) => page.data) || [];
-
-    const videosWithEnd = React.useMemo(() => {
-        if (activeTab === 'forYou' && !hasNextPage && videos.length == 0) {
-            return [...videos, { id: 'end-of-feed', isEndMarker: true }];
-        }
-        return videos;
-    }, [videos, activeTab, hasNextPage]);
-
+    const downloader = useVideoDownload();
     const onViewableItemsChanged = useCallback(
         ({ viewableItems }) => {
             if (viewableItems.length > 0) {
@@ -185,6 +193,7 @@ export default function LoopsFeed({ navigation }) {
     useFocusEffect(
         useCallback(() => {
             setScreenFocused(true);
+            remeasure();
 
             return () => {
                 setScreenFocused(false);
@@ -193,8 +202,15 @@ export default function LoopsFeed({ navigation }) {
                     recordVideoImpression(currentVideoRef.current, watchDuration);
                 }
             };
-        }, [recordVideoImpression]),
+        }, [recordVideoImpression, remeasure]),
     );
+
+    useEffect(() => {
+        const sub = AppState.addEventListener('change', (state) => {
+            if (state === 'active') remeasure();
+        });
+        return () => sub.remove();
+    }, [remeasure]);
 
     const handleLike = (videoId, liked) => {
         const dir = liked ? 'like' : 'unlike';
@@ -236,31 +252,22 @@ export default function LoopsFeed({ navigation }) {
         setShowOther(false);
     };
 
+    const showEmptyState = !isLoading && !isFetchingNextPage && videos.length === 0;
+
     const renderItem = useCallback(
         ({ item, index }) => {
-            if (item.isEndMarker) {
-                return (
-                    <View style={styles.endOfFeedContainer}>
-                        <Text style={styles.endOfFeedEmoji}>🌟</Text>
-                        <Text style={styles.endOfFeedTitle}>You're all caught up!</Text>
-                        <Text style={styles.endOfFeedSubtitle}>
-                            We're curating more Loops for you. Check back soon.
-                        </Text>
-                    </View>
-                );
-            }
-
             return (
                 <VideoPlayer
                     key={item.id}
                     item={item}
                     isActive={index === currentIndex}
+                    itemHeight={feedHeight}
                     onLike={handleLike}
                     onComment={handleComment}
                     onShare={handleShare}
                     onBookmark={handleBookmark}
                     onOther={handleOther}
-                    bottomInset={insets.bottom}
+                    bottomInset={0}
                     commentsOpen={showComments && selectedVideo?.id === item.id}
                     shareOpen={showShare && selectedVideo?.id === item.id}
                     otherOpen={showOther && selectedVideo?.id === item.id}
@@ -270,6 +277,7 @@ export default function LoopsFeed({ navigation }) {
                     navigation={navigation}
                     onNavigate={handleNavigate}
                     tabBarHeight={TAB_BAR_HEIGHT}
+                    scrollRef={flatListRef}
                 />
             );
         },
@@ -282,6 +290,8 @@ export default function LoopsFeed({ navigation }) {
             selectedVideo,
             screenFocused,
             videoPlaybackRates,
+            feedHeight,
+            flatListRef,
         ],
     );
 
@@ -298,25 +308,8 @@ export default function LoopsFeed({ navigation }) {
         }
     };
 
-    const getItemLayout = useCallback(
-        (data, index) => ({
-            length: SCREEN_HEIGHT,
-            offset: SCREEN_HEIGHT * index,
-            index,
-        }),
-        [],
-    );
-
-    if (isLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#fff" />
-            </View>
-        );
-    }
-
     return (
-        <View style={styles.container}>
+        <View ref={containerRef} style={styles.container} onLayout={onContainerLayout}>
             <View style={[styles.header, { top: insets.top + 10 }]}>
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
@@ -327,7 +320,7 @@ export default function LoopsFeed({ navigation }) {
                         }}
                         style={[styles.tab, activeTab === 'following' && styles.activeTab]}
                         onPress={() => {
-                            setActiveTab('following');
+                            setTabOverride('following');
                             setCurrentIndex(0);
                             flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
                         }}>
@@ -347,7 +340,7 @@ export default function LoopsFeed({ navigation }) {
                         }}
                         style={[styles.tab, activeTab === 'local' && styles.activeTab]}
                         onPress={() => {
-                            setActiveTab('local');
+                            setTabOverride('local');
                             setCurrentIndex(0);
                             flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
                         }}>
@@ -365,7 +358,7 @@ export default function LoopsFeed({ navigation }) {
                             }}
                             style={[styles.tab, activeTab === 'forYou' && styles.activeTab]}
                             onPress={() => {
-                                setActiveTab('forYou');
+                                setTabOverride('forYou');
                                 setCurrentIndex(0);
                                 flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
                             }}>
@@ -388,41 +381,57 @@ export default function LoopsFeed({ navigation }) {
                 </TouchableOpacity>
             </View>
 
-            <FlatList
-                ref={flatListRef}
-                data={videosWithEnd}
-                renderItem={renderItem}
-                keyExtractor={(item, index) => `${item.id}-${index}`}
-                pagingEnabled
-                showsVerticalScrollIndicator={false}
-                snapToInterval={SCREEN_HEIGHT}
-                snapToAlignment="start"
-                decelerationRate="fast"
-                viewabilityConfig={viewabilityConfig.current}
-                onViewableItemsChanged={onViewableItemsChanged}
-                onEndReached={handleEndReached}
-                onEndReachedThreshold={0.5}
-                getItemLayout={getItemLayout}
-                removeClippedSubviews={true}
-                maxToRenderPerBatch={1}
-                windowSize={3}
-                initialNumToRender={1}
-                updateCellsBatchingPeriod={100}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        progressViewOffset={insets.top + 60}
-                    />
-                }
-                ListFooterComponent={
-                    isFetchingNextPage ? (
-                        <View style={styles.footer}>
-                            <ActivityIndicator size="large" color="#fff" />
-                        </View>
-                    ) : null
-                }
-            />
+            {isLoading || feedHeight === 0 ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#fff" />
+                </View>
+            ) : (
+                <FlatList
+                    ref={flatListRef}
+                    data={videos}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => `${item.id}-${index}`}
+                    pagingEnabled={!showEmptyState}
+                    scrollEnabled={!showEmptyState}
+                    showsVerticalScrollIndicator={false}
+                    snapToInterval={feedHeight}
+                    snapToAlignment="start"
+                    decelerationRate="fast"
+                    viewabilityConfig={viewabilityConfig.current}
+                    onViewableItemsChanged={onViewableItemsChanged}
+                    onEndReached={handleEndReached}
+                    onEndReachedThreshold={0.5}
+                    getItemLayout={(data, index) => ({
+                        length: feedHeight,
+                        offset: feedHeight * index,
+                        index,
+                    })}
+                    removeClippedSubviews={false}
+                    maxToRenderPerBatch={1}
+                    windowSize={3}
+                    initialNumToRender={1}
+                    updateCellsBatchingPeriod={100}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            progressViewOffset={insets.top + 60}
+                        />
+                    }
+                    ListEmptyComponent={
+                        showEmptyState ? (
+                            <FeedEmptyState tab={activeTab} onRefresh={onRefresh} />
+                        ) : null
+                    }
+                    ListFooterComponent={
+                        isFetchingNextPage ? (
+                            <View style={styles.footer}>
+                                <ActivityIndicator size="large" color="#fff" />
+                            </View>
+                        ) : null
+                    }
+                />
+            )}
 
             <CommentsModal
                 visible={showComments}
@@ -436,16 +445,19 @@ export default function LoopsFeed({ navigation }) {
                 visible={showShare}
                 item={selectedVideo}
                 onClose={() => setShowShare(false)}
-            />
-
-            <OtherModal
-                visible={showOther}
-                item={selectedVideo}
-                onClose={() => setShowOther(false)}
                 onPlaybackSpeedChange={handlePlaybackSpeedChange}
+                isForYou={activeTab === 'forYou'}
                 currentPlaybackRate={
                     selectedVideo ? videoPlaybackRates[selectedVideo.id] || 1.0 : 1.0
                 }
+                onDownload={() => downloader.download(selectedVideo?.media?.src_url)}
+            />
+
+            <DownloadToast
+                status={downloader?.status}
+                progress={downloader?.progress}
+                error={downloader?.error}
+                onCancel={downloader?.cancel}
             />
         </View>
     );
@@ -496,12 +508,10 @@ const styles = StyleSheet.create({
         right: 16,
     },
     footer: {
-        height: SCREEN_HEIGHT,
         justifyContent: 'center',
         alignItems: 'center',
     },
     endOfFeedContainer: {
-        height: SCREEN_HEIGHT,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
