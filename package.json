@@ -11,7 +11,7 @@
     "lint": "expo lint"
   },
   "dependencies": {
-    "@expo/ui": "~56.0.22",
+    "@expo/ui": "~56.0.25",
     "@expo/vector-icons": "^15.0.2",
     "@shopify/flash-list": "2.0.2",
     "@shopify/react-native-skia": "2.6.2",
