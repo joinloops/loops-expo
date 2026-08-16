@@ -1,6 +1,6 @@
 import { triggerAuthFailure } from '@/utils/authEvents';
 import { Storage } from '@/utils/cache';
-import { File, UploadType } from 'expo-file-system';
+import { File as FsFile, UploadType } from 'expo-file-system';
 import * as WebBrowser from 'expo-web-browser';
 import { Alert } from 'react-native';
 
@@ -19,6 +19,39 @@ import type {
 let _authFailureTriggered = false;
 
 type UploadFilePart = { uri: string; name?: string; type?: string };
+
+export type GuardableResponse = {
+    status: number;
+    url?: string;
+    headers?: { get(name: string): string | null };
+};
+
+class UploadResponse {
+    readonly status: number;
+    readonly ok: boolean;
+    readonly url: string;
+    readonly headers: { get(name: string): string | null };
+
+    private readonly _body: string;
+
+    constructor(url: string, status: number, body: string, headers: Record<string, string>) {
+        this.url = url;
+        this.status = status;
+        this.ok = status >= 200 && status < 300;
+        this._body = body ?? '';
+
+        const lower = new Map(Object.entries(headers ?? {}).map(([k, v]) => [k.toLowerCase(), v]));
+        this.headers = { get: (name: string) => lower.get(name.toLowerCase()) ?? null };
+    }
+
+    async text(): Promise<string> {
+        return this._body;
+    }
+
+    async json(): Promise<any> {
+        return JSON.parse(this._body);
+    }
+}
 
 function isFilePart(value: any): value is UploadFilePart {
     return (
@@ -394,7 +427,7 @@ async function uploadFileMultipart(
     params: { [key: string]: any },
     token?: string,
     extras?: UploadExtras,
-): Promise<Response> {
+): Promise<UploadResponse> {
     let fileFieldName: string | undefined;
     let filePart: UploadFilePart | undefined;
     const parameters: Record<string, string> = {};
@@ -413,7 +446,11 @@ async function uploadFileMultipart(
         throw new Error('uploadFileMultipart: no file ({ uri }) present in params');
     }
 
-    const file = new File(filePart.uri);
+    const file = new FsFile(filePart.uri);
+
+    if (!file.exists) {
+        throw new Error(`uploadFileMultipart: file not found at ${filePart.uri}`);
+    }
 
     const result = await file.upload(url, {
         uploadType: UploadType.MULTIPART,
@@ -429,18 +466,12 @@ async function uploadFileMultipart(
         signal: extras?.signal,
     });
 
-    const nullBody = result.status === 204 || result.status === 205 || result.status === 304;
-
-    const response = new Response(nullBody ? null : result.body, {
-        status: result.status,
-        headers: result.headers,
-    });
+    const response = new UploadResponse(url, result.status, result.body, result.headers);
 
     guardAuthResponse(response);
 
     return response;
 }
-
 // ============================================================================
 // SELF API HELPERS (Uses stored instance and token)
 // ============================================================================
@@ -975,6 +1006,10 @@ export async function composeAutocompleteTags(q): Promise<any> {
     return await _selfGet(`api/v1/autocomplete/tags?q=${q}`);
 }
 
+export async function getScheduleQuota(): Promise<any> {
+    return await _selfGet('api/v1/studio/scheduled/count');
+}
+
 export async function composeAutocompleteMentions(q): Promise<any> {
     return await _selfGet(`api/v1/autocomplete/accounts?q=${q}`);
 }
@@ -1140,6 +1175,16 @@ export async function recordImpression(
         video_id: videoId,
         watch_duration: Math.floor(watchDuration),
         completed,
+    });
+}
+
+export async function recordForYouFeedFeedback(
+    videoId: string,
+    feedbackType: string,
+): Promise<any> {
+    return await _selfPost(`api/v0/feed/recommended/feedback`, {
+        video_id: videoId,
+        feedback_type: feedbackType,
     });
 }
 
@@ -1578,7 +1623,18 @@ export async function fetchDmConversations({
 }
 
 export async function fetchDmConversation(id: string): Promise<any> {
-    return await _selfGet(`api/v1/dm/conversations/${id}`);
+    const res = await _selfGet(`api/v1/dm/conversations/${id}`);
+    return res;
+}
+
+export async function fetchDmSuggestedRecipients(): Promise<any> {
+    const res = await _selfGet('api/v1/dm/suggested-recipients');
+    return res?.data;
+}
+
+export async function fetchDmSuggestedRecipientsWithGroups(): Promise<any> {
+    const res = await _selfGet('api/v1/dm/suggested-recipients?include_groups=1');
+    return res?.data;
 }
 
 export async function dmMarkConversationRead(id: string): Promise<any> {
@@ -1640,3 +1696,32 @@ export async function dmSendMediaMessage(payload: DmSendMediaPayload): Promise<a
 export async function dmDeleteMessage(id: string): Promise<any> {
     return await _selfDelete(`api/v1/dm/messages/${id}`);
 }
+
+export async function getOrCreateDmConversation(id: string): Promise<any> {
+    const payload = { participant_id: id };
+    return await _selfPost('api/v1/dm/conversations/lookup', payload);
+}
+
+export async function dmCreateGroup(payload: any): Promise<any> {
+    return await _selfPost('api/v1/dm/groups', { profile_ids: payload });
+}
+
+export async function dmAddParticipants(id: string, payload: any): Promise<any> {
+    return await _selfPost(`api/v1/dm/conversations/${id}/participants`, { profile_ids: payload });
+}
+
+export async function dmLeaveGroup(id: string): Promise<any> {
+    return await _selfPost(`api/v1/dm/conversations/${id}/leave`);
+}
+
+export async function dmSearchAccounts(q: string): Promise<any> {
+    return await _selfPost(`api/v1/dm/search`, { q: q });
+}
+
+export const fetchDmPrivacy = async () => {
+    return await _selfGet('api/v1/account/settings/dm/status');
+};
+
+export const updateDmPrivacy = async (state) => {
+    return await _selfPost('api/v1/account/settings/dm/update', { state });
+};

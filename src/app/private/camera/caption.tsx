@@ -1,17 +1,20 @@
 import Avatar from '@/components/Avatar';
 import { XStack, YStack } from '@/components/ui/Stack';
 import { useTheme } from '@/contexts/ThemeContext';
+import { prepareVideoForUpload } from '@/hooks/useProcessVideo';
 import {
     composeAutocompleteMentions,
     composeAutocompleteTags,
+    getScheduleQuota,
     uploadVideo,
 } from '@/utils/requests';
 import { prettyCount } from '@/utils/ui';
+import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -27,12 +30,50 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Video as VideoCompressor } from 'react-native-compressor';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import tw from 'twrnc';
 
 const MAX_CAPTION_LENGTH = 200;
 const MAX_ALT_TEXT_LENGTH = 2000;
+const MIN_LEAD_MS = 6 * 60 * 60 * 1000;
+const MAX_HORIZON_MS = 30 * 24 * 60 * 60 * 1000;
+
+const roundUpToQuarter = (date: Date) => {
+    const copy = new Date(date);
+    copy.setSeconds(0, 0);
+    copy.setMinutes(Math.ceil(copy.getMinutes() / 15) * 15);
+    return copy;
+};
+
+const earliestSchedule = () => roundUpToQuarter(new Date(Date.now() + MIN_LEAD_MS));
+
+const formatScheduleDate = (date: Date) =>
+    date.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+    });
+
+const formatScheduleTime = (date: Date) =>
+    date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+const formatRelative = (date: Date) => {
+    const minutes = Math.round((date.getTime() - Date.now()) / 60000);
+
+    if (minutes < 60) {
+        return `in ${minutes} minute${minutes === 1 ? '' : 's'}`;
+    }
+
+    const hours = Math.round(minutes / 60);
+
+    if (hours < 48) {
+        return `in ${hours} hour${hours === 1 ? '' : 's'}`;
+    }
+
+    const days = Math.round(hours / 24);
+
+    return `in ${days} day${days === 1 ? '' : 's'}`;
+};
 
 const LANGUAGES = [
     { code: 'en', name: 'English' },
@@ -192,6 +233,11 @@ export default function CaptionScreen() {
     const [overlayMessage, setOverlayMessage] = useState<string>('Preparing…');
     const [progressPct, setProgressPct] = useState<number>(0);
 
+    const [scheduleEnabled, setScheduleEnabled] = useState(false);
+    const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
+    const [showScheduleModal, setShowScheduleModal] = useState(false);
+    const [pickerMode, setPickerMode] = useState<'date' | 'time' | null>(null);
+
     const inputRef = useRef<TextInput>(null);
     const altTextInputRef = useRef<TextInput>(null);
     const isFocused = useIsFocused();
@@ -199,7 +245,8 @@ export default function CaptionScreen() {
     const videoUri = (videoPath as string)?.startsWith('file://')
         ? (videoPath as string)
         : `file://${videoPath}`;
-    const player = useVideoPlayer(videoUri, () => {});
+    const player = useVideoPlayer(videoUri, () => { });
+
 
     const { data: hashtagSuggestions = [] } = useQuery({
         queryKey: ['autoComplete_hashtags', autocompleteQuery],
@@ -219,6 +266,14 @@ export default function CaptionScreen() {
         enabled: autocompleteType === 'mention' && autocompleteQuery.length > 0,
     });
 
+    const { data: scheduleQuota } = useQuery({
+        queryKey: ['studio_schedule_quota'],
+        queryFn: async () => await getScheduleQuota(),
+        staleTime: 60000,
+    });
+
+    const canSchedule = scheduleQuota?.can_schedule !== false;
+
     const uploadLoop = async ({
         originalPath,
         caption,
@@ -234,34 +289,25 @@ export default function CaptionScreen() {
         isAi,
         selectedSound,
     }: any) => {
+        player.pause();
         setOverlayVisible(true);
-        setOverlayMessage('Compressing… 0%');
+        setOverlayMessage('Preparing… 0%');
         setProgressPct(0);
 
-        const compressedUri = await VideoCompressor.compress(
-            originalPath,
-            {
-                maxSize: 1920,
-                compressionMethod: 'auto',
-            },
-            (progress) => {
-                const pct = Math.round(progress * 100);
-                setProgressPct(pct);
-                setOverlayMessage(`Compressing… ${pct}%`);
-            },
-        );
+        const compressedUri = await prepareVideoForUpload(originalPath, (pct) => {
+            setProgressPct(pct);
+            setOverlayMessage(`Preparing… ${pct}%`);
+        });
 
         const uploadUri = compressedUri.startsWith('file://')
             ? compressedUri
             : `file://${compressedUri}`;
-        const filename = `upload_${Date.now()}.mp4`;
 
         setOverlayMessage('Uploading…');
 
         const params = {
             video: {
                 uri: uploadUri,
-                name: filename,
                 type: 'video/mp4',
             },
             description: caption ?? null,
@@ -274,6 +320,7 @@ export default function CaptionScreen() {
             is_sensitive: isSensitive ? '1' : '0',
             contains_ad: isAd ? '1' : '0',
             contains_ai: isAi ? '1' : '0',
+            ...(scheduleEnabled && scheduledAt ? { scheduled_at: scheduledAt.toISOString() } : {}),
         };
 
         const res = await uploadVideo(params);
@@ -286,12 +333,18 @@ export default function CaptionScreen() {
         const json = await res.json();
         return { json, uploadUri };
     };
-
     const postMutation = useMutation({
         mutationFn: uploadLoop,
         onSuccess: async ({ json, uploadUri }) => {
             setOverlayMessage('Done!');
             setOverlayVisible(false);
+
+            if (scheduleEnabled && scheduledAt) {
+                Alert.alert(
+                    'Scheduled',
+                    `Your loop will publish ${formatRelative(scheduledAt)}, on ${formatScheduleDate(scheduledAt)} at ${formatScheduleTime(scheduledAt)}.`
+                );
+            }
             router.replace('/');
         },
         onError: (err: any) => {
@@ -341,6 +394,84 @@ export default function CaptionScreen() {
         setAutocompleteType(type);
         setAutocompleteQuery(textAfterTrigger);
         setAutocompleteStart(lastTriggerIndex);
+    };
+
+    const schedulePresets = useMemo(() => {
+        const floor = earliestSchedule();
+
+        const atClockTime = (daysAhead: number, hours: number) => {
+            const date = new Date();
+            date.setDate(date.getDate() + daysAhead);
+            date.setHours(hours, 0, 0, 0);
+
+            while (date.getTime() < floor.getTime()) {
+                date.setDate(date.getDate() + 1);
+            }
+
+            return date;
+        };
+
+        return [
+            { key: 'earliest', label: 'In 6 hours', date: floor },
+            { key: 'morning', label: 'Tomorrow morning', date: atClockTime(1, 9) },
+            { key: 'evening', label: 'Tomorrow evening', date: atClockTime(1, 19) },
+            { key: 'weekly', label: 'Next week', date: atClockTime(7, 9) },
+        ];
+    }, [showScheduleModal]);
+
+    const scheduleError = useMemo(() => {
+        if (!scheduleEnabled || !scheduledAt) return null;
+
+        if (scheduledAt.getTime() < Date.now() + MIN_LEAD_MS) {
+            return 'Pick a time at least 6 hours from now.';
+        }
+
+        if (scheduledAt.getTime() > Date.now() + MAX_HORIZON_MS) {
+            return 'Pick a time within the next 30 days.';
+        }
+
+        return null;
+    }, [scheduleEnabled, scheduledAt]);
+
+    const activePresetKey = useMemo(() => {
+        if (!scheduledAt) return null;
+
+        const match = schedulePresets.find(
+            (preset) => Math.abs(preset.date.getTime() - scheduledAt.getTime()) < 60 * 1000
+        );
+
+        return match ? match.key : null;
+    }, [scheduledAt, schedulePresets]);
+
+    const isScheduling = scheduleEnabled && !!scheduledAt && !scheduleError;
+
+    const toggleSchedule = (value: boolean) => {
+        setScheduleEnabled(value);
+
+        if (value && !scheduledAt) {
+            setScheduledAt(earliestSchedule());
+        }
+    };
+
+    const handlePickerValueChange = (_event: any, selected: Date) => {
+        const mode = pickerMode;
+
+        if (!selected) return;
+
+        const base = scheduledAt ?? earliestSchedule();
+        const next = new Date(base);
+
+        if (mode === 'date') {
+            next.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+        } else {
+            next.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
+        }
+
+        setScheduledAt(next);
+
+        if (Platform.OS === 'android') {
+            setPickerMode(null);
+        }
     };
 
     const handleCaptionChange = (text: string) => {
@@ -419,7 +550,7 @@ export default function CaptionScreen() {
                 </TouchableOpacity>
                 <Text style={tw`text-lg font-bold text-black dark:text-white`}>Upload Loop</Text>
                 <TouchableOpacity style={tw`w-11 h-11 justify-center`}>
-                    <Ionicons name="chevron-back" size={32} color="transparent" />
+                    <View></View>
                 </TouchableOpacity>
             </View>
 
@@ -447,15 +578,13 @@ export default function CaptionScreen() {
                     </View>
 
                     <View style={tw`w-20 h-[150px] bg-black rounded-lg overflow-hidden relative`}>
-                        {isFocused && (
+                        {isFocused && !overlayVisible && (
                             <VideoView
                                 style={tw`flex-1 w-full h-full bg-black`}
                                 player={player}
                                 allowsPictureInPicture={false}
                                 nativeControls={false}
-                                surfaceType={
-                                    Platform.OS === 'android' ? 'textureView' : 'surfaceView'
-                                }
+                                surfaceType="surfaceView"
                             />
                         )}
                     </View>
@@ -631,6 +760,38 @@ export default function CaptionScreen() {
 
                     <TouchableOpacity
                         style={tw`flex-row items-center justify-between px-5 py-4`}
+                        onPress={() => setShowScheduleModal(true)}
+                        disabled={!canSchedule && !scheduleEnabled}>
+                        <View style={tw`flex-row items-center max-w-[70%] gap-3 flex-1`}>
+                            <View style={tw`pr-2.5`}>
+                                <Ionicons
+                                    name="time-outline"
+                                    size={20}
+                                    color={colorScheme === 'dark' ? '#999' : '#999'}
+                                />
+                            </View>
+                            <YStack>
+                                <Text style={tw`text-[15px] font-semibold text-gray-900 dark:text-gray-100`}>
+                                    Schedule
+                                </Text>
+                                <Text style={tw`text-[13px] text-gray-600 dark:text-gray-400 mt-0.5`}>
+                                    {isScheduling && scheduledAt
+                                        ? `${formatScheduleDate(scheduledAt)} at ${formatScheduleTime(scheduledAt)}`
+                                        : canSchedule
+                                            ? 'Post now, or pick a time for later'
+                                            : 'You have reached your scheduled post limit'}
+                                </Text>
+                            </YStack>
+                        </View>
+                        <Ionicons
+                            name="chevron-forward-outline"
+                            size={20}
+                            color={colorScheme === 'dark' ? '#999' : '#999'}
+                        />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={tw`flex-row items-center justify-between px-5 py-4`}
                         onPress={() => setShowMoreOptionsModal(true)}>
                         <View style={tw`flex-row items-center max-w-[70%] gap-3 flex-1`}>
                             <View style={tw`pr-2.5`}>
@@ -663,10 +824,13 @@ export default function CaptionScreen() {
                 style={tw`flex-row px-5 py-4 pb-10 mb-3 gap-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black`}>
                 <TouchableOpacity
                     onPress={handlePost}
-                    style={tw`flex-1 flex-row items-center justify-center bg-[#F02C56] py-4 rounded-full gap-2`}
+                    disabled={!!scheduleError || postMutation.isPending}
+                    style={tw`flex-1 flex-row items-center justify-center bg-[#F02C56] py-4 rounded-full gap-2 ${scheduleError ? 'opacity-50' : 'opacity-100'}`}
                     activeOpacity={0.7}>
-                    <Feather name="upload" size={20} color="#fff" />
-                    <Text style={tw`text-[22px] font-bold text-white`}>Post</Text>
+                    <Feather name={isScheduling ? 'clock' : 'upload'} size={20} color="#fff" />
+                    <Text style={tw`text-[22px] font-bold text-white`}>
+                        {isScheduling ? 'Schedule' : 'Post'}
+                    </Text>
                 </TouchableOpacity>
             </View>
 
@@ -1058,6 +1222,142 @@ export default function CaptionScreen() {
                             </TouchableOpacity>
                         )}
                     />
+                </SafeAreaView>
+            </Modal>
+
+            <Modal
+                visible={showScheduleModal}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setShowScheduleModal(false)}>
+                <SafeAreaView style={tw`flex-1 bg-white dark:bg-black`}>
+                    <View
+                        style={tw`flex-row justify-between items-center px-5 py-4 border-b border-gray-200 dark:border-gray-800`}>
+                        <TouchableOpacity onPress={() => setShowScheduleModal(false)}>
+                            <Ionicons
+                                name="close"
+                                size={28}
+                                color={colorScheme === 'dark' ? '#fff' : '#000'}
+                            />
+                        </TouchableOpacity>
+                        <Text style={tw`text-lg font-bold text-black dark:text-white`}>Schedule</Text>
+                        <TouchableOpacity onPress={() => setShowScheduleModal(false)}>
+                            <Text style={tw`text-base font-semibold text-[#F02C56]`}>Done</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
+                        <View style={tw`flex-row items-center justify-between px-5 py-4`}>
+                            <View style={tw`flex-row items-center max-w-[70%] gap-3 flex-1`}>
+                                <YStack>
+                                    <Text
+                                        style={tw`text-[15px] font-semibold text-gray-900 dark:text-gray-100`}>
+                                        Publish later
+                                    </Text>
+                                    <Text style={tw`text-[13px] text-gray-600 dark:text-gray-400`}>
+                                        Nobody can see this loop until the time you pick
+                                    </Text>
+                                </YStack>
+                            </View>
+                            <Switch
+                                value={scheduleEnabled}
+                                onValueChange={toggleSchedule}
+                                disabled={!canSchedule && !scheduleEnabled}
+                            />
+                        </View>
+
+                        {scheduleQuota && (
+                            <Text style={tw`px-5 pb-2 text-[13px] text-gray-600 dark:text-gray-400`}>
+                                {scheduleQuota.pending_count} of {scheduleQuota.max_allowed} scheduled
+                            </Text>
+                        )}
+
+                        {scheduleEnabled && (
+                            <>
+                                <View style={tw`flex-row flex-wrap gap-2 px-5 py-3`}>
+                                    {schedulePresets.map((preset) => (
+                                        <TouchableOpacity
+                                            key={preset.key}
+                                            onPress={() => setScheduledAt(preset.date)}
+                                            style={tw`px-3 py-2 rounded-full border ${activePresetKey === preset.key
+                                                    ? 'border-[#F02C56] bg-[#F02C56]/10'
+                                                    : 'border-gray-300 dark:border-gray-700'
+                                                }`}>
+                                            <Text
+                                                style={tw`text-[13px] font-semibold ${activePresetKey === preset.key
+                                                        ? 'text-[#F02C56]'
+                                                        : 'text-gray-700 dark:text-gray-300'
+                                                    }`}>
+                                                {preset.label}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <View style={tw`flex-row gap-3 px-5 py-3`}>
+                                    <TouchableOpacity
+                                        onPress={() => setPickerMode('date')}
+                                        style={tw`flex-1 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3`}>
+                                        <Text style={tw`text-xs text-gray-600 dark:text-gray-400 mb-1`}>
+                                            Date
+                                        </Text>
+                                        <Text
+                                            style={tw`text-[15px] font-semibold text-black dark:text-white`}>
+                                            {scheduledAt ? formatScheduleDate(scheduledAt) : 'Pick a date'}
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        onPress={() => setPickerMode('time')}
+                                        style={tw`flex-1 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3`}>
+                                        <Text style={tw`text-xs text-gray-600 dark:text-gray-400 mb-1`}>
+                                            Time
+                                        </Text>
+                                        <Text
+                                            style={tw`text-[15px] font-semibold text-black dark:text-white`}>
+                                            {scheduledAt ? formatScheduleTime(scheduledAt) : 'Pick a time'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {scheduleError ? (
+                                    <Text style={tw`px-5 py-2 text-[13px] text-[#ff0050]`}>
+                                        {scheduleError}
+                                    </Text>
+                                ) : scheduledAt ? (
+                                    <Text style={tw`px-5 py-2 text-[13px] text-gray-600 dark:text-gray-400`}>
+                                        Publishes {formatRelative(scheduledAt)}
+                                    </Text>
+                                ) : null}
+
+                                {pickerMode && (
+                                    <DateTimePicker
+                                        value={scheduledAt ?? earliestSchedule()}
+                                        mode={pickerMode}
+                                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                        presentation={Platform.OS === 'android' ? 'dialog' : 'inline'}
+                                        minimumDate={new Date(Date.now() + MIN_LEAD_MS)}
+                                        maximumDate={new Date(Date.now() + MAX_HORIZON_MS)}
+                                        accentColor="#F02C56"
+                                        themeVariant={colorScheme === 'dark' ? 'dark' : 'light'}
+                                        onValueChange={handlePickerValueChange}
+                                        onDismiss={() => setPickerMode(null)}
+                                    />
+                                )}
+
+                                {Platform.OS === 'ios' && pickerMode && (
+                                    <TouchableOpacity
+                                        onPress={() => setPickerMode(null)}
+                                        style={tw`mx-5 my-3 py-3 rounded-full bg-gray-100 dark:bg-gray-900 items-center`}>
+                                        <Text
+                                            style={tw`text-[15px] font-semibold text-gray-900 dark:text-gray-100`}>
+                                            Done
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            </>
+                        )}
+                    </ScrollView>
                 </SafeAreaView>
             </Modal>
 
