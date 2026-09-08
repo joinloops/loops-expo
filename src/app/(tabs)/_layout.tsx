@@ -1,16 +1,20 @@
+import Avatar from '@/components/Avatar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNotificationPolling } from '@/hooks/useNotificationPolling';
 import { useAuthStore } from '@/utils/authStore';
 import { useNotificationStore } from '@/utils/notificationStore';
-import Feather from '@expo/vector-icons/Feather';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useMemo } from 'react';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import props from '@/components/profile/AccountHeader';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function TabsLayout() {
     const { user } = useAuthStore();
     const { badgeCount } = useNotificationStore();
     const { colorScheme } = useTheme();
+    const insets = useSafeAreaInsets()
 
     const displayBadgeCount = useMemo(() => {
         if (badgeCount == 0) return undefined;
@@ -25,32 +29,35 @@ export default function TabsLayout() {
             initialRouteName="index"
             screenOptions={{
                 backBehavior: 'order',
-                tabBarActiveTintColor: colorScheme === 'dark' ? '#fff' : '#000',
-                tabBarInactiveTintColor: colorScheme === 'dark' ? '#555' : '#999',
+                tabBarShowLabel: true,
+                headerShown: false,
+                tabBarActiveTintColor: colorScheme === 'dark' ? '#FFFFFF' : '#101828',
+                tabBarInactiveTintColor: colorScheme === 'dark' ? '#99A1AF' : '#6A7282',
                 tabBarStyle: {
                     backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-                    borderTopWidth: 1,
-                    borderTopColor: colorScheme === 'dark' ? '#1e2939' : '#eee',
-                    height: Platform.OS === 'ios' ? 94 : 94,
-                    paddingTop: Platform.OS === 'ios' ? 11 : 5,
-                    paddingBottom: Platform.OS === 'ios' ? 8 : 5,
-                    elevation: 0,
-                    shadowColor: '#666',
-                    shadowOpacity: 0,
-                    shadowOffset: {
-                        height: 0,
-                    },
-                    shadowRadius: 0,
+                    borderTopWidth: 2,
+                    borderColor: colorScheme === 'dark' ? '#1e2939' : '#E5E7EB',
+                    height: (Platform.OS === 'ios' ? 72 : 72) + insets.bottom,
+                    paddingTop: Platform.OS === 'ios' ? 12 : 6,
+                    paddingBottom: Platform.OS === 'ios' ? 9 : 6,
+                    position: 'static',
                 },
+                tabBarLabelStyle: {
+                    marginTop: 1}
             }}>
             <Tabs.Screen
                 name="index"
                 options={{
                     title: 'Home',
                     tabBarAccessibilityLabel: 'Home',
-                    tabBarShowLabel: false,
-                    headerShown: false,
-                    tabBarIcon: ({ color }) => <Feather size={28} name="home" color={color} />,
+                    tabBarIcon: ({ focused, color }) => {
+                        let iconName;
+                        let size = 28;
+
+                        iconName = focused ? 'home' : 'home-outline';
+
+                        return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
+                    },
                 }}
             />
             <Tabs.Screen
@@ -58,30 +65,54 @@ export default function TabsLayout() {
                 options={{
                     title: 'Explore',
                     tabBarAccessibilityLabel: 'Explore',
-                    tabBarShowLabel: false,
-                    headerShown: false,
-                    tabBarIcon: ({ color }) => <Feather size={28} name="compass" color={color} />,
+                    tabBarIcon: ({ focused, color }) => {
+                        let iconName;
+                        let size = 28;
+
+                        iconName = focused ? 'compass' : 'compass-outline';
+
+                        return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
+                    },
                 }}
             />
             <Tabs.Screen
                 name="create"
                 options={{
-                    title: 'Create',
+                    title: '',
                     tabBarAccessibilityLabel: 'Create',
-                    tabBarShowLabel: false,
-                    headerShown: false,
-                    tabBarIcon: ({ color }) => <Feather size={28} name="video" color={color} />,
+                    tabBarIcon: ({ focused, color }) => {
+                        let iconName;
+                        let size = 32;
+                        let background = [{backgroundColor: 'red'}];
+
+                        iconName = focused ? 'plus' : 'plus';
+                        if (colorScheme === 'dark') {
+                            color = focused ? '#000' : '#E5E7EB'
+                            background = focused ? [styles.createButton, {backgroundColor: '#E5E7EB'}] : [styles.createButton, {backgroundColor: '#1e2939'}]
+                        } else {
+                            color = focused ? '#fff' : '#1e2939'
+                            background = focused ? [styles.createButton, {backgroundColor: '#1e2939'}] : [styles.createButton, {backgroundColor: '#E5E7EB'}]
+                        };
+
+                        return <MaterialCommunityIcons name={iconName} size={size} color={color} style={background} />;
+                    },
                 }}
             />
             <Tabs.Screen
                 name="notifications"
                 options={{
-                    title: 'Notifications',
-                    tabBarAccessibilityLabel: 'Notifications',
-                    tabBarShowLabel: false,
+                    title: 'Inbox',
+                    tabBarAccessibilityLabel: 'Inbox',
                     tabBarBadge: displayBadgeCount,
                     tabBarBadgeStyle: { fontSize: 12 },
-                    tabBarIcon: ({ color }) => <Feather size={28} name="inbox" color={color} />,
+                    tabBarIcon: ({ focused, color }) => {
+                        let iconName;
+                        let size = 28;
+
+                        iconName = focused ? 'bell' : 'bell-outline';
+
+                        return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
+                    },
                 }}
             />
             <Tabs.Screen
@@ -89,11 +120,32 @@ export default function TabsLayout() {
                 options={{
                     title: 'Profile',
                     tabBarAccessibilityLabel: 'Profile',
-                    tabBarShowLabel: false,
-                    headerShown: false,
-                    tabBarIcon: ({ color }) => <Feather size={28} name="user" color={color} />,
+                    tabBarIcon: ({ focused }) => {
+                        let style;
+                        style = focused
+                            ? {
+                                outlineWidth: 2.5,
+                                outlineColor: colorScheme === 'dark' ? '#FFFFFF' : '#101828',
+                                borderWidth: 1.5,
+                                borderColor: colorScheme === 'dark' ? '#000' : '#FFFFFF',
+                              }
+                            : null;
+                        return <Avatar url={props.user?.avatar} theme="tab" style={style} />;
+                    },
                 }}
             />
         </Tabs>
     );
 }
+
+const styles = StyleSheet.create({
+    createButton: {
+        display: 'flex',
+        textAlign: 'center',
+        height: 40,
+        paddingTop: 4,
+        width: 44,
+        borderRadius: 8,
+        marginTop: 13,
+    },
+});
