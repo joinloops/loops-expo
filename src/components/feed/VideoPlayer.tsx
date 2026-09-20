@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#000',
     },
     controlsOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.3)',
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
         elevation: 11,
     },
     sensitiveOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(0,0,0,0.99)',
         justifyContent: 'center',
         alignItems: 'center',
