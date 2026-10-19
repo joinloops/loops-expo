@@ -773,6 +773,10 @@ export async function fetchAccountEmail(): Promise<any> {
     return await _selfGet('api/v1/account/settings/email');
 }
 
+export async function fetchAccountUsernameSettings(): Promise<any> {
+    return await _selfGet('api/v1/account/settings/username');
+}
+
 export async function fetchAccountBirthdate(): Promise<any> {
     return await _selfGet('api/v1/account/settings/birthdate');
 }
@@ -1292,6 +1296,17 @@ export async function updateAccountBio(params: any): Promise<any> {
 
 export async function updateAccountEmail(params: any): Promise<any> {
     return await _selfPost('api/v1/account/settings/email/update', params);
+}
+
+export async function checkAccountUsername(params: { username: string }): Promise<any> {
+    return await _selfPost('api/v1/account/settings/username/check', params);
+}
+
+export async function updateAccountUsername(params: {
+    username: string;
+    password?: string | null;
+}): Promise<any> {
+    return await _selfPost('api/v1/account/settings/username/update', params);
 }
 
 export async function updateAccountBirthdate(params: any): Promise<any> {

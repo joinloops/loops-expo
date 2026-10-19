@@ -241,10 +241,7 @@ export default function EditProfileScreen() {
                 <ProfileItem
                     label="Username"
                     value={username}
-                    showChevron={false}
-                    onPress={() =>
-                        Alert.alert('Unsupported', 'Username changes are not supported yet.')
-                    }
+                    onPress={() => router.push('/private/settings/account/edit-username')}
                 />
 
                 <Pressable
