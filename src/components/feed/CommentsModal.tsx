@@ -169,6 +169,9 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                 };
             });
         },
+        onError(error, variables, onMutateResult, context) {
+            console.log(error)
+        },
     });
 
     const klipyMutation = useMutation({
@@ -851,7 +854,9 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
     }
 
     return (
-        <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
+        <Modal visible={visible} animationType="fade" transparent={true} onRequestClose={onClose}>
+            <Pressable style={tw`absolute inset-0 bg-black/50`} onPress={onClose} />
+
             <KeyboardAvoidingView
                 behavior={'padding'}
                 style={tw`flex-1 justify-end`}
@@ -918,7 +923,7 @@ export default function CommentsModal({ visible, item, onClose, navigation, onNa
                     <View
                         style={tw.style(
                             `flex flex-row items-center p-3 border-t border-gray-200 dark:border-gray-700 gap-3 bg-white dark:bg-black`,
-                            { paddingBottom: Math.max(insets.bottom, 8) },
+                            { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 8) : Math.max(insets.bottom, 8) + 8 },
                         )}>
                         <Avatar url={user?.avatar} size={32} />
                         <TextInput
