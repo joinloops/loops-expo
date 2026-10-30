@@ -1,11 +1,14 @@
+import { senderShortName } from '@/components/dm/dmGroupHelpers';
+import { stripLeadingMentions } from '@/components/dm/dmHelpers';
 import KlipyMedia from '@/components/feed/KlipyMedia';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { StackText } from '@/components/ui/Stack';
 import type { DmOptimisticMessage, DmParticipant } from '@/types/dm';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
-import { Image, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import tw from 'twrnc';
+import Avatar from '../Avatar';
 
 const ACCENT = '#F02C56';
 const MEDIA_WIDTH = 200;
@@ -17,12 +20,16 @@ const isKlipyUrl = (url?: string | null): boolean =>
 interface MessageBubbleProps {
     message: DmOptimisticMessage;
     isSelf: boolean;
+    isNewest?: boolean;
     participant?: DmParticipant | null;
+    sender?: DmParticipant | null;
     showAvatar: boolean;
+    showName?: boolean;
     showMeta: boolean;
     dayLabel?: string | null;
     onLongPress: (message: DmOptimisticMessage) => void;
     onPressLoop: (message: DmOptimisticMessage) => void;
+    onPressMedia: (message: DmOptimisticMessage, index: number) => void;
     onPressRetry: (message: DmOptimisticMessage) => void;
 }
 
@@ -36,14 +43,39 @@ export const MessageBubble = ({
     message,
     isSelf,
     participant,
+    sender,
     showAvatar,
+    showName = false,
     showMeta,
     dayLabel,
+    isNewest = false,
     onLongPress,
     onPressLoop,
+    onPressMedia,
     onPressRetry,
 }: MessageBubbleProps) => {
     const firstMedia = message.media?.[0];
+    const avatarUser = sender ?? participant;
+    const senderLabel = senderShortName(avatarUser);
+    const bodyText = stripLeadingMentions(message.body);
+
+    const ACCENT = '#F02C56';
+    const MEDIA_WIDTH = 200;
+    const LOOP_CARD_WIDTH = 160;
+    const GAP_TIGHT = 6;
+    const GAP_GROUP = 30;
+    const GRID_WIDTH = 240;
+    const GRID_HEIGHT = 200;
+    const GRID_GAP = 2;
+
+    const GRID_COLUMNS: Record<number, number[][]> = {
+        2: [[0], [1]],
+        3: [[0], [1, 2]],
+        4: [[0, 2], [1, 3]],
+    };
+
+    const groupGap = isNewest ? 0 : GAP_GROUP;
+    const tightGap = isNewest ? 0 : GAP_TIGHT;
 
     const mediaHeight =
         firstMedia?.width && firstMedia?.height
@@ -57,7 +89,58 @@ export const MessageBubble = ({
         }
         if (message.type === 'loop_share') {
             onPressLoop(message);
+            return;
         }
+        if (
+            message.type === 'media' &&
+            message.media?.length === 1 &&
+            firstMedia?.type === 'image' &&
+            !isKlipyUrl(firstMedia.url) &&
+            !message.pending
+        ) {
+            onPressMedia(message, 0);
+        }
+    };
+
+    const renderTile = (item: DmMediaEntity, index: number) => {
+        const isVideoMime = (item.mime_type ?? '').startsWith('video/');
+        const uri = isVideoMime ? (item.preview_url ?? item.url) : item.url;
+        const isPlayable = item.type === 'video';
+        const canOpen = !isVideoMime && (item.type === 'image' || item.type === 'gif');
+
+        return (
+            <Pressable
+                key={item.id ?? String(index)}
+                onPress={() => canOpen && onPressMedia(message, index)}
+                onLongPress={() => onLongPress(message)}
+                style={({ pressed }) => [
+                    tw`flex-1 overflow-hidden bg-gray-200 dark:bg-gray-900`,
+                    pressed && canOpen && tw`opacity-80`,
+                ]}>
+                {uri ? (
+                    <ExpoImage
+                        source={{ uri }}
+                        placeholder={item.blurhash ? { blurhash: item.blurhash } : undefined}
+                        placeholderContentFit="cover"
+                        style={tw`w-full h-full`}
+                        contentFit="contain"
+                        cachePolicy="memory-disk"
+                        accessibilityLabel={item.description ?? undefined}
+                    />
+                ) : (
+                    <View style={tw`flex-1 items-center justify-center`}>
+                        <Ionicons name="document-outline" size={22} color="#999" />
+                    </View>
+                )}
+                {isPlayable && (
+                    <View style={tw`absolute inset-0 items-center justify-center`}>
+                        <View style={tw`w-9 h-9 rounded-full bg-black/50 items-center justify-center`}>
+                            <Ionicons name="play" size={18} color="#fff" style={tw`ml-0.5`} />
+                        </View>
+                    </View>
+                )}
+            </Pressable>
+        );
     };
 
     const renderContent = () => {
@@ -66,11 +149,21 @@ export const MessageBubble = ({
             const thumbnail = video.media?.thumbnail;
 
             return (
-                <View>
+                <View
+                    style={[
+                        tw`overflow-hidden rounded-2xl`,
+                        isSelf
+                            ? [
+                                { backgroundColor: ACCENT },
+                                tw`rounded-br-md`,
+                            ]
+                            : tw`bg-gray-100 dark:bg-gray-800 rounded-bl-md`,
+                        { width: LOOP_CARD_WIDTH },
+                    ]}>
                     <View
                         style={[
-                            tw`bg-black rounded-xl overflow-hidden`,
-                            { width: LOOP_CARD_WIDTH, aspectRatio: 9 / 16 },
+                            tw`relative bg-black overflow-hidden`,
+                            { width: '100%', aspectRatio: 9 / 16 },
                         ]}>
                         {thumbnail ? (
                             <Image
@@ -80,14 +173,22 @@ export const MessageBubble = ({
                             />
                         ) : (
                             <View style={tw`absolute inset-0 items-center justify-center`}>
-                                <Ionicons name="videocam-outline" size={32} color="#666" />
+                                <Ionicons
+                                    name="videocam-outline"
+                                    size={32}
+                                    color="#666"
+                                />
                             </View>
                         )}
 
-                        {video.is_sensitive && (
-                            <View
-                                style={tw`absolute inset-0 bg-black/70 items-center justify-center`}>
-                                <Ionicons name="eye-off-outline" size={28} color="#fff" />
+                        {video.is_sensitive ? (
+                            <View style={tw`absolute inset-0 bg-black/70 items-center justify-center`}>
+                                <Ionicons
+                                    name="eye-off-outline"
+                                    size={28}
+                                    color="#fff"
+                                />
+
                                 <StackText
                                     fontSize="$2"
                                     textColor="text-white"
@@ -96,12 +197,9 @@ export const MessageBubble = ({
                                     Sensitive
                                 </StackText>
                             </View>
-                        )}
-
-                        {!video.is_sensitive && (
+                        ) : (
                             <View style={tw`absolute inset-0 items-center justify-center`}>
-                                <View
-                                    style={tw`w-11 h-11 rounded-full bg-black/50 items-center justify-center`}>
+                                <View style={tw`w-11 h-11 rounded-full bg-black/50 items-center justify-center`}>
                                     <Ionicons
                                         name="play"
                                         size={22}
@@ -124,18 +222,15 @@ export const MessageBubble = ({
                     </View>
 
                     {!!message.body && (
-                        <View
-                            style={[
-                                tw`mt-1 px-3 py-2 rounded-2xl`,
-                                isSelf
-                                    ? [{ backgroundColor: ACCENT }, tw`rounded-br-md`]
-                                    : tw`bg-gray-100 dark:bg-gray-800 rounded-bl-md`,
-                                { maxWidth: LOOP_CARD_WIDTH },
-                            ]}>
+                        <View style={tw`px-3 py-2.5`}>
                             <StackText
                                 fontSize="$3"
-                                textColor={isSelf ? 'text-white' : 'text-black dark:text-white'}>
-                                {message.body}
+                                textColor={
+                                    isSelf
+                                        ? 'text-white'
+                                        : 'text-black dark:text-white'
+                                }>
+                                {bodyText}
                             </StackText>
                         </View>
                     )}
@@ -143,50 +238,73 @@ export const MessageBubble = ({
             );
         }
 
-        if (message.type === 'media' && firstMedia) {
-            if (isKlipyUrl(firstMedia.url)) {
+        if (message.type === 'media' && message.media?.length) {
+            const items = message.media.slice(0, 4);
+
+            if (items.length === 1) {
+                const only = items[0];
+
+                if (isKlipyUrl(only.url)) {
+                    return (
+                        <KlipyMedia
+                            media={{
+                                id: String(only.id),
+                                mime: only.mime_type ?? 'video/mp4',
+                                url: only.url,
+                                description: only.description,
+                                width: only.width ?? 0,
+                                height: only.height ?? 0,
+                                provider: 'klipy',
+                            }}
+                        />
+                    );
+                }
+
+                const isVideoMime = (only.mime_type ?? '').startsWith('video/');
+                const uri = isVideoMime ? (only.preview_url ?? only.url) : only.url;
+                const isPlayable = only.type === 'video';
+
                 return (
-                    <KlipyMedia
-                        media={{
-                            id: String(firstMedia.id),
-                            mime: firstMedia.mime_type ?? 'video/mp4',
-                            url: firstMedia.url,
-                            description: firstMedia.description,
-                            width: firstMedia.width ?? 0,
-                            height: firstMedia.height ?? 0,
-                            provider: 'klipy',
-                        }}
-                    />
+                    <View
+                        style={[
+                            tw`rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800`,
+                            { width: MEDIA_WIDTH, height: mediaHeight },
+                        ]}>
+                        <ExpoImage
+                            source={{ uri }}
+                            placeholder={only.blurhash ? { blurhash: only.blurhash } : undefined}
+                            style={tw`w-full h-full`}
+                            contentFit="cover"
+                            cachePolicy="memory-disk"
+                            accessibilityLabel={only.description ?? undefined}
+                        />
+                        {isPlayable && (
+                            <View style={tw`absolute inset-0 items-center justify-center`}>
+                                <View
+                                    style={tw`w-11 h-11 rounded-full bg-black/50 items-center justify-center`}>
+                                    <Ionicons name="play" size={22} color="#fff" style={tw`ml-0.5`} />
+                                </View>
+                            </View>
+                        )}
+                    </View>
                 );
             }
 
-            const isVideoMime = (firstMedia.mime_type ?? '').startsWith('video/');
-            const uri = isVideoMime
-                ? (firstMedia.preview_url ?? firstMedia.url)
-                : firstMedia.url;
-            const isPlayable = firstMedia.type === 'video';
+            const columns = GRID_COLUMNS[items.length] ?? GRID_COLUMNS[2];
 
             return (
                 <View
                     style={[
-                        tw`rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800`,
-                        { width: MEDIA_WIDTH, height: mediaHeight },
+                        tw`rounded-xl overflow-hidden flex-row bg-gray-100 dark:bg-gray-800`,
+                        { width: GRID_WIDTH, height: GRID_HEIGHT, gap: GRID_GAP },
                     ]}>
-                    <ExpoImage
-                        source={{ uri }}
-                        style={tw`w-full h-full`}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                        accessibilityLabel={firstMedia.description ?? undefined}
-                    />
-                    {isPlayable && (
-                        <View style={tw`absolute inset-0 items-center justify-center`}>
-                            <View
-                                style={tw`w-11 h-11 rounded-full bg-black/50 items-center justify-center`}>
-                                <Ionicons name="play" size={22} color="#fff" style={tw`ml-0.5`} />
-                            </View>
+                    {columns.map((column, columnIndex) => (
+                        <View
+                            key={String(columnIndex)}
+                            style={[tw`flex-1`, { gap: GRID_GAP }]}>
+                            {column.map((itemIndex) => renderTile(items[itemIndex], itemIndex))}
                         </View>
-                    )}
+                    ))}
                 </View>
             );
         }
@@ -203,7 +321,7 @@ export const MessageBubble = ({
                 <StackText
                     fontSize="$3"
                     textColor={isSelf ? 'text-white' : 'text-black dark:text-white'}>
-                    {message.body ?? ''}
+                    {bodyText}
                 </StackText>
             </View>
         );
@@ -219,16 +337,23 @@ export const MessageBubble = ({
                 </View>
             )}
 
+            {showName && !isSelf && !!senderLabel && (
+                <View style={tw`pl-10 mb-0.5`}>
+                    <StackText fontSize="$1" textColor="text-gray-500" fontWeight="semibold">
+                        {senderLabel}
+                    </StackText>
+                </View>
+            )}
+
             <View
                 style={[
                     tw`flex-row items-end`,
                     isSelf ? tw`justify-end` : tw`justify-start`,
-                    showMeta ? tw`mb-0.5` : tw`mb-0.5`,
                 ]}>
                 {!isSelf &&
-                    (showAvatar && participant?.avatar ? (
-                        <Image
-                            source={{ uri: participant.avatar }}
+                    (showAvatar && avatarUser?.avatar ? (
+                        <Avatar
+                            url={avatarUser.avatar}
                             style={tw`w-8 h-8 rounded-full mr-2`}
                         />
                     ) : (
@@ -247,20 +372,24 @@ export const MessageBubble = ({
             </View>
 
             {message.failed ? (
-                <View style={[tw`mt-1 mb-2`, isSelf ? tw`items-end` : tw`items-start pl-10`]}>
+                <View style={[tw`mt-1`, { marginBottom: groupGap }, isSelf ? tw`items-end` : tw`items-start pl-10`]}>
                     <StackText fontSize="$1" textColor="text-red-500">
                         Not delivered · Tap to retry
                     </StackText>
                 </View>
             ) : showMeta ? (
-                <View style={[tw`mt-0.5 mb-2`, isSelf ? tw`items-end` : tw`items-start pl-10`]}>
-                    <StackText fontSize="$1" textColor="text-gray-500">
-                        {formatTime(message.created_at)}
-                        {message.edited_at ? ' · Edited' : ''}
-                    </StackText>
-                </View>
+                <PressableHaptics
+                    onLongPress={() => onLongPress(message)}>
+
+                    <View style={[tw`mt-1`, { marginBottom: groupGap }, isSelf ? tw`items-end` : tw`items-start pl-10`]} >
+                        <StackText fontSize="$1" textColor="text-gray-500">
+                            {formatTime(message.created_at)}
+                            {message.edited_at ? ' · Edited' : ''}
+                        </StackText>
+                    </View>
+                </PressableHaptics>
             ) : (
-                <View style={tw`mb-0.5`} />
+                <View style={{ marginBottom: tightGap }} />
             )}
         </View>
     );
