@@ -58,7 +58,7 @@ export function dmLastMessagePreview(
 
     switch (message.type) {
         case 'text': {
-            const body = (message.body ?? '').replace(/\s+/g, ' ').trim();
+            const body = stripLeadingMentions(message.body ?? '').replace(/\s+/g, ' ').trim();
             return isSelf ? `You: ${body}` : body;
         }
         case 'loop_share':
@@ -69,3 +69,17 @@ export function dmLastMessagePreview(
             return isSelf ? 'You sent a message' : 'Sent a message';
     }
 }
+
+const MENTION_USER = '[A-Za-z0-9_](?:[A-Za-z0-9_.-]*[A-Za-z0-9_])?';
+const MENTION_HOST =
+    '[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+';
+
+const LEADING_MENTIONS = new RegExp(
+    `^(?:\\s*@${MENTION_USER}(?:@${MENTION_HOST})?[,;:]?(?=\\s|$))+\\s*`,
+);
+
+export const stripLeadingMentions = (body?: string | null): string => {
+    if (!body) return '';
+    const stripped = body.replace(LEADING_MENTIONS, '');
+    return stripped.length ? stripped : body.trim();
+};

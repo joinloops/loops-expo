@@ -1,10 +1,18 @@
-import { dmDisplayName, dmLastMessagePreview, dmTimeAgo } from '@/components/dm/dmHelpers';
+import {
+    activeConversationParticipants,
+    conversationDisplayName,
+    groupPreviewPrefix,
+    isGroupConversation,
+} from '@/components/dm/dmGroupHelpers';
+import { dmLastMessagePreview, dmTimeAgo } from '@/components/dm/dmHelpers';
+import { GroupAvatar } from '@/components/dm/GroupAvatar';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
 import { StackText } from '@/components/ui/Stack';
 import type { DmConversation } from '@/types/dm';
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Image, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import tw from 'twrnc';
+import Avatar from '../Avatar';
 
 const ACCENT = '#F02C56';
 
@@ -32,8 +40,9 @@ export const ConversationRow = ({
     isDeclining = false,
 }: ConversationRowProps) => {
     const unread = mode === 'default' && conversation.unread;
-    const name = dmDisplayName(conversation.participant);
-    const preview = dmLastMessagePreview(conversation, selfId);
+    const isGroup = isGroupConversation(conversation);
+    const name = conversationDisplayName(conversation);
+    const preview = `${groupPreviewPrefix(conversation, selfId)}${dmLastMessagePreview(conversation, selfId)}`;
     const time = dmTimeAgo(conversation.updated_at);
 
     return (
@@ -44,10 +53,18 @@ export const ConversationRow = ({
                 tw`flex-row items-center px-4 py-3`,
                 pressed && tw`bg-gray-50 dark:bg-gray-900`,
             ]}>
-            {conversation.participant?.avatar ? (
-                <Image
-                    source={{ uri: conversation.participant.avatar }}
-                    style={tw`w-14 h-14 rounded-full mr-3`}
+            {isGroup ? (
+                <View style={tw`mr-3`}>
+                    <GroupAvatar
+                        participants={activeConversationParticipants(conversation)}
+                        size={56}
+                    />
+                </View>
+            ) : conversation.participant?.avatar ? (
+                <Avatar
+                    url={conversation.participant.avatar}
+                    theme="lg"
+                    style={tw`mr-3`}
                 />
             ) : (
                 <View
@@ -67,10 +84,19 @@ export const ConversationRow = ({
                         fontSize="$4"
                         fontWeight={unread ? 'bold' : 'semibold'}
                         textColor="text-black dark:text-white"
-                        numberOfLines={1}>
+                        numberOfLines={1}
+                        style={tw`shrink`}>
                         {name}
                     </StackText>
-                    {conversation.participant?.is_remote && (
+                    {isGroup && (
+                        <Ionicons
+                            name="people-outline"
+                            size={14}
+                            color="#999"
+                            style={tw`ml-1.5`}
+                        />
+                    )}
+                    {!isGroup && conversation.participant?.is_remote && (
                         <Ionicons
                             name="planet-outline"
                             size={14}
