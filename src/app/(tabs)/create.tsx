@@ -143,7 +143,7 @@ export default function CameraScreen() {
                         .then((path: string | null) => {
                             if (path) navigateToPreview(path, 0);
                         })
-                        .catch(() => {});
+                        .catch(() => { });
                     isRecordingRef.current = false;
                     setIsRecording(false);
                 }
@@ -377,9 +377,9 @@ export default function CameraScreen() {
             if (activeFilter === 'none') {
                 try {
                     await camera.current?.stopRecording();
-                } catch {}
+                } catch { }
             } else {
-                LoopsFilter.forceStop().catch(() => {});
+                LoopsFilter.forceStop().catch(() => { });
             }
         }
         if (recordingTimer.current) {
@@ -649,7 +649,7 @@ export default function CameraScreen() {
                 <PressableHaptics onPress={toggleCamera} style={styles.topButton}>
                     <Ionicons name="camera-reverse" size={28} color="#fff" />
                 </PressableHaptics>
-                {/* {Platform.OS === 'ios' ? (
+                {Platform.OS === 'ios' ? (
                     <PressableHaptics onPress={toggleFilters} style={styles.controlButton}>
                         <Ionicons
                             name={showFilters ? 'sparkles' : 'sparkles-outline'}
@@ -657,7 +657,7 @@ export default function CameraScreen() {
                             color="#fff"
                         />
                     </PressableHaptics>
-                ) : null} */}
+                ) : null}
                 <TouchableOpacity onPress={toggleFlash} style={styles.controlButton}>
                     <Ionicons
                         name={flash === 'off' ? 'flash-off' : 'flash'}
