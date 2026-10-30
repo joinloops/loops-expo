@@ -13,6 +13,7 @@ import {
     fetchAccountState,
     fetchUserVideos,
     followAccount,
+    getOrCreateDmConversation,
     unblockAccount,
     unfollowAccount,
 } from '@/utils/requests';
@@ -65,6 +66,7 @@ export default function ProfileScreen() {
     const [showReportModal, setShowReportModal] = useState(false);
     const [sortBy, setSortBy] = useState('Latest');
     const { colorScheme } = useTheme();
+    const [messageLoading, setMessageLoading] = useState(false);
 
     const {
         data: user,
@@ -293,6 +295,25 @@ export default function ProfileScreen() {
         [handleVideoPress],
     );
 
+    const handleMessagePress = async () => {
+        if (messageLoading) return;
+        setMessageLoading(true);
+
+        try {
+            const convo = await getOrCreateDmConversation(user.id);
+            router.push({
+                pathname: `/private/messages/${convo.data?.id}`,
+            });
+        } catch (error) {
+            const msg =
+                error?.response?.data?.message ??
+                'Unable to start a conversation with this account.';
+            Alert.alert('Message unavailable', msg);
+        } finally {
+            setMessageLoading(false);
+        }
+    };
+
     const keyExtractor = useCallback((item) => item?.id?.toString() ?? '', []);
 
     if (userLoading) {
@@ -343,7 +364,7 @@ export default function ProfileScreen() {
         <View style={tw`flex-1 bg-white dark:bg-black`}>
             <Stack.Screen
                 options={{
-                    title: user?.name || 'Profile',
+                    title: 'Profile',
                     headerStyle: tw`bg-white dark:bg-black`,
                     headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
                     headerShadowVisible: false,
@@ -382,6 +403,8 @@ export default function ProfileScreen() {
                             onMenuPress={handleOnOpenMenu}
                             onUnblockPress={handleOnUnblockPress}
                             isFollowLoading={followMutation.isPending}
+                            messageLoading={messageLoading}
+                            onMessagePress={handleMessagePress}
                         />
                         <AccountTabs
                             activeTab={activeTab}
@@ -464,7 +487,8 @@ export default function ProfileScreen() {
                                 <Text style={tw`text-base text-red-600 font-medium`}>Report</Text>
                             </Pressable>
 
-                            <View style={tw`mt-2 border-t border-gray-200 dark:border-gray-800`}>
+                            <View
+                                style={tw`mt-2 border-t border-gray-200 dark:border-gray-800 android:pb-9`}>
                                 <Pressable
                                     style={tw`px-6 py-4`}
                                     onPress={() => setShowMenuModal(false)}>
