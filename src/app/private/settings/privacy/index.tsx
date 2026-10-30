@@ -82,6 +82,13 @@ export default function PrivacyScreen() {
                     value={suggestAccount}
                     onValueChange={handleToggleSuggest}
                 />
+
+                <SectionHeader title="Messages" />
+                <SettingsItem
+                    icon="paper-plane-outline"
+                    label="Direct Messages"
+                    onPress={() => router.push('/private/settings/privacy/directMessages')}
+                />
                 <SectionHeader title="Interactions" />
                 <SettingsItem
                     icon="close-circle-outline"

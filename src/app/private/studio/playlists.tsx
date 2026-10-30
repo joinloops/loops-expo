@@ -5,14 +5,14 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { Stack, useRouter } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    Pressable,
-    RefreshControl,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  Text,
+  TextInput,
+  View,
 } from 'react-native'
 import tw from 'twrnc'
 
@@ -90,8 +90,8 @@ function PlaylistRow({ item, onPress }) {
 
 export default function PlaylistsScreen() {
   const router = useRouter()
-    const { colorScheme } = useTheme();
-    const isDark = colorScheme === 'dark';
+  const { colorScheme } = useTheme();
+  const isDark = colorScheme === 'dark';
   const [searchInput, setSearchInput] = useState('')
   const [sortIndex, setSortIndex] = useState(0)
   const search = useDebouncedValue(searchInput.trim())
@@ -108,23 +108,23 @@ export default function PlaylistsScreen() {
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: ['studio-playlists', `search:${search}`, `sortField:${sort.field}`, `sortDirection:${sort.direction}`],
-    queryFn: ({ pageParam }) => 
-        fetchPlaylists({ 
-            cursor: pageParam as string | null,
-            search: search,
-            sortField: sort.field,
-            sortDirection: sort.direction,
-        }),
+    queryFn: ({ pageParam }) =>
+      fetchPlaylists({
+        cursor: pageParam as string | null,
+        search: search,
+        sortField: sort.field,
+        sortDirection: sort.direction,
+      }),
     initialPageParam: null,
     getNextPageParam: (lastPage) => lastPage?.meta?.next_cursor ?? undefined,
   })
 
-    const { data: playlistLimits } = useQuery({
-        queryKey: ['studio', 'playlistLimits'],
-        queryFn: () => fetchPlaylistLimits()
-    })
+  const { data: playlistLimits } = useQuery({
+    queryKey: ['studio', 'playlistLimits'],
+    queryFn: () => fetchPlaylistLimits()
+  })
 
-    const canCreate = !playlistLimits?.feature_unavailable && playlistLimits?.can_create;
+  const canCreate = !playlistLimits?.feature_unavailable && playlistLimits?.can_create;
 
 
   const playlists = useMemo(
@@ -196,33 +196,33 @@ export default function PlaylistsScreen() {
 
   return (
     <View style={tw`flex-1 bg-white dark:bg-black`}>
-    <Stack.Screen
-            options={{
-                title: 'My Playlists',
-                headerStyle: { backgroundColor: isDark ? '#000' : '#ffffff' },
-                headerTintColor: isDark ? '#F3F4F6' : '#000',
-                headerTitleStyle: {
-                    fontSize: 22,
-                    fontWeight: 'bold',
-                    color: colorScheme === 'dark' ? '#fff' : '#000',
-                },
-                headerShadowVisible: false,
-                headerBackTitle: 'Studio',
-                headerRight: () => canCreate ? (
-                    <Pressable
-                        hitSlop={8}
-                        disabled={!canCreate}
-                        onPress={handleAddNewPlaylist}
-                        style={tw`${canCreate ? '' : 'opacity-40'}`}>
-                        <Ionicons
-                            name="add-circle-outline"
-                            size={22}
-                            color={isDark ? '#F3F4F6' : '#000'}
-                        />
-                    </Pressable>
-                ) : null,
-            }}
-        />
+      <Stack.Screen
+        options={{
+          title: 'My Playlists',
+          headerStyle: { backgroundColor: isDark ? '#000' : '#ffffff' },
+          headerTintColor: isDark ? '#F3F4F6' : '#000',
+          headerTitleStyle: {
+            fontSize: 22,
+            fontWeight: 'bold',
+            color: colorScheme === 'dark' ? '#fff' : '#000',
+          },
+          headerShadowVisible: false,
+          headerBackTitle: 'Studio',
+          headerRight: () => canCreate ? (
+            <Pressable
+              hitSlop={8}
+              disabled={!canCreate}
+              onPress={handleAddNewPlaylist}
+              style={tw`${canCreate ? '' : 'opacity-40'}`}>
+              <Ionicons
+                name="add-circle-outline"
+                size={22}
+                color={isDark ? '#F3F4F6' : '#000'}
+              />
+            </Pressable>
+          ) : null,
+        }}
+      />
       <View style={tw`px-4 pt-2 pb-3`}>
         <View style={tw`flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-xl px-3`}>
           <Ionicons
@@ -235,7 +235,7 @@ export default function PlaylistsScreen() {
             onChangeText={setSearchInput}
             placeholder="Search playlists"
             placeholderTextColor={tw.color('text-gray-400 dark:text-gray-500')}
-            style={tw`flex-1 h-12 flex align-center lh-0 px-2 text-gray-900 dark:text-white [include-font-padding:false]`}
+            style={tw`flex-1 h-12 flex items-center px-2 text-gray-900 dark:text-white [include-font-padding:false]`}
             returnKeyType="search"
             textAlignVertical="center"
             autoCorrect={false}
