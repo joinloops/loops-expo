@@ -378,7 +378,9 @@ export default function Screen() {
                         <YStack paddingY="$6" alignItems="center">
                             <ActivityIndicator color="#F02C56" />
                         </YStack>
-                    ) : null
+                    ) : (
+                        <View style={tw`h-40`} />
+                    )
                 }
                 onEndReachedThreshold={0.4}
                 onEndReached={handleEndReached}
