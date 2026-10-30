@@ -240,8 +240,6 @@ export class OAuthService {
      */
     private static async handleCallback(url: string): Promise<boolean> {
         try {
-            console.log('Handling callback URL:', url);
-
             const { queryParams } = Linking.parse(url);
 
             if (queryParams?.message || queryParams?.error) {
