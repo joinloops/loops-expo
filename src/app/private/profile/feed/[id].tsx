@@ -76,8 +76,8 @@ export default function ProfileFeed({ navigation }) {
                 return await videoUnlike(data.id);
             }
         },
-        onSuccess: (res) => {},
-        onError: (error) => {},
+        onSuccess: (res) => { },
+        onError: (error) => { },
     });
 
     const videoBookmarkMutation = useMutation({
@@ -91,8 +91,8 @@ export default function ProfileFeed({ navigation }) {
                 return await videoUnbookmark(data.id);
             }
         },
-        onSuccess: (res) => {},
-        onError: (error) => {},
+        onSuccess: (res) => { },
+        onError: (error) => { },
     });
 
     const videos = data?.pages?.flatMap((page) => page.data) || [];
@@ -128,6 +128,10 @@ export default function ProfileFeed({ navigation }) {
         setShowOther(true);
     };
 
+    const handleOnEdit = () => {
+        router.push(`/private/video/edit/${selectedVideo.id}`)
+    }
+
     const handlePlaybackSpeedChange = (speed) => {
         if (selectedVideo) {
             setVideoPlaybackRates((prev) => ({
@@ -153,9 +157,8 @@ export default function ProfileFeed({ navigation }) {
                 onLike={handleLike}
                 onComment={handleComment}
                 onShare={handleShare}
-                onOther={handleOther}
                 onBookmark={handleBookmark}
-                bottomInset={insets.bottom}
+                bottomInset={insets.bottom + 15}
                 commentsOpen={showComments && selectedVideo?.id === item.id}
                 shareOpen={showShare && selectedVideo?.id === item.id}
                 otherOpen={showOther && selectedVideo?.id === item.id}
@@ -163,7 +166,7 @@ export default function ProfileFeed({ navigation }) {
                 videoPlaybackRates={videoPlaybackRates}
                 navigation={navigation}
                 onNavigate={handleNavigate}
-                tabBarHeight={20}
+                tabBarHeight={insets.bottom + 40}
             />
         ),
         [
@@ -249,6 +252,7 @@ export default function ProfileFeed({ navigation }) {
                 visible={showShare}
                 item={selectedVideo}
                 onClose={() => setShowShare(false)}
+                onEdit={handleOnEdit}
             />
 
             <OtherModal
