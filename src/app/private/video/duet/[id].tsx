@@ -8,7 +8,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Alert,
     Animated,
+    AppState,
     Dimensions,
+    Linking,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -27,7 +29,12 @@ import Reanimated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
+import {
+    Camera,
+    useCameraDevice,
+    useCameraPermission,
+    useMicrophonePermission,
+} from 'react-native-vision-camera';
 
 const MAX_DURATION = 60;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -53,9 +60,12 @@ export default function DuetCameraScreen() {
     const [recordingDuration, setRecordingDuration] = useState(0);
     const [layout, setLayout] = useState<DuetLayout>('side-by-side');
     const [isVideoReady, setIsVideoReady] = useState(false);
+    const [permissionsDenied, setPermissionsDenied] = useState(false);
 
     const device = useCameraDevice(cameraPosition);
     const { hasPermission, requestPermission } = useCameraPermission();
+    const { hasPermission: hasMicPermission, requestPermission: requestMicPermission } =
+        useMicrophonePermission();
     const isFocused = useIsFocused();
 
     const recordingProgress = useRef(new Animated.Value(0)).current;
@@ -114,13 +124,26 @@ export default function DuetCameraScreen() {
         width: `${Math.round(((zoom.value - minZoom) / (maxZoom - minZoom)) * 100)}%`,
     }));
 
+    const requestPermissions = useCallback(async () => {
+        const cameraGranted = hasPermission || (await requestPermission());
+        const micGranted = hasMicPermission || (await requestMicPermission());
+
+        setPermissionsDenied(!cameraGranted || !micGranted);
+    }, [hasPermission, hasMicPermission, requestPermission, requestMicPermission]);
+
     useEffect(() => {
-        (async () => {
-            if (!hasPermission) {
-                await requestPermission();
+        requestPermissions();
+    }, []);
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (state) => {
+            if (state === 'active' && (!hasPermission || !hasMicPermission)) {
+                requestPermissions();
             }
-        })();
-    }, [hasPermission, requestPermission]);
+        });
+
+        return () => subscription.remove();
+    }, [hasPermission, hasMicPermission, requestPermissions]);
 
     useEffect(() => {
         if (!isRecording && !isPaused) {
@@ -375,10 +398,42 @@ export default function DuetCameraScreen() {
         };
     });
 
-    if (!hasPermission) {
+    if (!hasPermission || !hasMicPermission) {
+        const missingBoth = !hasPermission && !hasMicPermission;
+        const message = missingBoth
+            ? 'Camera and microphone access required'
+            : !hasPermission
+                ? 'Camera access required'
+                : 'Microphone access required';
+
         return (
-            <View style={styles.container}>
-                <Text style={styles.permissionText}>Camera permission required</Text>
+            <View style={[styles.container, styles.permissionContainer]}>
+                <StatusBar style="light" />
+                <Stack.Screen options={{ headerShown: false }} />
+                <Ionicons
+                    name={!hasPermission ? 'videocam-off-outline' : 'mic-off-outline'}
+                    size={48}
+                    color="rgba(255, 255, 255, 0.9)"
+                />
+                <Text style={styles.permissionTitle}>{message}</Text>
+                <Text style={styles.permissionSubtext}>
+                    Duets record your video and audio alongside the original loop. Allow access to
+                    continue.
+                </Text>
+                {permissionsDenied ? (
+                    <PressableHaptics
+                        onPress={() => Linking.openSettings()}
+                        style={styles.permissionButton}>
+                        <Text style={styles.permissionButtonText}>Open Settings</Text>
+                    </PressableHaptics>
+                ) : (
+                    <PressableHaptics onPress={requestPermissions} style={styles.permissionButton}>
+                        <Text style={styles.permissionButtonText}>Allow Access</Text>
+                    </PressableHaptics>
+                )}
+                <TouchableOpacity onPress={() => router.back()} style={styles.permissionBackButton}>
+                    <Text style={styles.permissionBackText}>Not now</Text>
+                </TouchableOpacity>
             </View>
         );
     }
@@ -532,7 +587,7 @@ export default function DuetCameraScreen() {
                             device={device}
                             isActive={isFocused}
                             video={true}
-                            audio={true}
+                            audio={hasMicPermission}
                             photo={false}
                             animatedProps={animatedProps}
                         />
@@ -665,6 +720,44 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         marginTop: 100,
+    },
+    permissionContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 40,
+        gap: 16,
+    },
+    permissionTitle: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    permissionSubtext: {
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontSize: 14,
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+    permissionButton: {
+        backgroundColor: '#F02C56',
+        paddingHorizontal: 32,
+        paddingVertical: 14,
+        borderRadius: 24,
+        marginTop: 8,
+    },
+    permissionButtonText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    permissionBackButton: {
+        paddingVertical: 10,
+    },
+    permissionBackText: {
+        color: 'rgba(255, 255, 255, 0.6)',
+        fontSize: 14,
+        fontWeight: '600',
     },
     videoContainer: {
         position: 'absolute',
