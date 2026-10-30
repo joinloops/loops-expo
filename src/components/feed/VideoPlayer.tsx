@@ -1,20 +1,15 @@
 import Avatar from '@/components/Avatar';
 import LinkifiedCaption from '@/components/feed/LinkifiedCaption';
 import { PressableHaptics } from '@/components/ui/PressableHaptics';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import React, { useEffect, useRef, useState } from 'react';
-import {
-    Dimensions,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import VideoScrubber from './VideoScrubber';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -25,7 +20,6 @@ export default function VideoPlayer({
     onComment,
     onShare,
     onBookmark,
-    onOther,
     bottomInset,
     commentsOpen,
     screenFocused,
@@ -34,6 +28,8 @@ export default function VideoPlayer({
     otherOpen,
     navigation,
     onNavigate,
+    itemHeight,
+    scrollRef,
     tabBarHeight = 60,
 }) {
     const [isLiked, setIsLiked] = useState(item.has_liked);
@@ -46,21 +42,36 @@ export default function VideoPlayer({
     const router = useRouter();
     const [playSensitive, setPlaySensitive] = useState(false);
     const controlsTimeoutRef = useRef(null);
+    const [userPaused, setUserPaused] = useState(false);
+    const insets = useSafeAreaInsets();
+    const [isScrubbing, setIsScrubbing] = useState(false);
 
     const playbackRate = videoPlaybackRates[item.id] || 1.0;
+
+    const aspectRatio =
+        item.media?.width && item.media?.height ? item.media.width / item.media.height : 0;
+    const videoContentFit = aspectRatio > 1 ? 'contain' : 'cover';
 
     const player = useVideoPlayer(item.media.src_url, (player) => {
         player.loop = true;
         player.playbackRate = playbackRate;
     });
 
+    const ICON_SHADOW = {
+        textShadowColor: 'rgba(0,0,0,0.50)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 6,
+    };
+
     useEffect(() => {
         isMountedRef.current = true;
-
         return () => {
             isMountedRef.current = false;
+            try {
+                player?.pause();
+            } catch { }
         };
-    }, []);
+    }, [player]);
 
     useEffect(() => {
         if (!player) return;
@@ -75,13 +86,22 @@ export default function VideoPlayer({
         if (!player) return;
 
         try {
-            if (manualControlRef.current) {
+            if (!isActive) {
+                if (isMountedRef.current) {
+                    player.pause();
+                    setIsPlaying(false);
+                    setUserPaused(false);
+                }
+                manualControlRef.current = false;
+                wasActiveRef.current = false;
                 return;
             }
 
-            const shouldPlay = isActive && screenFocused && !(item.is_sensitive && !playSensitive);
+            if (manualControlRef.current) return;
 
-            if (isActive && !wasActiveRef.current) {
+            const shouldPlay = screenFocused && !(item.is_sensitive && !playSensitive);
+
+            if (!wasActiveRef.current) {
                 player.currentTime = 0;
             }
 
@@ -93,27 +113,28 @@ export default function VideoPlayer({
                 setIsPlaying(false);
             }
 
-            wasActiveRef.current = isActive;
+            wasActiveRef.current = true;
         } catch (error) {
             console.log('Player control error:', error);
         }
-    }, [
-        isActive,
-        commentsOpen,
-        shareOpen,
-        otherOpen,
-        screenFocused,
-        player,
-        item.is_sensitive,
-        playSensitive,
-    ]);
+    }, [isActive, screenFocused, player, item.is_sensitive, playSensitive]);
 
     useEffect(() => {
         if (!isActive) {
-            manualControlRef.current = false;
             setPlaySensitive(false);
         }
     }, [isActive]);
+
+    useFocusEffect(
+        useCallback(() => {
+            return () => {
+                try {
+                    player?.pause();
+                    setIsPlaying(false);
+                } catch { }
+            };
+        }, [player]),
+    );
 
     const handleLike = () => {
         setIsLiked(!isLiked);
@@ -125,23 +146,25 @@ export default function VideoPlayer({
         onBookmark(item.id, !isBookmarked);
     };
 
-    const togglePlayPause = () => {
+    const togglePlayPause = useCallback(() => {
         if (!player || !isMountedRef.current) return;
 
         try {
             manualControlRef.current = true;
 
-            if (isPlaying) {
+            if (player.playing) {
                 player.pause();
                 setIsPlaying(false);
+                setUserPaused(true);
             } else {
                 player.play();
                 setIsPlaying(true);
+                setUserPaused(false);
             }
         } catch (error) {
             console.log('Toggle play/pause error:', error);
         }
-    };
+    }, [player]);
 
     const handleScreenPress = () => {
         if (!isMountedRef.current) {
@@ -185,9 +208,9 @@ export default function VideoPlayer({
 
     if (item.is_sensitive && !playSensitive) {
         return (
-            <View style={styles.videoContainer}>
+            <View style={[styles.videoContainer, { height: itemHeight }]}>
                 <View
-                    style={styles.sensitiveOverlay}
+                    style={[styles.sensitiveOverlay, { paddingBottom: tabBarHeight }]}
                     accessible={true}
                     accessibilityLabel="Sensitive content warning. This video may contain sensitive content."
                     accessibilityRole="alert">
@@ -218,55 +241,42 @@ export default function VideoPlayer({
     }
 
     return (
-        <View style={styles.videoContainer}>
-            <View style={styles.videoWrapper}>
+        <View style={[styles.videoContainer, { height: itemHeight }]}>
+            <Pressable
+                style={styles.tapArea}
+                onPress={togglePlayPause}
+                accessibilityRole="button"
+                accessibilityLabel={isPlaying ? 'Pause video' : 'Play video'}>
                 <VideoView
                     style={styles.video}
                     player={player}
+                    pointerEvents="none"
                     allowsPictureInPicture={false}
                     nativeControls={false}
-                    accessible={true}
+                    accessible={false}
                     accessibilityLabel={item.media.alt_text || 'Video content'}
                     accessibilityHint="Tap to show playback controls"
-                    contentFit="contain"
+                    contentFit={videoContentFit}
                 />
 
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={() => handleScreenPress()}
-                    disabled={showControls}
-                    accessible={true}
-                    accessibilityLabel="Video"
-                    accessibilityHint="Tap to show playback controls"
-                    accessibilityRole="button"
+                <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
+                    style={styles.gradientOverlay}
+                    pointerEvents="none"
                 />
 
-                {showControls && (
-                    <View style={styles.controlsOverlay} pointerEvents="box-none">
-                        <TouchableOpacity
-                            onPress={(e) => {
-                                e?.stopPropagation?.();
-                                togglePlayPause();
-                            }}
-                            style={styles.playButton}
-                            activeOpacity={0.7}
-                            accessible={true}
-                            accessibilityLabel={isPlaying ? 'Pause video' : 'Play video'}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: isPlaying }}>
-                            <Ionicons name={isPlaying ? 'pause' : 'play'} size={60} color="white" />
-                        </TouchableOpacity>
+                {isActive && userPaused && (
+                    <View style={styles.playIndicatorOverlay} pointerEvents="none">
+                        <View style={styles.playIndicator}>
+                            <Ionicons name="play" size={70} color="rgba(255,255,255,0.9)" />
+                        </View>
                     </View>
                 )}
-            </View>
+            </Pressable>
 
-            <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
-                style={styles.gradientOverlay}
-                pointerEvents="none"
-            />
-
-            <View style={[styles.rightActions, { bottom: bottomInset + tabBarHeight + 20 }]}>
+            <View
+                style={[styles.rightActions, { bottom: tabBarHeight, opacity: isScrubbing ? 0 : 1 }]}
+                pointerEvents={isScrubbing ? 'none' : 'auto'}>
                 <PressableHaptics
                     style={styles.actionButton}
                     onPress={() => router.push(`/private/profile/${item.account.id}`)}
@@ -287,7 +297,7 @@ export default function VideoPlayer({
                     }
                     accessibilityRole="button"
                     accessibilityState={{ selected: isLiked }}>
-                    <Ionicons name={'heart'} size={35} color={isLiked ? '#F02C56' : 'white'} />
+                    <Ionicons name={'heart'} size={35} color={isLiked ? '#F02C56' : 'white'} style={ICON_SHADOW} />
                     <Text style={styles.actionText} accessibilityElementsHidden={true}>
                         {likeCount}
                     </Text>
@@ -303,7 +313,7 @@ export default function VideoPlayer({
                             : 'Comments are disabled'
                     }
                     accessibilityRole="button">
-                    <Ionicons name="chatbubble" size={32} color="white" />
+                    <Ionicons name="chatbubble" size={32} color="white" style={ICON_SHADOW} />
                     {item.permissions?.can_comment && (
                         <Text style={styles.actionText} accessibilityElementsHidden={true}>
                             {item.comments}
@@ -326,6 +336,7 @@ export default function VideoPlayer({
                         name="bookmark"
                         size={32}
                         color={isBookmarked ? '#F02C56' : 'white'}
+                        style={ICON_SHADOW}
                     />
                     <Text style={styles.actionText} accessibilityElementsHidden={true}>
                         {bookmarkCount}
@@ -338,23 +349,18 @@ export default function VideoPlayer({
                     accessible={true}
                     accessibilityLabel={`Share. ${item.shares} shares`}
                     accessibilityRole="button">
-                    <Ionicons name="arrow-redo" size={32} color="white" />
+                    <Ionicons name="arrow-redo" size={32} color="white" style={ICON_SHADOW} />
                     <Text style={styles.actionText} accessibilityElementsHidden={true}>
                         {item.shares}
                     </Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => onOther(item)}
-                    accessible={true}
-                    accessibilityLabel="More options"
-                    accessibilityRole="button">
-                    <MaterialCommunityIcons name="dots-horizontal" size={32} color="white" />
-                </TouchableOpacity>
             </View>
 
-            <View style={[styles.bottomInfo, { bottom: bottomInset + tabBarHeight + 10 }]}>
+            <View
+                style={[
+                    styles.bottomInfo,
+                    { bottom: tabBarHeight, opacity: isScrubbing ? 0 : 1 },
+                ]}>
                 <TouchableOpacity
                     onPress={() => {
                         onNavigate?.();
@@ -422,15 +428,22 @@ export default function VideoPlayer({
                     </View>
                 )}
             </View>
+            <VideoScrubber
+                player={player}
+                isActive={isActive}
+                bottom={bottomInset}
+                scrollRef={scrollRef}
+                onScrubbingChange={setIsScrubbing}
+            />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     videoContainer: {
-        width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT,
+        width: '100%',
         position: 'relative',
+        backgroundColor: '#000',
     },
     videoWrapper: {
         flex: 1,
@@ -440,6 +453,9 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         backgroundColor: '#000',
+    },
+    tapArea: {
+        ...StyleSheet.absoluteFillObject,
     },
     controlsOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -464,6 +480,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.99)',
         justifyContent: 'center',
         alignItems: 'center',
+        flex: 1,
         zIndex: 15,
         elevation: 15,
     },
@@ -547,8 +564,9 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: '600',
         marginTop: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        textShadowColor: 'rgba(0,0,0,0.55)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 6,
         shadowOpacity: 0.3,
         shadowRadius: 3,
         elevation: 4,
@@ -557,6 +575,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 12,
         right: 80,
+        zIndex: 5,
     },
     username: {
         color: 'white',
@@ -612,5 +631,25 @@ const styles = StyleSheet.create({
     aiLabelText: {
         color: '#ffffff',
         fontWeight: 500,
+    },
+    playIndicatorOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        position: 'absolute',
+        backgroundColor: 'rgba(0,0,0, 0.5)',
+        width: '100%',
+        height: '100%',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 2,
+        elevation: 2,
+    },
+    playIndicator: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 3,
+        elevation: 3,
     },
 });
