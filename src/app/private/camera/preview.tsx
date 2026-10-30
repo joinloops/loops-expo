@@ -1,44 +1,58 @@
 import { XStack } from '@/components/ui/Stack';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { useEventListener } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Asset, requestPermissionsAsync } from 'expo-media-library';
 import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { useState } from 'react';
+import { useVideoPlayer, VideoSource, VideoView } from 'expo-video';
+import { useMemo, useState } from 'react';
 
 import {
     Alert,
     Dimensions,
-    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
+
+const normalizeVideoUri = (path: string) => {
+    if (!path) return path;
+    return path.startsWith('file://') || path.startsWith('content://')
+        ? path
+        : `file://${path}`;
+};
+
 
 export default function PreviewScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { videoPath, duration, isUpload } = params;
     const [selectedSound, setSelectedSound] = useState('');
-    const [isPlaying, setIsPlaying] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const isFocused = useIsFocused();
 
-    const player = useVideoPlayer(videoPath as string, (player) => {
+    const uri = useMemo(
+        () => normalizeVideoUri(String(videoPath ?? '')),
+        [videoPath],
+    );
+
+    const source = useMemo<VideoSource>(
+        () => ({ uri }),
+        [uri],
+    );
+
+    const [isPlaying, setIsPlaying] = useState(true);
+
+    const player = useVideoPlayer(source, (player) => {
         player.loop = true;
-        player.play();
+        // player.play();
     });
 
-    useEventListener(player, 'statusChange', ({ status, error }) => {
-        console.log('Player status changed: ', status);
-        console.log('Player error changed: ', error);
-    });
 
     const handleBack = () => {
+        player.pause();
         router.back();
     };
 
@@ -52,20 +66,23 @@ export default function PreviewScreen() {
     };
 
     const handleNext = () => {
-        player.pause();
-        router.push({
+        router.replace({
             pathname: '/private/camera/caption',
-            params: { videoPath: videoPath, duration: duration },
+            params: {
+                videoPath: uri,
+                duration,
+            },
         });
     };
 
     const togglePlayPause = () => {
         if (player.playing) {
             player.pause();
+            setIsPlaying(false);
         } else {
             player.play();
+            setIsPlaying(true);
         }
-        setIsPlaying(player.playing);
     };
 
     const handleDownload = async () => {
@@ -104,7 +121,7 @@ export default function PreviewScreen() {
                     player={player}
                     allowsPictureInPicture={false}
                     nativeControls={false}
-                    surfaceType={Platform.OS === 'android' ? 'textureView' : 'surfaceView'}
+                    surfaceType="textureView"
                 />
             )}
 
