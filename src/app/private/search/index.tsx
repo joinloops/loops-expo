@@ -83,12 +83,12 @@ export default function SearchScreen() {
                     users: old.users?.map((u: User) =>
                         u.id === userId
                             ? {
-                                  ...u,
-                                  is_following: !isFollowing,
-                                  follower_count: isFollowing
-                                      ? u.follower_count - 1
-                                      : u.follower_count + 1,
-                              }
+                                ...u,
+                                is_following: !isFollowing,
+                                follower_count: isFollowing
+                                    ? u.follower_count - 1
+                                    : u.follower_count + 1,
+                            }
                             : u,
                     ),
                 };
@@ -517,16 +517,6 @@ export default function SearchScreen() {
                             </TouchableOpacity>
                         )}
                     </View>
-
-                    <TouchableOpacity
-                        style={tw`ml-3`}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Ionicons
-                            name="ellipsis-horizontal"
-                            size={26}
-                            color={colorScheme === 'dark' ? 'white' : 'black'}
-                        />
-                    </TouchableOpacity>
                 </View>
 
                 <View style={tw`border-b border-gray-200 dark:border-gray-800`}>
@@ -541,11 +531,10 @@ export default function SearchScreen() {
                                 style={tw`mr-6 py-3 ${activeTab === tab ? 'border-b-2 border-black dark:border-white' : ''}`}
                                 onPress={() => handleTabChange(tab)}>
                                 <Text
-                                    style={tw`text-base px-3 ${
-                                        activeTab === tab
+                                    style={tw`text-base px-3 ${activeTab === tab
                                             ? 'font-semibold text-black dark:text-white'
                                             : 'font-normal text-gray-500 dark:text-gray-400'
-                                    }`}>
+                                        }`}>
                                     {tab}
                                 </Text>
                             </TouchableOpacity>
