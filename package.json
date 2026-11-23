@@ -16,6 +16,7 @@
     "@tanstack/react-query-persist-client": "^5.100.8",
     "expo": "~57.0.33",
     "expo-apple-authentication": "~57.0.2",
+    "expo-application": "~57.0.3",
     "expo-build-properties": "~57.0.23",
     "expo-check-installed-apps": "^0.2.14",
     "expo-clipboard": "~57.0.2",
@@ -82,13 +83,19 @@
     "typescript": "~6.0.3"
   },
   "react-native-executorch": {
-    "backends": ["xnnpack"],
-    "libs": ["phonemis"]
+    "backends": [
+      "xnnpack"
+    ],
+    "libs": [
+      "phonemis"
+    ]
   },
   "expo": {
     "autolinking": {
       "ios": {
-        "exclude": ["react-native-compressor"]
+        "exclude": [
+          "react-native-compressor"
+        ]
       },
       "android": {
         "exclude": [
